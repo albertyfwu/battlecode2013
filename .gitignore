@@ -11,3 +11,6 @@ lib/*
 music/*
 sound/*
 version.txt
+.classpath
+.project
+bin/*
