@@ -14,3 +14,4 @@ version.txt
 .classpath
 .project
 bin/*
+.metadata/*
