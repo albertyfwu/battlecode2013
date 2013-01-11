@@ -41,7 +41,7 @@ public class SoldierRobot extends BaseRobot {
 			
 			// Try to go to a coordinate
 			// Try to go to (39, 25) on choice.xml map
-			MapLocation end = new MapLocation(39, 27);
+			MapLocation end = new MapLocation(19, 27);
 			MapLocation start = rc.getLocation();
 			if (!calculatedPath) {
 				calculatedPath = true;
