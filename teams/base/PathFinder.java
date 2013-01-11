@@ -84,7 +84,7 @@ public class PathFinder {
 			for (int[] box : getNeighborBoxes(currentBox, numBoxes)) {
 				if (!visitedBoxes[box[0]][box[1]]) {
 					int mineCount = mineCounts[box[0]][box[1]];
-					int currentHeuristic = heuristic(mineCount, currentBox, endBox);					
+					int currentHeuristic = heuristic(mineCount, box, endBox);					
 					if (currentHeuristic < minHeuristic) {
 						minHeuristic = currentHeuristic;
 						minBox = box;
@@ -117,8 +117,8 @@ public class PathFinder {
 	// TODO: Choose MINE_DEFUSE_DELAY OR MINE_DEFUSE_DEFUSION_DELAY correctly
 	// TODO: Also, don't let it move backwards? Make distance even more imperative.
 	public static int heuristic(int mineCount, int[] startBox, int[] endBox) {
-//		return distanceBetweenBoxes(startBox, endBox) + mineCount * GameConstants.MINE_DEFUSE_DELAY / TeamConstants.HPA_BOX_LEN;
-		return (int)Math.pow(distanceBetweenBoxes(startBox, endBox), 15) + mineCount * GameConstants.MINE_DEFUSE_DELAY / TeamConstants.PATH_BOX_LEN;
+		return 2 * GameConstants.MINE_DEFUSE_DELAY * distanceBetweenBoxes(startBox, endBox) + mineCount * GameConstants.MINE_DEFUSE_DELAY / TeamConstants.PATH_BOX_LEN;
+//		return (int)Math.pow(distanceBetweenBoxes(startBox, endBox), 2) + mineCount * GameConstants.MINE_DEFUSE_DELAY / TeamConstants.PATH_BOX_LEN;
 	}
 	
 	public static int distanceBetweenBoxes(int[] startBox, int[] endBox) {
