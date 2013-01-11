@@ -32,12 +32,12 @@ public class HPA_old {
 		// Find the number of boxes this corresponds to (based on box length of
 		// TeamConstants.HPA_BOX_LEN)
 		int numBoxes = 0;
-		if (maxDelta % TeamConstants.HPA_BOX_LEN == 0) {
-			numBoxes = maxDelta / TeamConstants.HPA_BOX_LEN;
+		if (maxDelta % TeamConstants.PATH_BOX_LEN == 0) {
+			numBoxes = maxDelta / TeamConstants.PATH_BOX_LEN;
 		} else {
-			numBoxes = maxDelta / TeamConstants.HPA_BOX_LEN + 1;
+			numBoxes = maxDelta / TeamConstants.PATH_BOX_LEN + 1;
 		}
-		int boxLen = numBoxes * TeamConstants.HPA_BOX_LEN;
+		int boxLen = numBoxes * TeamConstants.PATH_BOX_LEN;
 		// Now that we have boxLen, find one corner of the HPA viewing box (big box)
 		int bigX = (int)((x1 + x2) / 2f - boxLen / 2f);
 		int bigY = (int)((y1 + y2) / 2f - boxLen / 2f);
@@ -82,11 +82,11 @@ public class HPA_old {
 				// horzDoors
 				int currentBestX = 0;
 				int currentBestCountX = Integer.MAX_VALUE;
-				for (int k = 0; k < TeamConstants.HPA_BOX_LEN; k++) {
+				for (int k = 0; k < TeamConstants.PATH_BOX_LEN; k++) {
 					int count = 0;
 					for (int n = -TeamConstants.HPA_CHECK_WIDTH; n <= TeamConstants.HPA_CHECK_WIDTH; n++) {
-						int tempx = bigX + i * TeamConstants.HPA_BOX_LEN + k;
-						int tempy = bigY + (j + 1) * TeamConstants.HPA_BOX_LEN;
+						int tempx = bigX + i * TeamConstants.PATH_BOX_LEN + k;
+						int tempy = bigY + (j + 1) * TeamConstants.PATH_BOX_LEN;
 						if (mineLocsSet[tempx][tempy]) {
 							count++;
 						}
@@ -96,16 +96,16 @@ public class HPA_old {
 						currentBestCountX = count;
 					}
 				}
-				horzDoors[i][j] = new MapLocation(bigX + i * TeamConstants.HPA_BOX_LEN + currentBestX,
-						bigY + (j + 1) * TeamConstants.HPA_BOX_LEN);
+				horzDoors[i][j] = new MapLocation(bigX + i * TeamConstants.PATH_BOX_LEN + currentBestX,
+						bigY + (j + 1) * TeamConstants.PATH_BOX_LEN);
 				// vertDoors
 				int currentBestY = 0;
 				int currentBestCountY = Integer.MAX_VALUE;
-				for (int k = 0; k < TeamConstants.HPA_BOX_LEN; k++) {
+				for (int k = 0; k < TeamConstants.PATH_BOX_LEN; k++) {
 					int count = 0;
 					for (int n = -TeamConstants.HPA_CHECK_WIDTH; n <= TeamConstants.HPA_CHECK_WIDTH; n++) {
-						int tempx = bigX + (i + 1) * TeamConstants.HPA_BOX_LEN;
-						int tempy = bigY + j * TeamConstants.HPA_BOX_LEN + k;
+						int tempx = bigX + (i + 1) * TeamConstants.PATH_BOX_LEN;
+						int tempy = bigY + j * TeamConstants.PATH_BOX_LEN + k;
 						if (mineLocsSet[tempx][tempy]) {
 							count++;
 						}
@@ -115,8 +115,8 @@ public class HPA_old {
 						currentBestCountY = count;
 					}
 				}
-				vertDoors[i][j] = new MapLocation(bigX + (i + 1) * TeamConstants.HPA_BOX_LEN,
-						bigY + j * TeamConstants.HPA_BOX_LEN + currentBestY);
+				vertDoors[i][j] = new MapLocation(bigX + (i + 1) * TeamConstants.PATH_BOX_LEN,
+						bigY + j * TeamConstants.PATH_BOX_LEN + currentBestY);
 			}
 		}
 		// Now we're done with horzDoors and vertDoors

@@ -35,7 +35,7 @@ public class SoldierRobot extends BaseRobot {
 			MapLocation start = rc.getLocation();
 			if (!calculatedPath) {
 				calculatedPath = true;
-				HPA.calculatePath(rc, start, end);
+				PathFinder.calculatePath(rc, start, end);
 			}
 			
 			
