@@ -74,7 +74,7 @@ public class RobotPlayer{
 //						numEncampments = rc.readBroadcast(9000);
 						
 						if (alliedRobots.length - numEncampments < 25){ // if < 25 allied robots
-							if (Math.random() < 0.1) {
+							if (Math.random() < 0.1 && rc.isActive()) {
 								if (rc.senseMine(rc.getLocation()) == null) {
 									rc.layMine();
 								}
@@ -114,7 +114,7 @@ public class RobotPlayer{
 			}catch (Exception e){
 				System.out.println("caught exception before it killed us:");
 				System.out.println(rc.getRobot().getID());
-				//e.printStackTrace();
+				e.printStackTrace();
 			}
 			rc.yield();
 		}

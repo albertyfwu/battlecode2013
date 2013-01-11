@@ -41,7 +41,7 @@ public class RobotPlayer{
 					}
 				}else{//someone spotted
 					MapLocation closestEnemy = findClosest(enemyRobots);
-					smartCountNeighbors(enemyRobots,closestEnemy);
+//					smartCountNeighbors(enemyRobots,closestEnemy);
 					goToLocation(closestEnemy);
 				}
 			}catch (Exception e){
@@ -69,14 +69,30 @@ public class RobotPlayer{
 		int dist = rc.getLocation().distanceSquaredTo(whereToGo);
 		if (dist>0&&rc.isActive()){
 			Direction dir = rc.getLocation().directionTo(whereToGo);
-			int[] directionOffsets = {0,1,-1,2,-2};
-			Direction lookingAtCurrently = null;
-			lookAround: for (int d:directionOffsets){
-				lookingAtCurrently = Direction.values()[(dir.ordinal()+d+8)%8];
-				if(rc.canMove(lookingAtCurrently)){
-					moveOrDefuse(lookingAtCurrently);
-					break lookAround;
+			
+			neighborArray = populateNeighbors(new int[5][5]);/*1500*/
+			int[] adj = totalAllAdjacentPlusMe(neighborArray);/*2500*/
+			
+			rc.setIndicatorString(0, "adjacent: "+intListToString(adj));
+			double[] scores = howGoodMultiple(adj);
+			int dirValue = dir.ordinal();
+			scores[dirValue] += 0.5;
+			scores[(9 + dirValue)%8] += 0.35;
+			scores[(7 + dirValue)%8] += 0.35;
+			scores[(10 + dirValue+1)%8] += 0.15;
+			scores[(6 + dirValue+1)%8] += 0.15;
+			
+			double maxScore = - 9000.0;
+			int bestDir = 8;
+			for (int i=0; i<9; i++) {
+				if (scores[i] > maxScore) {
+					maxScore = scores[i];
+					bestDir = i;
 				}
+			}
+			if (bestDir != 8) {
+				System.out.println("dir: " + bestDir);
+				moveOrDefuse(Direction.values()[bestDir]);
 			}
 		}
 	}
@@ -98,6 +114,9 @@ public class RobotPlayer{
 	}
 	public static void hqCode() throws GameActionException{
 		if (rc.isActive()) {
+			if (Clock.getRoundNum() > 400) { // for debug
+				rc.resign();
+			}
 			// Spawn a soldier
 			Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
 			if (rc.canMove(dir))
@@ -116,8 +135,9 @@ public class RobotPlayer{
 		//build a 5 by 5 array of neighboring units
 		neighborArray = populateNeighbors(new int[5][5]);/*1500*/
 		//get the total number of enemies and allies adjacent to each of the 8 adjacent tiles
-		int[] adj = totalAllAdjacent(neighborArray);/*2500*/
+		int[] adj = totalAllAdjacentPlusMe(neighborArray);/*2500*/
 		
+		double[] scores = howGoodMultiple(adj);
 		//also check your current position
 		int me = totalAdjacent(neighborArray,self);
 		
@@ -170,6 +190,13 @@ public class RobotPlayer{
 		}
 		return array;
 	}
+	
+	/**
+	 * 
+	 * @param neighbors
+	 * @param index
+	 * @return
+	 */
 	public static int totalAdjacent(int[][] neighbors,int[] index){/*270*/
 		int total = 0;
 		for(int i=0;i<8;i++){
@@ -184,18 +211,47 @@ public class RobotPlayer{
 		return tot;
 	}
 	public static int[] totalAllAdjacent(int[][] neighbors){/*2454*/
-		//TODO compute only on open spaces (for planned movement)
 		int[] allAdjacent = new int[8];
 		for(int i=0;i<8;i++){
-			allAdjacent[i] =  totalAdjacent(neighbors,addPoints(self,surroundingIndices[i]));
+			if (rc.canMove(Direction.values()[i])) {
+				allAdjacent[i] =  totalAdjacent(neighbors,addPoints(self,surroundingIndices[i]));
+			} else {
+				allAdjacent[i] = 90;
+			}
 		}
 		return allAdjacent;
+	}
+	
+	public static int[] totalAllAdjacentPlusMe(int[][] neighbors){/*2454*/
+		int[] allAdjacent = new int[9];
+		
+		for(int i=0;i<8;i++){
+			if (rc.canMove(Direction.values()[i])) {
+				allAdjacent[i] =  totalAdjacent(neighbors,addPoints(self,surroundingIndices[i]));
+			} else {
+				allAdjacent[i] = 90;
+			}		
+		}
+		allAdjacent[8] = totalAdjacent(neighbors, self);
+		return allAdjacent;
+	}
+	
+	public static double[] howGoodMultiple(int neighborInts[]) {
+		double[] goodnessScores = new double[9];
+		for (int i=0; i<neighborInts.length; i++) {
+			goodnessScores[i] = howGood(neighborInts[i]);
+		}
+		return goodnessScores;
 	}
 //heuristic: goodness or badness of a neighbor int, which includes allies and enemies
 	public static double howGood(int neighborInt){
 		double goodness = 0;
+		if (neighborInt < 0) {
+			return -1000.0;
+		}
 		double numberOfAllies = neighborInt%10;
 		double numberOfEnemies = neighborInt-numberOfAllies;
+		goodness = numberOfAllies/(numberOfEnemies + 5);
 //		goodness = ?????; //what heuristic will you use?
 		return goodness;
 	}

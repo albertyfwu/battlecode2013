@@ -1,4 +1,4 @@
-package team162;
+package macroLotsOfMines;
 
 import battlecode.common.*;
 
@@ -6,6 +6,8 @@ public class RobotPlayer{
 	
 	private static RobotController rc;
 	private static MapLocation rallyPoint = null;
+	private static int robotID = 0;
+	private static int[] directionOffsets;
 	private static boolean enemyHasMines = false;
 	
 	private static int designatedCapturer = 0;
@@ -13,7 +15,7 @@ public class RobotPlayer{
 	private static boolean isCapturer = false;
 	private static MapLocation nextEncampment = null;
 	
-	private static int currentChannel1337 = 0;
+	private static int currentCaptureToHQ = 0;
 	
 	private static int numEncampments = 0; 
 	
@@ -21,38 +23,39 @@ public class RobotPlayer{
 	private static MapLocation HQLocation = null;
 	private static int rushDistanceSquared = 0;
 	
+	private static int numTotalEncampments = 10000;
+	
+	private static double ratioSuppliers = 0.8;
+	
+	private static int channelNumEncampments = 7000;
+	private static int channelNumTotalEncampments = 7001;
+	private static int channelCaptureToHQ = 1339;
+	private static int channelHQToCapture = 4339;
 	
 	
 	public static void run(RobotController myRC){
 		rc = myRC;
+		robotID = rc.getRobot().getID();
+		if (robotID % 4 == 0 || robotID % 4 == 1) {
+			directionOffsets = new int[]{0,1,-1,2,-2};
+		} else {
+			directionOffsets = new int[]{0,-1,1,-2,2};
+		}
+		HQLocation = rc.senseHQLocation();
+		enemyHQLocation = rc.senseEnemyHQLocation();
+		rushDistanceSquared = rc.senseHQLocation().distanceSquaredTo(rc.senseEnemyHQLocation());
+
 		while(true){
 			try{
-				
-				// initialize HQ locations
-				if (enemyHQLocation == null) {
-					enemyHQLocation = rc.senseEnemyHQLocation();
-				}
-				if (HQLocation == null) {
-					HQLocation = rc.senseHQLocation();
-				}
-				if (rushDistanceSquared == 0) {
-					rushDistanceSquared = rc.senseHQLocation().distanceSquaredTo(rc.senseEnemyHQLocation());
-				}				
-				
-				BroadcastChannel channel4337 = BroadcastSystem.getChannelByType(ChannelType.CHANNEL2);
-				int captureID = 0;
-				Message message = channel4337.read(rc);
-				if (message != null) {
-					captureID = message.body;
-				}
-				
+				int captureID = rc.readBroadcast(channelHQToCapture);
 				if (rc.getRobot().getID() == captureID) {
 					isCapturer = true;
 				}
 				
 				if (rc.getType()==RobotType.SOLDIER && isCapturer == false){
-//					if (rallyPoint == null) {
-//						int hashedLoc = rc.readBroadcast(5001);
+					if (rc.isActive()) {
+//						if (rallyPoint == null) {
+//						int hashedLoc = rc.readBroadcast(3001);
 //						if (hashedLoc != 0) {
 //							int y = hashedLoc % 1000;
 //							int x = (hashedLoc - y)/1000;
@@ -60,51 +63,66 @@ public class RobotPlayer{
 //						}
 //					}
 					
-					Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class,100000,rc.getTeam().opponent());
-					if(enemyRobots.length==0 || (enemyRobots.length == 1 && rc.senseRobotInfo(enemyRobots[0]).type == RobotType.HQ)){//no enemies nearby
-						Robot[] alliedRobots = rc.senseNearbyGameObjects(Robot.class, 1000000, rc.getTeam());
-						
-						BroadcastChannel channel9000 = BroadcastSystem.getChannelByType(ChannelType.CHANNEL3);
-						int numEncampments = 0;
-						Message message1 = channel9000.read(rc);
-						if (message1 != null) {
-							numEncampments = message1.body;
-						}
-						
-//						numEncampments = rc.readBroadcast(9000);
-						
-						if (alliedRobots.length - numEncampments < 25){ // if < 25 allied robots
-							if (Math.random() < 0.1 && rc.isActive()) {
+						Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class,100000,rc.getTeam().opponent());
+						if(enemyRobots.length==0 || (enemyRobots.length == 1 && rc.senseRobotInfo(enemyRobots[0]).type == RobotType.HQ)){//no enemies nearby
+							Robot[] alliedRobots = rc.senseNearbyGameObjects(Robot.class, 1000000, rc.getTeam());
+							numEncampments = rc.readBroadcast(channelNumEncampments);
+							numTotalEncampments = rc.readBroadcast(channelNumTotalEncampments);
+							//						if (rc.senseEncampmentSquare(rc.getLocation())){
+							//							rc.captureEncampment(RobotType.SUPPLIER);
+							//						}
+							boolean layedMine = false;
+							if (alliedRobots.length - numEncampments < 25){ // if < 25 allied robots
 								if (rc.senseMine(rc.getLocation()) == null) {
-									rc.layMine();
-								}
-							}
-							rallyPoint = findRallyPoint(0);
-							goToLocation(rallyPoint);
-						}else{
-							goToLocation(enemyHQLocation);
-						}
-					}else{//someone spotted
-						int[] closestEnemyInfo = getClosestRobot(enemyRobots);
-						int closestDist = closestEnemyInfo[0];
-						MapLocation closestEnemy = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
-
-						Robot[] nearbyAllies= rc.senseNearbyGameObjects(Robot.class,64,rc.getTeam());
-						if (nearbyAllies.length > 3 * enemyRobots.length) { // if we outnumber them by a lot
-							if (closestDist > 4) {
-								if (rc.hasUpgrade(Upgrade.DEFUSION) && Math.random() < 0.05) { // defuse randomly
-									MapLocation[] mines = rc.senseMineLocations(rc.getLocation(), 14, rc.getTeam().opponent());
-									if (mines.length > 0) {
-										rc.defuseMine(mines[0]);
+									if (Math.random() < 1) {
+										layedMine = true;
+										rc.layMine();
 									}
-								} else { // if not defusing
-									goToLocation(closestEnemy);
 								}
+								if (!layedMine) {
+									boolean wentToNeighbor = false;
+									mineLoop: for (int i=0; i<8; i++) {
+										MapLocation neighborLocation = rc.getLocation().add(Direction.values()[i]);
+										if (rc.senseMine(neighborLocation) == null) {
+											goToLocation(neighborLocation);
+											wentToNeighbor = true;
+											break mineLoop;
+										}
+									}
+									if (!wentToNeighbor) {
+										float ratio = (float) ((1.0 * numEncampments)/(1.0 * numTotalEncampments));
+										rallyPoint = findRallyPoint(ratio);
+										goToLocation(rallyPoint);
+									}
+									
+								}
+
+							}else{
+								goToLocation(enemyHQLocation);
 							}
-						} else {
-							goToLocationAvoidMines(closestEnemy);
+						} else {//someone spotted
+							int[] closestEnemyInfo = getClosestRobot(enemyRobots);
+							int closestDist = closestEnemyInfo[0];
+							MapLocation closestEnemy = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
+
+							Robot[] nearbyAllies= rc.senseNearbyGameObjects(Robot.class,64,rc.getTeam());
+							if (nearbyAllies.length > 3 * enemyRobots.length) { // if we outnumber them by a lot
+								if (closestDist > 4) {
+									if (rc.hasUpgrade(Upgrade.DEFUSION) && Math.random() < 0.05) { // defuse randomly
+										MapLocation[] mines = rc.senseMineLocations(rc.getLocation(), 14, rc.getTeam().opponent());
+										if (mines.length > 0) {
+											rc.defuseMine(mines[0]);
+										}
+									} else { // if not defusing
+										goToLocation(closestEnemy);
+									}
+								}
+							} else {
+								goToLocationAvoidMines(closestEnemy);
+							}
 						}
 					}
+
 				} else if (rc.getType()==RobotType.SOLDIER && isCapturer == true) {
 					captureCode();
 				} else if (rc.getType()==RobotType.HQ){ // if HQ
@@ -121,29 +139,19 @@ public class RobotPlayer{
 	}
 	
 	private static void goToLocation(MapLocation whereToGo) throws GameActionException {
-		MapLocation goal;
-		if (whereToGo == null) {
-			goal = findRallyPoint(0);
-		} else {
-			goal = whereToGo;
-		}
-		int dist = rc.getLocation().distanceSquaredTo(goal);
-		if (dist>0 && rc.isActive()){
-			Direction dir = rc.getLocation().directionTo(goal);
+
+		int dist = rc.getLocation().distanceSquaredTo(whereToGo);
+		if (dist>0){
+			Direction dir = rc.getLocation().directionTo(whereToGo);
 			goDirectionAndDefuse(dir);
 		}
 	}
 	
 	private static void goToLocationAvoidMines(MapLocation whereToGo) throws GameActionException {
-		MapLocation goal;
-		if (whereToGo == null) {
-			goal = findRallyPoint(0);
-		} else {
-			goal = whereToGo;
-		}
-		int dist = rc.getLocation().distanceSquaredTo(goal);
-		if (dist>0&&rc.isActive()){
-			Direction dir = rc.getLocation().directionTo(goal);
+
+		int dist = rc.getLocation().distanceSquaredTo(whereToGo);
+		if (dist>0){
+			Direction dir = rc.getLocation().directionTo(whereToGo);
 			goDirectionAvoidMines(dir);
 		}
 	}
@@ -210,34 +218,24 @@ public class RobotPlayer{
 			x = (int) (enemyLoc.x * ratio + (1-ratio) * ourLoc.x);
 			y = (int) (enemyLoc.y * ratio + (1-ratio) * ourLoc.y);
 		}
-		
 		MapLocation rallyPoint = new MapLocation(x,y);
 		return rallyPoint;
 	}
 	
 	public static void captureCode() throws GameActionException {
-		currentChannel1337 += 1;
-		
-		BroadcastChannel channel1337 = BroadcastSystem.getChannelByType(ChannelType.CHANNEL1);
-		channel1337.write(rc, new Message(0, (short)currentChannel1337));
-		
+		currentCaptureToHQ += 1;
+		rc.broadcast(channelCaptureToHQ, currentCaptureToHQ);
 		if (rc.isActive()) {
 			if (nextEncampment == null) {
-				BroadcastChannel channel5001 = BroadcastSystem.getChannelByType(ChannelType.CHANNEL4);
-				int hashedLoc = 0;
-				Message message = channel5001.read(rc);
-				if (message != null) {
-					hashedLoc = message.body;
-				}
-				
+				int hashedLoc = rc.readBroadcast(3001);
 				if (hashedLoc != 0) {
-					int y = (byte) hashedLoc;
-					int x = (byte)(hashedLoc >> 8);
+					int y = hashedLoc % 1000;
+					int x = (hashedLoc - y)/1000;
 					nextEncampment = new MapLocation(x,y);
 				}
 			}
 			if (rc.senseEncampmentSquare(rc.getLocation())) {
-				if (Math.random() < 0.7) {
+				if (Math.random() < ratioSuppliers) {
 					rc.captureEncampment(RobotType.SUPPLIER);
 				} else {
 					rc.captureEncampment(RobotType.GENERATOR);
@@ -253,13 +251,17 @@ public class RobotPlayer{
 	public static void hqCode() throws GameActionException{
 		
 		
-		
+//		if (Clock.getRoundNum() > 50) { // for testing purposes
+//			rc.resign();
+//		} 
 		// Broadcast nearest encampment
 		MapLocation[] neutralEncampments = rc.senseEncampmentSquares(rc.getLocation(), 1000000,Team.NEUTRAL);
+		if (numTotalEncampments == 10000) {
+			numTotalEncampments = neutralEncampments.length;
+		}
 		MapLocation closestEnc = getClosestEncampemnt(neutralEncampments);
 
-		BroadcastChannel channel5001 = BroadcastSystem.getChannelByType(ChannelType.CHANNEL4);
-		channel5001.write(rc, new Message(0, (closestEnc.x << 8) + closestEnc.y)); // broadcast closestEnc location
+		rc.broadcast(3001, closestEnc.x * 1000 + closestEnc.y); // broadcast closestEnc location
 		
 		Robot[] alliedRobots = rc.senseNearbyGameObjects(Robot.class,100000,rc.getTeam());
 		
@@ -267,9 +269,8 @@ public class RobotPlayer{
 		MapLocation[] alliedEncampments = rc.senseEncampmentSquares(rc.getLocation(), 1000000, rc.getTeam());
 		numEncampments = alliedEncampments.length;
 		
-		BroadcastChannel channel9000 = BroadcastSystem.getChannelByType(ChannelType.CHANNEL3);
-		channel9000.write(rc, new Message(0, numEncampments));
-//		rc.broadcast(9000, numEncampments);
+		rc.broadcast(channelNumEncampments, numEncampments);
+		rc.broadcast(channelNumTotalEncampments, numTotalEncampments);
 		
 		int numAlliedSoldiers = alliedRobots.length - alliedEncampments.length;
 		if (numAlliedSoldiers > 5) {
@@ -277,16 +278,10 @@ public class RobotPlayer{
 				int[] closeRobotInfo = getClosestSoldier(alliedRobots);
 				designatedCapturer = closeRobotInfo[3];		
 			} else {
-				
-				BroadcastChannel channel1337 = BroadcastSystem.getChannelByType(ChannelType.CHANNEL1);
-				
-				Message message = channel1337.read(rc);
-				if (message!= null && message.body == currentChannel1337) {
+				if (rc.readBroadcast(channelCaptureToHQ) == currentCaptureToHQ) { // if it doesnt change
 					capturerWaitCounter++;
 				} else {
-					if (message != null) {
-						currentChannel1337 = message.body;
-					}
+					currentCaptureToHQ = rc.readBroadcast(channelCaptureToHQ);
 					capturerWaitCounter = 0;
 				}
 				
@@ -294,29 +289,27 @@ public class RobotPlayer{
 					designatedCapturer = 0; // reset
 				}
 			}
-			BroadcastChannel channel4337 = BroadcastSystem.getChannelByType(ChannelType.CHANNEL2);
-			channel4337.write(rc, new Message(9, designatedCapturer));
-		}
-		
-		if (numAlliedSoldiers > 25 && Clock.getRoundNum() > 500) {
-			if (!rc.hasUpgrade(Upgrade.FUSION)) {
-				rc.researchUpgrade(Upgrade.FUSION);
-			} else if (!rc.hasUpgrade(Upgrade.DEFUSION)) {
-				rc.researchUpgrade(Upgrade.DEFUSION);
-			} else if (!rc.hasUpgrade(Upgrade.PICKAXE)) {
-				rc.researchUpgrade(Upgrade.PICKAXE);
-			}
-		}
+			rc.broadcast(channelHQToCapture, designatedCapturer);
+		}	
 
 		
 		if (rc.isActive()) {
-			// Spawn a soldier
-			Direction desiredDir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
-			Direction dir = getSpawnDirection(rc, desiredDir);
-			if (dir != null) {
-				rc.spawn(dir);
+			if (numAlliedSoldiers > 25 && Clock.getRoundNum() > 500) {
+				if (!rc.hasUpgrade(Upgrade.PICKAXE)) {
+					rc.researchUpgrade(Upgrade.PICKAXE);
+				} else if (!rc.hasUpgrade(Upgrade.FUSION)) {
+					rc.researchUpgrade(Upgrade.FUSION);
+				} else if (!rc.hasUpgrade(Upgrade.DEFUSION)) {
+					rc.researchUpgrade(Upgrade.DEFUSION);
+				}
+			} else {
+				// Spawn a soldier
+				Direction desiredDir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
+				Direction dir = getSpawnDirection(rc, desiredDir);
+				if (dir != null) {
+					rc.spawn(dir);
+				}
 			}
-			
 		}
 	}
 	
