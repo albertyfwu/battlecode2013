@@ -117,7 +117,7 @@ public class PathFinder {
 	// TODO: Choose MINE_DEFUSE_DELAY OR MINE_DEFUSE_DEFUSION_DELAY correctly
 	// TODO: Also, don't let it move backwards? Make distance even more imperative.
 	public static int heuristic(int mineCount, int[] startBox, int[] endBox) {
-		return 2 * GameConstants.MINE_DEFUSE_DELAY * distanceBetweenBoxes(startBox, endBox) + mineCount * GameConstants.MINE_DEFUSE_DELAY / TeamConstants.PATH_BOX_LEN;
+		return 3 * GameConstants.MINE_DEFUSE_DELAY * distanceBetweenBoxes(startBox, endBox) + mineCount * GameConstants.MINE_DEFUSE_DELAY / TeamConstants.PATH_BOX_LEN;
 //		return (int)Math.pow(distanceBetweenBoxes(startBox, endBox), 2) + mineCount * GameConstants.MINE_DEFUSE_DELAY / TeamConstants.PATH_BOX_LEN;
 	}
 	

@@ -4,11 +4,11 @@ import battlecode.common.RobotController;
 
 public abstract class BaseRobot {
 	
-	public RobotController rc;
+	public static RobotController rc;
 	
 	// Default constructor
-	public BaseRobot(RobotController rc) {
-		this.rc = rc;
+	public BaseRobot(RobotController myRC) {
+		rc = myRC;
 	}
 	
 	// Actions for a specific robot
