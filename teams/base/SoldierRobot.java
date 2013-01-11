@@ -40,8 +40,8 @@ public class SoldierRobot extends BaseRobot {
 //			}
 			
 			// Try to go to a coordinate
-			// Try to go to (39, 25) on choice.xml map
-			MapLocation end = new MapLocation(19, 27);
+			// Try to go to (39, 27) on choice.xml map
+			MapLocation end = new MapLocation(39, 27);
 			MapLocation start = rc.getLocation();
 			if (!calculatedPath) {
 				calculatedPath = true;
@@ -49,6 +49,7 @@ public class SoldierRobot extends BaseRobot {
 				wayPointsSize = wayPoints.size();
 			}
 
+			// TODO: write a function for following waypoints
 			if (wayPoints != null) {
 				// we have waypoints, so follow them
 				if (rc.getLocation().distanceSquaredTo(wayPoints.get(wayPointsIndex)) <= 5) {

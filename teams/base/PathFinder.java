@@ -119,7 +119,7 @@ public class PathFinder {
 	public static int heuristic(int mineCount, int[] startBox, int[] endBox) {
 		// if a box is TeamConstants.PATH_BOX_LEN away, and has the maximum TeamConstants.PATH_BOX_LEN^2 fewer bombs, we should still prefer
 		// moving towards the destination if we're close enough
-		return (int)(20*GameConstants.MINE_DEFUSE_DELAY * Math.pow(manhattanDistanceBetweenBoxes(startBox, endBox), 0.25)) + mineCount * GameConstants.MINE_DEFUSE_DELAY / TeamConstants.PATH_BOX_LEN;
+		return (int)(15*GameConstants.MINE_DEFUSE_DELAY * Math.pow(manhattanDistanceBetweenBoxes(startBox, endBox), 0.25)) + mineCount * GameConstants.MINE_DEFUSE_DELAY / TeamConstants.PATH_BOX_LEN;
 //		return (int)Math.pow(distanceBetweenBoxes(startBox, endBox), 2) + mineCount * GameConstants.MINE_DEFUSE_DELAY / TeamConstants.PATH_BOX_LEN;
 	}
 	
