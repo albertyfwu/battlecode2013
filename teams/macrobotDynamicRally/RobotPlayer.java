@@ -23,6 +23,8 @@ public class RobotPlayer{
 	
 	private static int numTotalEncampments = 10000;
 	
+	private static double ratioSuppliers = 0.8;
+	
 	
 	public static void run(RobotController myRC){
 		rc = myRC;
@@ -45,7 +47,8 @@ public class RobotPlayer{
 				}
 				
 				if (rc.getType()==RobotType.SOLDIER && isCapturer == false){
-//					if (rallyPoint == null) {
+					if (rc.isActive()) {
+//						if (rallyPoint == null) {
 //						int hashedLoc = rc.readBroadcast(4001);
 //						if (hashedLoc != 0) {
 //							int y = hashedLoc % 1000;
@@ -54,49 +57,54 @@ public class RobotPlayer{
 //						}
 //					}
 					
-					Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class,100000,rc.getTeam().opponent());
-					if(enemyRobots.length==0 || (enemyRobots.length == 1 && rc.senseRobotInfo(enemyRobots[0]).type == RobotType.HQ)){//no enemies nearby
-						Robot[] alliedRobots = rc.senseNearbyGameObjects(Robot.class, 1000000, rc.getTeam());
-						numEncampments = rc.readBroadcast(8000);
-						numTotalEncampments = rc.readBroadcast(8001);
-//						if (rc.senseEncampmentSquare(rc.getLocation())){
-//							rc.captureEncampment(RobotType.SUPPLIER);
-//						}
-						if (alliedRobots.length - numEncampments < 25){ // if < 25 allied robots
-							if (rc.senseMine(rc.getLocation()) == null) {
-								if (Math.random() < 0.1) {
-									rc.layMine();
+						Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class,100000,rc.getTeam().opponent());
+						if(enemyRobots.length==0 || (enemyRobots.length == 1 && rc.senseRobotInfo(enemyRobots[0]).type == RobotType.HQ)){//no enemies nearby
+							Robot[] alliedRobots = rc.senseNearbyGameObjects(Robot.class, 1000000, rc.getTeam());
+							numEncampments = rc.readBroadcast(8000);
+							numTotalEncampments = rc.readBroadcast(8001);
+							//						if (rc.senseEncampmentSquare(rc.getLocation())){
+							//							rc.captureEncampment(RobotType.SUPPLIER);
+							//						}
+							boolean layedMine = false;
+							if (alliedRobots.length - numEncampments < 25){ // if < 25 allied robots
+								if (rc.senseMine(rc.getLocation()) == null) {
+									if (Math.random() < 0.1) {
+										layedMine = true;
+										rc.layMine();
+									}
+								}
+								if (!layedMine) {
+									float ratio = (float) ((1.0 * numEncampments)/(1.0 * numTotalEncampments));
+									rallyPoint = findRallyPoint(ratio);
+									goToLocation(rallyPoint);
+								}
+
+							}else{
+								goToLocation(enemyHQLocation);
+							}
+						} else {//someone spotted
+							int[] closestEnemyInfo = getClosestRobot(enemyRobots);
+							int closestDist = closestEnemyInfo[0];
+							MapLocation closestEnemy = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
+
+							Robot[] nearbyAllies= rc.senseNearbyGameObjects(Robot.class,64,rc.getTeam());
+							if (nearbyAllies.length > 3 * enemyRobots.length) { // if we outnumber them by a lot
+								if (closestDist > 4) {
+									if (rc.hasUpgrade(Upgrade.DEFUSION) && Math.random() < 0.05) { // defuse randomly
+										MapLocation[] mines = rc.senseMineLocations(rc.getLocation(), 14, rc.getTeam().opponent());
+										if (mines.length > 0) {
+											rc.defuseMine(mines[0]);
+										}
+									} else { // if not defusing
+										goToLocation(closestEnemy);
+									}
 								}
 							} else {
-								float ratio = (float) ((1.0 * numEncampments)/(1.0 * numTotalEncampments));
-								rallyPoint = findRallyPoint(ratio);
-								goToLocation(rallyPoint);
+								goToLocationAvoidMines(closestEnemy);
 							}
-							
-						}else{
-							goToLocation(enemyHQLocation);
-						}
-					}else{//someone spotted
-						int[] closestEnemyInfo = getClosestRobot(enemyRobots);
-						int closestDist = closestEnemyInfo[0];
-						MapLocation closestEnemy = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
-
-						Robot[] nearbyAllies= rc.senseNearbyGameObjects(Robot.class,64,rc.getTeam());
-						if (nearbyAllies.length > 3 * enemyRobots.length) { // if we outnumber them by a lot
-							if (closestDist > 4) {
-								if (rc.hasUpgrade(Upgrade.DEFUSION) && Math.random() < 0.05) { // defuse randomly
-									MapLocation[] mines = rc.senseMineLocations(rc.getLocation(), 14, rc.getTeam().opponent());
-									if (mines.length > 0) {
-										rc.defuseMine(mines[0]);
-									}
-								} else { // if not defusing
-									goToLocation(closestEnemy);
-								}
-							}
-						} else {
-							goToLocationAvoidMines(closestEnemy);
 						}
 					}
+
 				} else if (rc.getType()==RobotType.SOLDIER && isCapturer == true) {
 					captureCode();
 				} else if (rc.getType()==RobotType.HQ){ // if HQ
@@ -115,7 +123,7 @@ public class RobotPlayer{
 	private static void goToLocation(MapLocation whereToGo) throws GameActionException {
 
 		int dist = rc.getLocation().distanceSquaredTo(whereToGo);
-		if (dist>0&&rc.isActive()){
+		if (dist>0){
 			Direction dir = rc.getLocation().directionTo(whereToGo);
 			goDirectionAndDefuse(dir);
 		}
@@ -124,7 +132,7 @@ public class RobotPlayer{
 	private static void goToLocationAvoidMines(MapLocation whereToGo) throws GameActionException {
 
 		int dist = rc.getLocation().distanceSquaredTo(whereToGo);
-		if (dist>0&&rc.isActive()){
+		if (dist>0){
 			Direction dir = rc.getLocation().directionTo(whereToGo);
 			goDirectionAvoidMines(dir);
 		}
@@ -209,7 +217,7 @@ public class RobotPlayer{
 				}
 			}
 			if (rc.senseEncampmentSquare(rc.getLocation())) {
-				if (Math.random() < 0.7) {
+				if (Math.random() < ratioSuppliers) {
 					rc.captureEncampment(RobotType.SUPPLIER);
 				} else {
 					rc.captureEncampment(RobotType.GENERATOR);
@@ -264,27 +272,26 @@ public class RobotPlayer{
 				}
 			}
 			rc.broadcast(4338, designatedCapturer);
-		}
-		
-		if (numAlliedSoldiers > 25 && Clock.getRoundNum() > 500) {
-			if (!rc.hasUpgrade(Upgrade.FUSION)) {
-				rc.researchUpgrade(Upgrade.FUSION);
-			} else if (!rc.hasUpgrade(Upgrade.DEFUSION)) {
-				rc.researchUpgrade(Upgrade.DEFUSION);
-			} else if (!rc.hasUpgrade(Upgrade.PICKAXE)) {
-				rc.researchUpgrade(Upgrade.PICKAXE);
-			}
-		}
+		}	
 
 		
 		if (rc.isActive()) {
-			// Spawn a soldier
-			Direction desiredDir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
-			Direction dir = getSpawnDirection(rc, desiredDir);
-			if (dir != null) {
-				rc.spawn(dir);
+			if (numAlliedSoldiers > 25 && Clock.getRoundNum() > 500) {
+				if (!rc.hasUpgrade(Upgrade.PICKAXE)) {
+					rc.researchUpgrade(Upgrade.PICKAXE);
+				} else if (!rc.hasUpgrade(Upgrade.FUSION)) {
+					rc.researchUpgrade(Upgrade.FUSION);
+				} else if (!rc.hasUpgrade(Upgrade.DEFUSION)) {
+					rc.researchUpgrade(Upgrade.DEFUSION);
+				}
+			} else {
+				// Spawn a soldier
+				Direction desiredDir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
+				Direction dir = getSpawnDirection(rc, desiredDir);
+				if (dir != null) {
+					rc.spawn(dir);
+				}
 			}
-			
 		}
 	}
 	
