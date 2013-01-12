@@ -30,21 +30,22 @@ public class SoldierRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
-			Message message = BroadcastSystem.read(ChannelType.CHANNEL1);
-			if (message.isValid){
-				rc.setIndicatorString(0, Integer.toString(message.body));
-			}
-			
-//			BroadcastChannel channel = BroadcastSystem.getChannelByType(ChannelType.values()[0]);
-//			Message message = channel.read(rc);
-//			if (message != null) {
-//				byte header = (byte)message.header;
-//				short body = (short)message.body;
-//				rc.setIndicatorString(0, Integer.toString(header));
-//				rc.setIndicatorString(1, Integer.toString(body));
+//			Message message = BroadcastSystem.read(ChannelType.CHANNEL1);
+//			if (message.isValid){
+//				rc.setIndicatorString(0, Integer.toString(message.body));
 //			}
-			
-			
+
+			// Check to see if we're already moving along waypoints
+			if (NavSystem.followingWaypoints) {
+				NavSystem.followWaypoints();
+//				rc.setIndicatorString(0, "following");
+			} else {
+				// do other stuff
+				MapLocation end = rc.senseEnemyHQLocation();
+				NavSystem.calculateSmartWaypoint(end);
+				NavSystem.followWaypoints();
+//				rc.setIndicatorString(0, "not following");
+			}
 			
 			// Try to go to a coordinate
 			// Try to go to (39, 27) on choice.xml map

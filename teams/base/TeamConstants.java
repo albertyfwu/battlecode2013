@@ -17,4 +17,7 @@ public interface TeamConstants {
 	 */
 	// length of a path scoring box (height or width)
 	public static final int PATH_BOX_LEN = 5;
+	
+	public static final int PATH_OFFSET_RADIUS = 4;
+	public static final int PATH_CHECK_RADIUS = 3;
 }
