@@ -9,24 +9,24 @@ public class EncampmentJobSystem {
 	public static RobotController rc;
 	public static MapLocation goalLoc;
 	public static ChannelType[] encampmentJobChannelList = 
-		{ChannelType.CHANNELENC1,
-		ChannelType.CHANNELENC2,
-		ChannelType.CHANNELENC3,
-		ChannelType.CHANNELENC4,
-		ChannelType.CHANNELENC5,
-		ChannelType.CHANNELENC6,
-		ChannelType.CHANNELENC7,
-		ChannelType.CHANNELENC8}; // list of encampment channels
+		{ChannelType.ENC1,
+		ChannelType.ENC2,
+		ChannelType.ENC3,
+		ChannelType.ENC4,
+		ChannelType.ENC5,
+		ChannelType.ENC6,
+		ChannelType.ENC7,
+		ChannelType.ENC8}; // list of encampment channels
 
 	public static ChannelType[] encampmentCompletionChannelList=
-		{ChannelType.CHANNELCOMP1,
-		ChannelType.CHANNELCOMP2,
-		ChannelType.CHANNELCOMP3,
-		ChannelType.CHANNELCOMP4,
-		ChannelType.CHANNELCOMP5,
-		ChannelType.CHANNELCOMP6,
-		ChannelType.CHANNELCOMP7,
-		ChannelType.CHANNELCOMP8}; // list of encampment completion channels
+		{ChannelType.COMP1,
+		ChannelType.COMP2,
+		ChannelType.COMP3,
+		ChannelType.COMP4,
+		ChannelType.COMP5,
+		ChannelType.COMP6,
+		ChannelType.COMP7,
+		ChannelType.COMP8}; // list of encampment completion channels
 	
 	/**
 	 * Initializes BroadcastSystem by setting rc

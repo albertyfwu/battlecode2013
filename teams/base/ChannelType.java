@@ -10,25 +10,24 @@ public enum ChannelType {
 	CHANNEL4,
 	
 	// for encampments
-	CHANNELENC1,
-	CHANNELENC2,
-	CHANNELENC3,
-	CHANNELENC4,
-	CHANNELENC5,
-	CHANNELENC6,
-	CHANNELENC7,
-	CHANNELENC8,
+	ENC1,
+	ENC2,
+	ENC3,
+	ENC4,
+	ENC5,
+	ENC6,
+	ENC7,
+	ENC8,
 	
 	// completion channels
-	CHANNELCOMP1,
-	CHANNELCOMP2,
-	CHANNELCOMP3,
-	CHANNELCOMP4,
-	CHANNELCOMP5,
-	CHANNELCOMP6,
-	CHANNELCOMP7,
-	CHANNELCOMP8;
-	
+	COMP1,
+	COMP2,
+	COMP3,
+	COMP4,
+	COMP5,
+	COMP6,
+	COMP7,
+	COMP8;	
 	
 	public static final int size = ChannelType.values().length;
 	public static final int range = GameConstants.BROADCAST_MAX_CHANNELS / size;

@@ -136,7 +136,7 @@ public class NavSystem {
 		followingWaypoint = true; // we are now following waypoints to get to endLocation
 		waypointDestination = endLocation;
 		MapLocation currentLocation = rc.getLocation();
-		if (currentLocation.distanceSquaredTo(endLocation) <= TeamConstants.PATH_GO_ALL_IN_SQ_RADIUS) {
+		if (currentLocation.distanceSquaredTo(endLocation) <= Constants.PATH_GO_ALL_IN_SQ_RADIUS) {
 			currentWaypoint = endLocation;
 			return;
 		}
@@ -146,8 +146,8 @@ public class NavSystem {
 		Direction dirLookingAt = currentLocation.directionTo(endLocation);
 		for (int i = -2; i <= 2; i++) {
 			Direction dir = Direction.values()[(dirLookingAt.ordinal() + i + 8) % 8];
-			MapLocation iterLocation = currentLocation.add(dir, TeamConstants.PATH_OFFSET_RADIUS);
-			int currentScore = smartScore(iterLocation, TeamConstants.PATH_CHECK_RADIUS, endLocation);	
+			MapLocation iterLocation = currentLocation.add(dir, Constants.PATH_OFFSET_RADIUS);
+			int currentScore = smartScore(iterLocation, Constants.PATH_CHECK_RADIUS, endLocation);	
 			if (currentScore < bestScore) {
 				bestScore = currentScore;
 				bestLocation = iterLocation;

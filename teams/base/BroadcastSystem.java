@@ -72,10 +72,10 @@ public class BroadcastSystem {
 	 * @return channelNos
 	 */
 	public static int[] getChannelNos(ChannelType channelType) {
-		int[] channelNos = new int[TeamConstants.REDUNDANT_CHANNELS];
+		int[] channelNos = new int[Constants.REDUNDANT_CHANNELS];
 		int rangeStart = channelType.ordinal() * ChannelType.range;
-		int constant = Clock.getRoundNum() / TeamConstants.CHANNEL_CYCLE;
-		for (int i = 0; i < TeamConstants.REDUNDANT_CHANNELS; i++) {
+		int constant = Clock.getRoundNum() / Constants.CHANNEL_CYCLE;
+		for (int i = 0; i < Constants.REDUNDANT_CHANNELS; i++) {
 			int offset = ((channelType.ordinal() * i) ^ constant) % ChannelType.range;
 			// ensure that the offset is nonnegative
 			if (offset < 0) {

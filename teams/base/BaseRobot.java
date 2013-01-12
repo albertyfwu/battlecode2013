@@ -9,16 +9,15 @@ public abstract class BaseRobot {
 	// Default constructor
 	public BaseRobot(RobotController myRC) {
 		rc = myRC;
+		NavSystem.init(this);
+		BroadcastSystem.init(this);
+		EncampmentJobSystem.init(this);
 	}
 	
 	// Actions for a specific robot
 	abstract public void run();
 	
 	public void loop() {
-		// Initialize BroadcastSystem
-		NavSystem.init(this);
-		BroadcastSystem.init(this);
-		EncampmentJobSystem.init(this);
 		while (true) {
 			try {
 				run();

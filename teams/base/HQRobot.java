@@ -16,7 +16,7 @@ public class HQRobot extends BaseRobot {
 		super(rc);
 		HQLocation = rc.getLocation();
 		EnemyHQLocation = rc.senseEnemyHQLocation();
-		numEncampmentsNeeded = TeamConstants.INITIAL_NUM_ENCAMPMENTS_NEEDED; 
+		numEncampmentsNeeded = Constants.INITIAL_NUM_ENCAMPMENTS_NEEDED; 
 		
 		MapLocation[] allEncampments = rc.senseAllEncampmentSquares();
 		if (allEncampments.length < numEncampmentsNeeded) {
