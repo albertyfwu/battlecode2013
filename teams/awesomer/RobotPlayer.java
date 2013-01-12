@@ -15,7 +15,7 @@ public class RobotPlayer{
 				if (rc.getType()==RobotType.SOLDIER){
 					Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class,100000,rc.getTeam().opponent());
 					if(enemyRobots.length==0){//no enemies nearby
-						if (Clock.getRoundNum()<200){
+						if (Clock.getRoundNum()<350){
 							goToLocation(rallyPoint);
 						}else{
 							goToLocation(rc.senseEnemyHQLocation());
