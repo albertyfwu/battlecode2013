@@ -24,4 +24,6 @@ public interface TeamConstants {
 	
 	// The squared radius distance at which we stop over-valuing mines, and just go straight for the endLocation
 	public static final int PATH_GO_ALL_IN_SQ_RADIUS = 64;
+	
+	public static final int INITIAL_NUM_ENCAMPMENTS_NEEDED = 3;
 }
