@@ -10,8 +10,7 @@ public class RobotPlayer {
 		try {
 			switch(rc.getType()) {
 			case HQ:
-				// TODO: initialize other HQStrategies?
-				robot = new HQRobot(rc, HQStrategy.CREATE_SOLDIER);
+				robot = new HQRobot(rc);
 				break;
 			case SOLDIER:
 				robot = new SoldierRobot(rc);

@@ -17,7 +17,7 @@ public class BroadcastSystem {
 	
 	/**
 	 * Initializes BroadcastSystem by setting rc
-	 * @param myRC
+	 * @param myRobot
 	 */
 	public static void init(BaseRobot myRobot) {
 		robot = myRobot;
@@ -30,16 +30,19 @@ public class BroadcastSystem {
 			if (rc != null) {
 				for (int channelNo : getChannelNos(channelType)) {
 					int rawMessage = rc.readBroadcast(channelNo);
+					if (rawMessage == 0) {
+						return new Message(false, true);
+					}
 					byte testSignature = (byte)(rawMessage >> 24);
 					if (signature == testSignature) { // verified
 						int body = rawMessage & signatureMask;
-						return new Message(body, true); // true means message is valid
+						return new Message(body, true, false); // true means message is valid
 					}
 				}
 			}
-			return new Message(false);
+			return new Message(false, false);
 		} catch (Exception e) {
-			return new Message(false);
+			return new Message(false, false);
 		}
 	}
 	

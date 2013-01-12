@@ -13,11 +13,15 @@ public interface TeamConstants {
 	public static final int CHANNEL_CYCLE = 10;
 	
 	/**
-	 * Pathfinder
+	 * Smart Waypoints
 	 */
-	// length of a path scoring box (height or width)
-	public static final int PATH_BOX_LEN = 5;
 	
-	public static final int PATH_OFFSET_RADIUS = 4;
+	// How far off we should look each time we need to calculate a new waypoint
+	public static final int PATH_OFFSET_RADIUS = 3;
+	
+	// How large of a circle we should be checking each time we calculate a new waypoint
 	public static final int PATH_CHECK_RADIUS = 3;
+	
+	// The squared radius distance at which we stop over-valuing mines, and just go straight for the endLocation
+	public static final int PATH_GO_ALL_IN_SQ_RADIUS = 64;
 }
