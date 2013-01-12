@@ -19,6 +19,14 @@ public class NavSystem {
 	public static MapLocation currentWaypoint;
 	public static MapLocation waypointDestination;
 	
+	public static MapLocation ourHQ;
+	public static MapLocation enemyHQ;
+
+	public static int mapHeight;
+	public static int mapWidth;
+	
+	public static MapSymmetry mapSymmetry;
+	
 	/**
 	 * MUST CALL THIS METHOD BEFORE USING NavSystem
 	 * @param myRC
@@ -27,12 +35,29 @@ public class NavSystem {
 		robot = myRobot;
 		rc = robot.rc;
 		int robotID = rc.getRobot().getID();
+		
 		// Randomly assign soldiers priorities for trying to move left or right
 		if (robotID % 4 == 0 || robotID % 4 == 1) {
 			directionOffsets = new int[]{0,1,-1,2,-2};
 		} else {
 			directionOffsets = new int[]{0, -1,1,-2,2};
 		}
+		
+		// Get locations of our HQ and enemy HQ
+		ourHQ = rc.senseHQLocation();
+		enemyHQ = rc.senseEnemyHQLocation();
+		// Figure out if the map is horizontally or rotationally symmetric
+		mapHeight = rc.getMapHeight();
+		mapWidth = rc.getMapWidth();
+		// Map must have one of the following symmetries:
+		if (ourHQ.x == enemyHQ.x) {
+			mapSymmetry = MapSymmetry.HORIZONTAL;
+		} else if (ourHQ.y == enemyHQ.y){
+			mapSymmetry = MapSymmetry.VERTICAL;
+		} else {
+			mapSymmetry = MapSymmetry.ROTATIONAL;
+		}
+		System.out.println("Hello: " + mapSymmetry);
 	}
 	
 	/**
@@ -124,6 +149,32 @@ public class NavSystem {
 		} else {
 			// keep moving to the current waypoint
 			goToLocation(currentWaypoint);
+		}
+	}
+	
+	/**
+	 * Calculates a waypoint for reaching endLocation via a backdoor strategy.
+	 * TODO: Right now, it just calls calculateManhattanWaypoint...need a better strategy
+	 * @param endLocation
+	 * @throws GameActionException
+	 */
+	public static void calculateBackdoorWaypoint(MapLocation endLocation) throws GameActionException {
+		calculateManhattanWaypoint(endLocation);
+	}
+	
+	/**
+	 * Calculates a waypoint to follow along Manhattan grid system (horizontal and vertical)
+	 * @param endLocation
+	 * @throws GameActionException
+	 */
+	public static void calculateManhattanWaypoint(MapLocation endLocation) throws GameActionException {
+		followingWaypoint = true; // we are now following waypoints to get to endLocation
+		waypointDestination = endLocation;
+		MapLocation currentLocation = rc.getLocation();
+		if (Math.abs(endLocation.x - currentLocation.x) <= 3) { // if endLocation and currentLocation are in the same column
+			currentWaypoint = endLocation;
+		} else { // get to the same column first
+			currentWaypoint = new MapLocation(endLocation.x, currentLocation.y);
 		}
 	}
 	

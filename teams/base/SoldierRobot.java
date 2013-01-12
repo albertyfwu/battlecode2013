@@ -38,7 +38,8 @@ public class SoldierRobot extends BaseRobot {
 			} else {
 				// do other stuff
 				MapLocation end = rc.senseEnemyHQLocation();
-				NavSystem.calculateSmartWaypoint(end);
+//				NavSystem.calculateSmartWaypoint(end);
+				NavSystem.calculateBackdoorWaypoint(end);
 				NavSystem.followWaypoint();
 //				rc.setIndicatorString(0, "not following");
 			}
