@@ -2,6 +2,7 @@ package base;
 
 import java.util.ArrayList;
 
+import battlecode.common.Clock;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 
@@ -30,7 +31,7 @@ public class SoldierRobot extends BaseRobot {
 
 	@Override
 	public void run() {
-		try {
+		try {			
 			if (NavSystem.followingWaypoint) {
 				NavSystem.followWaypoint();
 //				rc.setIndicatorString(0, "following");

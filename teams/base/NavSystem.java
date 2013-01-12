@@ -104,6 +104,12 @@ public class NavSystem {
 		return !(bombTeam == null || bombTeam == rc.getTeam());
 	}
 	
+	/**
+	 * Follows the waypoint as currently set in currentWaypoint.
+	 * If you want to get a waypoint for a endLocation, check out
+	 * calculateSmartWaypoint instead.
+	 * @throws GameActionException
+	 */
 	public static void followWaypoint() throws GameActionException {
 		// If we're close to the current waypoint, find the next one
 		if (rc.getLocation().distanceSquaredTo(currentWaypoint) <= 5) {
@@ -121,6 +127,11 @@ public class NavSystem {
 		}
 	}
 	
+	/**
+	 * Calculates a smart waypoint to take given your desired destination
+	 * @param endLocation
+	 * @throws GameActionException
+	 */
 	public static void calculateSmartWaypoint(MapLocation endLocation) throws GameActionException {
 		followingWaypoint = true; // we are now following waypoints to get to endLocation
 		waypointDestination = endLocation;
