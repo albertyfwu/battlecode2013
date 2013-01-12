@@ -1,10 +1,22 @@
 package base;
 
+import java.util.ArrayList;
+
+import battlecode.common.Direction;
+import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
+import battlecode.common.Team;
 
 public class SoldierRobot extends BaseRobot {
 
 	public Platoon platoon = null;
+	public boolean calculatedPath = false;
+	
+	// TODO: Testing
+	public ArrayList<MapLocation> wayPoints;
+	public int wayPointsSize;
+	public int wayPointsIndex;
 	
 	public SoldierRobot(RobotController rc) {
 		super(rc);
@@ -18,14 +30,43 @@ public class SoldierRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
-			BroadcastChannel channel = BroadcastSystem.getChannelByType(ChannelType.values()[0]);
-			Message message = channel.read(rc);
-			if (message != null) {
-				byte header = (byte)message.header;
-				short body = (short)message.body;
-				rc.setIndicatorString(0, Integer.toString(header));
-				rc.setIndicatorString(1, Integer.toString(body));
+			Message message = BroadcastSystem.read(ChannelType.CHANNEL1);
+			if (message.isValid){
+				rc.setIndicatorString(0, Integer.toString(message.body));
 			}
+			
+//			BroadcastChannel channel = BroadcastSystem.getChannelByType(ChannelType.values()[0]);
+//			Message message = channel.read(rc);
+//			if (message != null) {
+//				byte header = (byte)message.header;
+//				short body = (short)message.body;
+//				rc.setIndicatorString(0, Integer.toString(header));
+//				rc.setIndicatorString(1, Integer.toString(body));
+//			}
+			
+			
+			
+			// Try to go to a coordinate
+			// Try to go to (39, 27) on choice.xml map
+//			MapLocation end = new MapLocation(39, 27);
+//			MapLocation start = rc.getLocation();
+//			if (!calculatedPath) {
+//				calculatedPath = true;
+//				wayPoints = Nav.calculatePath(rc, start, end);
+//				wayPointsSize = wayPoints.size();
+//			}
+//
+//			// TODO: write a function for following waypoints
+//			if (wayPoints != null) {
+//				// we have waypoints, so follow them
+//				if (rc.getLocation().distanceSquaredTo(wayPoints.get(wayPointsIndex)) <= 5) {
+//					if (wayPointsIndex < wayPointsSize - 1) {
+//						wayPointsIndex++;
+//					}
+//				}
+//				goToLocation(wayPoints.get(wayPointsIndex));
+//			}
+			
 			
 //			// TODO: do some broadcast reading, listen to leader of platoon, etc...
 //			switch (this.platoon.getStrategy()) {
@@ -44,5 +85,4 @@ public class SoldierRobot extends BaseRobot {
 	public Platoon getPlatoon() {
 		return this.platoon;
 	}
-
 }

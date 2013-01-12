@@ -1,17 +1,20 @@
 package base;
 
+/**
+ * Message interface for sending broadcasts.
+ * WARNING: Must ensure that only last 24 bits of body are used
+ */
 public class Message {
-	public byte header;
-	public short body;
 	
-	public Message(byte header, short body) {
-		this.header = header;
+	public boolean isValid = false;
+	public int body;
+	
+	public Message(int body, boolean isValid) {
 		this.body = body;
+		this.isValid = isValid;
 	}
 	
-	// for default ints
-	public Message(int header, int body) {
-		this.header = (byte) header;
-		this.body = (short) body;
+	public Message(boolean isValid) {
+		this(0, isValid);
 	}
 }

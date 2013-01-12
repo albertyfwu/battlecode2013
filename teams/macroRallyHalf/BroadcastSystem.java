@@ -1,4 +1,4 @@
-package macrobot;
+package macroRallyHalf;
 
 import battlecode.common.Clock;
 import battlecode.common.GameConstants;

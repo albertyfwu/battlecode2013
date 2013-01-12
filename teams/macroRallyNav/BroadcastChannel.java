@@ -1,4 +1,4 @@
-package macrobot;
+package macroRallyNav;
 
 import battlecode.common.RobotController;
 

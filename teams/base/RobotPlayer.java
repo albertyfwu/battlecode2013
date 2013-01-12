@@ -14,14 +14,7 @@ public class RobotPlayer {
 				robot = new HQRobot(rc, HQStrategy.CREATE_SOLDIER);
 				break;
 			case SOLDIER:
-				// Random initialization of soldier strategy
-				// TODO: better random seeding?
-				double randInt = Math.random(); // randInt \in [0, 1)
-				if (randInt < 0.7) {
-					robot = new SoldierRobot(rc);
-				} else {
-					robot = new SoldierRobot(rc);
-				}
+				robot = new SoldierRobot(rc);
 				break;
 			case ARTILLERY:
 				robot = new ArtilleryRobot(rc);

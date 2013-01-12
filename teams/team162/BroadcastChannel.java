@@ -1,4 +1,4 @@
-package macrobot;
+package team162;
 
 import battlecode.common.RobotController;
 
@@ -27,7 +27,7 @@ public class BroadcastChannel {
 		short body = message.body;
 		int result = (((signature << 8) + header) << 16) + body;
 		try {
-			for (int channelNo : BroadcastSystem.getChannelNos(this.channelType, rc.getTeam().ordinal())) {
+			for (int channelNo : BroadcastSystem.getChannelNos(this.channelType)) {
 				rc.broadcast(channelNo, result);
 			}
 		} catch (Exception e) {
@@ -38,7 +38,7 @@ public class BroadcastChannel {
 	// TODO: more redundancy and stuffs
 	public Message read(RobotController rc) {
 		try {
-			for (int channelNo : BroadcastSystem.getChannelNos(this.channelType, rc.getTeam().ordinal())) {
+			for (int channelNo : BroadcastSystem.getChannelNos(this.channelType)) {
 				int rawMessage = rc.readBroadcast(channelNo);
 				byte signature = (byte) (rawMessage >> 24);
 				if (this.signature == signature) {

@@ -1,4 +1,4 @@
-package macrobot;
+package team162;
 
 import battlecode.common.Clock;
 import battlecode.common.GameConstants;
@@ -29,13 +29,13 @@ public class BroadcastSystem {
 	 * @param channelType
 	 * @return result
 	 */
-	public static int[] getChannelNos(ChannelType channelType, int teamID) {
+	public static int[] getChannelNos(ChannelType channelType) {
 		int[] result = new int[TeamConstants.REDUNDANT_CHANNELS];
 		int roundNum = Clock.getRoundNum();
 		int mod = GameConstants.BROADCAST_MAX_CHANNELS / ChannelType.size;
 		int bigOffset = channelType.ordinal() * mod;
 		for (int i = 0; i < TeamConstants.REDUNDANT_CHANNELS; i++) {
-			int offset = (((channelType.hashCode() * i) ^ (roundNum / (GameConstants.ROUND_MAX_LIMIT / TeamConstants.CHANNEL_CYCLE_FREQ))) + teamID) % mod;
+			int offset = ((channelType.hashCode() * i) ^ (roundNum / (GameConstants.ROUND_MAX_LIMIT / TeamConstants.CHANNEL_CYCLE_FREQ))) % mod;
 			if (offset < 0) {
 				offset += mod;
 			}

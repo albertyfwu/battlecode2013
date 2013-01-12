@@ -1,6 +1,4 @@
-package base;
-
-import battlecode.common.GameConstants;
+package team162;
 
 public enum ChannelType {
 	// test
@@ -10,5 +8,4 @@ public enum ChannelType {
 	CHANNEL4;
 	
 	public static final int size = ChannelType.values().length;
-	public static final int range = GameConstants.BROADCAST_MAX_CHANNELS / size;
 }

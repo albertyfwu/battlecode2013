@@ -1,4 +1,4 @@
-package supgen;
+package awesomerHalfNHalf;
 
 import battlecode.common.*;
 
@@ -6,61 +6,49 @@ public class RobotPlayer{
 	
 	private static RobotController rc;
 	private static MapLocation rallyPoint;
+	private static int robotID = 0;
+	private static int[] directionOffsets;
 	
 	public static void run(RobotController myRC){
 		rc = myRC;
 		rallyPoint = findRallyPoint();
+		robotID = rc.getRobot().getID();
+		if (robotID % 4 == 0 || robotID % 4 == 1) {
+			directionOffsets = new int[]{0,1,-1,2,-2};
+		} else {
+			directionOffsets = new int[]{0,-1,1,-2,2};
+
+		}
 		while(true){
 			try{
 				if (rc.getType()==RobotType.SOLDIER){
-					if (rc.senseEncampmentSquare(rc.getLocation())){
-						if (rc.getTeamPower()>10*(rc.senseAlliedEncampmentSquares().length + 10)){
-							rc.captureEncampment(RobotType.SUPPLIER);
+					Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class,100000,rc.getTeam().opponent());
+					if(enemyRobots.length==0){//no enemies nearby
+						if (Clock.getRoundNum()<200){
+							goToLocation(rallyPoint);
+						}else{
+							goToLocation(rc.senseEnemyHQLocation());
 						}
-						else{
-							rc.captureEncampment(RobotType.GENERATOR);
+					}else{//someone spotted
+						int closestDist = 100000;
+						MapLocation closestEnemy=null;
+						for (int i=0;i<enemyRobots.length;i++){
+							Robot arobot = enemyRobots[i];
+							RobotInfo arobotInfo = rc.senseRobotInfo(arobot);
+							int dist = arobotInfo.location.distanceSquaredTo(rc.getLocation());
+							if (dist<closestDist){
+								closestDist = dist;
+								closestEnemy = arobotInfo.location;
+							}
 						}
-					}else{
-						Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class,100000,rc.getTeam().opponent());
-						if(enemyRobots.length==0 || (enemyRobots.length == 1 && rc.senseRobotInfo(enemyRobots[0]).type == RobotType.HQ)){//no enemies nearby
-							Robot[] alliedRobots = rc.senseNearbyGameObjects(Robot.class, 1000000, rc.getTeam());
-							if (alliedRobots.length < 5*(rc.senseAlliedEncampmentSquares().length)+1){
-								if (Math.random() < 0.1 && alliedRobots.length < 20) {
-									if (rc.senseMine(rc.getLocation()) == null) {
-										rc.layMine();
-									}
-								}
-								goToLocation(rallyPoint);
-							}else{
-								goToLocation(rc.senseEnemyHQLocation());
-							}
-						}else{//someone spotted
-							int closestDist = 100000;
-							MapLocation closestEnemy=null;
-							for (int i=0;i<enemyRobots.length;i++){
-								Robot arobot = enemyRobots[i];
-								RobotInfo arobotInfo = rc.senseRobotInfo(arobot);
-								int dist = arobotInfo.location.distanceSquaredTo(rc.getLocation());
-								if (dist<closestDist){
-									closestDist = dist;
-									closestEnemy = arobotInfo.location;
-								}
-							}
-							Robot[] nearbyAllies= rc.senseNearbyGameObjects(Robot.class,64,rc.getTeam());
-							if (nearbyAllies.length > 2.5 * enemyRobots.length) {
-								if (closestDist > 4) {
-									goToLocation(closestEnemy);
-								}
-							}
-							goToLocationAvoidMines(closestEnemy);
-						}
+						goToLocationAvoidMines(closestEnemy);
 					}
 				}else{
 					hqCode();
 				}
 			}catch (Exception e){
-//				System.out.println("caught exception before it killed us:");
-//				e.printStackTrace();
+				System.out.println("caught exception before it killed us:");
+				e.printStackTrace();
 			}
 			rc.yield();
 		}
@@ -83,7 +71,6 @@ public class RobotPlayer{
 	}
 	
 	private static void goDirectionAndDefuse(Direction dir) throws GameActionException {
-		int[] directionOffsets = {0,1,-1,2,-2};
 		Direction lookingAtCurrently = dir;
 		lookAround: for (int d:directionOffsets){
 			lookingAtCurrently = Direction.values()[(dir.ordinal()+d+8)%8];
@@ -100,7 +87,6 @@ public class RobotPlayer{
 	}
 	
 	private static void goDirectionAvoidMines(Direction dir) throws GameActionException {
-		int[] directionOffsets = {0,1,-1,2,-2};
 		Direction lookingAtCurrently = dir;
 		lookAround: for (int d:directionOffsets){
 			lookingAtCurrently = Direction.values()[(dir.ordinal()+d+8)%8];

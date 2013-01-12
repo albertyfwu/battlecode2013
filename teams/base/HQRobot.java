@@ -25,9 +25,11 @@ public class HQRobot extends BaseRobot {
 				rc.spawn(dir);
 			}
 			
-			BroadcastChannel channel = BroadcastSystem.getChannelByType(ChannelType.values()[0]);
-			Message message = new Message(0, Clock.getRoundNum());
-			channel.write(rc, message);
+			BroadcastSystem.write(ChannelType.CHANNEL1, 100);
+			
+//			BroadcastChannel channel = BroadcastSystem.getChannelByType(ChannelType.values()[0]);
+//			Message message = new Message(0, Clock.getRoundNum());
+//			channel.write(rc, message);
 			
 //			// TODO: find out what strategy to switch to?
 //			// this.strategy = HQStrategy.xxx
