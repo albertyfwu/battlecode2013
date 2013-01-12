@@ -6,6 +6,8 @@ public class RobotPlayer{
 	
 	private static RobotController rc;
 	private static MapLocation rallyPoint;
+	private static MapLocation enemyHQLocation;
+	private static Direction enemyHQDirection;
 	
 	private static int[][] neighborArray;
 	private static int[] self = {2,2};
@@ -14,6 +16,7 @@ public class RobotPlayer{
 	public static void run(RobotController myRC){
 		rc = myRC;
 		rallyPoint = findRallyPoint();
+		enemyHQLocation = rc.senseEnemyHQLocation();
 		surroundingIndices = initSurroundingIndices(Direction.NORTH);
 		while(true){
 			try{
@@ -34,7 +37,7 @@ public class RobotPlayer{
 			try{
 				Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class,1000000,rc.getTeam().opponent());
 				if(enemyRobots.length==0){//no enemies nearby
-					if (Clock.getRoundNum()<200){
+					if (Clock.getRoundNum()<350){
 						goToLocation(rallyPoint);
 					}else{
 						goToLocation(rc.senseEnemyHQLocation());
@@ -143,10 +146,37 @@ public class RobotPlayer{
 		
 		//display the neighbor information to the indicator strings
 		rc.setIndicatorString(0, "adjacent: "+intListToString(adj)+" me: "+me);
-		//note: if the indicator string says 23, that means 2 enemies and 3 allies.
-		
-		//TODO: Now act on that data. I leave this to you. 
-		
+		//note: if the indicator string says 23, that means 2 enemies and 3 allies. 
+		double max=-9000;
+		int besti=0;
+		int directionBonus;
+		Direction closestEnemyDirection = rc.getLocation().directionTo(closestEnemy);
+		Direction left = closestEnemyDirection.rotateLeft();
+		Direction right = closestEnemyDirection.rotateRight();
+		Direction current;
+		for(int i=0;i<8;i++){
+			current = Direction.values()[i];
+			if (current == closestEnemyDirection){
+				directionBonus = 340;
+			}else if (current == left || current == right){
+				directionBonus = 300;
+			}else if (current == left.opposite() || current == right.opposite()){
+				directionBonus = -300;
+			}else if (current == closestEnemyDirection.opposite()){
+				directionBonus = -340;
+			}else{
+				directionBonus = 0;
+			}
+			if (max<howGood(adj[i])+directionBonus){
+				max=howGood(adj[i])+directionBonus;
+				besti=i;
+			}
+		}
+		if (max<howGood(me)){
+			
+		}else{
+			rc.move(Direction.values()[besti]);
+		}
 	}
 	public static int[] locToIndex(MapLocation ref, MapLocation test,int offset){/*40*/
 		int[] index = new int[2];
@@ -213,6 +243,11 @@ public class RobotPlayer{
 	public static int[] totalAllAdjacent(int[][] neighbors){/*2454*/
 		int[] allAdjacent = new int[8];
 		for(int i=0;i<8;i++){
+			if (rc.canMove(Direction.values()[i])){
+				allAdjacent[i] =  totalAdjacent(neighbors,addPoints(self,surroundingIndices[i]));
+			}else{
+				allAdjacent[i] = -9000;
+			}
 			if (rc.canMove(Direction.values()[i])) {
 				allAdjacent[i] =  totalAdjacent(neighbors,addPoints(self,surroundingIndices[i]));
 			} else {
@@ -245,14 +280,18 @@ public class RobotPlayer{
 	}
 //heuristic: goodness or badness of a neighbor int, which includes allies and enemies
 	public static double howGood(int neighborInt){
+		double spread;
+		if (neighborInt == -9000){
+			return -9000;
+		}
 		double goodness = 0;
 		if (neighborInt < 0) {
 			return -1000.0;
 		}
 		double numberOfAllies = neighborInt%10;
 		double numberOfEnemies = neighborInt-numberOfAllies;
-		goodness = numberOfAllies/(numberOfEnemies + 5);
-//		goodness = ?????; //what heuristic will you use?
+		spread=-numberOfAllies+numberOfEnemies;
+		goodness=spread;
 		return goodness;
 	}
 }
