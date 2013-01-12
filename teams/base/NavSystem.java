@@ -18,6 +18,10 @@ public class NavSystem {
 	public static RobotController rc;
 	public static int[] directionOffsets;
 	
+	public static boolean followingWaypoints = false;
+	public static MapLocation currentWaypoint;
+	public static MapLocation waypointDestination;
+	
 	/**
 	 * MUST CALL THIS METHOD BEFORE USING NavSystem
 	 * @param myRC
@@ -103,10 +107,66 @@ public class NavSystem {
 		return !(bombTeam == null || bombTeam == rc.getTeam());
 	}
 	
+	public static void followWaypoints() throws GameActionException {
+		// If we're close to the current waypoint, find the next one
+		if (rc.getLocation().distanceSquaredTo(currentWaypoint) <= 5) {
+			if (currentWaypoint.distanceSquaredTo(waypointDestination) <= 5) {
+				// We're done following waypoints!
+				followingWaypoints = false;
+				goToLocation(waypointDestination);
+			} else {
+				calculateSmartWaypoint(waypointDestination);
+				goToLocation(currentWaypoint);
+			}
+		} else {
+			// keep moving to the current waypoint
+			goToLocation(currentWaypoint);
+		}
+	}
 	
-	// HPA Pathfinding
-	// Good reference: http://aigamedev.com/open/article/clearance-based-pathfinding/
-	// TODO: Make it handle diagonals (to avoid defusing)
+	public static void calculateSmartWaypoint(MapLocation endLocation) throws GameActionException {
+		followingWaypoints = true; // we are now following waypoints to get to endLocation
+		waypointDestination = endLocation;
+		MapLocation currentLocation = rc.getLocation();
+		// Count how many mines are in each of the directions we could move
+		int bestScore = Integer.MAX_VALUE;
+		MapLocation bestLocation = null;
+		System.out.println("start score");
+		String s = "";
+		Direction dirLookingAt = currentLocation.directionTo(endLocation);
+		for (int i = -2; i <= 2; i++) {
+			Direction dir = Direction.values()[(dirLookingAt.ordinal() + i + 8) % 8];
+			MapLocation iterLocation = currentLocation.add(dir, TeamConstants.PATH_OFFSET_RADIUS);
+			int currentScore = smartScore(iterLocation, TeamConstants.PATH_CHECK_RADIUS, endLocation);
+			
+			
+			int numMines = rc.senseNonAlliedMineLocations(iterLocation, TeamConstants.PATH_CHECK_RADIUS * TeamConstants.PATH_CHECK_RADIUS).length;
+			s += "dir: " + dir.ordinal() + ", mines: " + numMines + ", score: " + currentScore + " # ";			
+			
+			if (currentScore < bestScore) {
+				bestScore = currentScore;
+				bestLocation = iterLocation;
+			}
+		}
+		rc.setIndicatorString(0, s);
+		System.out.println("end score");
+		currentWaypoint = bestLocation;
+	}
+	
+	/**
+	 * Scoring function for calculating how favorable it is to move in a certain direction.
+	 * @param location
+	 * @param radius
+	 */
+	public static int smartScore(MapLocation location, int radius, MapLocation endLocation) {
+		int numMines = rc.senseNonAlliedMineLocations(location, radius * radius).length;
+		// maximum number of mines within this radius should be 3 * radius^2
+		int distanceSquared = location.distanceSquaredTo(endLocation);
+		return distanceSquared + 10 * numMines;
+	}
+	
+	
+	// Pathfinding by choosing locally optimal squares (with scoring function)
 	public static ArrayList<MapLocation> calculatePath(RobotController rc, MapLocation start, MapLocation end) {
 		// Turn start and end points into (x1, y1) and (x2, y2)
 		int x1 = start.x;

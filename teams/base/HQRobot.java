@@ -25,7 +25,7 @@ public class HQRobot extends BaseRobot {
 				rc.spawn(dir);
 			}
 			
-			BroadcastSystem.write(ChannelType.CHANNEL1, 100);
+//			BroadcastSystem.write(ChannelType.CHANNEL1, 100);
 			
 //			BroadcastChannel channel = BroadcastSystem.getChannelByType(ChannelType.values()[0]);
 //			Message message = new Message(0, Clock.getRoundNum());
