@@ -2,6 +2,7 @@ package base;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.Upgrade;
 
@@ -10,14 +11,20 @@ public class HQRobot extends BaseRobot {
 	public Upgrade[] upgrades;
 	HQStrategy strategy;
 	
-	public HQRobot(RobotController rc, HQStrategy strategy) {
+	public MapLocation[] encampmentJobs;
+	public int numEncampmentsNeeded; // must be less than encampmentJobChannelList.length
+	
+	
+	public HQRobot(RobotController rc) {
 		super(rc);
 		this.strategy = strategy;
+		numEncampmentsNeeded = 3; 
 	}
 
 	@Override
 	public void run() {
 		try {
+			
 			// Spawn a soldier
 			Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
 			if (rc.canMove(dir)) {

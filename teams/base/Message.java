@@ -7,14 +7,17 @@ package base;
 public class Message {
 	
 	public boolean isValid = false;
+	public boolean isUnwritten = false;
 	public int body;
 	
-	public Message(int body, boolean isValid) {
+	public Message(int body, boolean isValid, boolean isUnwritten) {
 		this.body = body;
 		this.isValid = isValid;
+		this.isUnwritten = isUnwritten;
 	}
 	
-	public Message(boolean isValid) {
-		this(0, isValid);
+	public Message(boolean isValid, boolean isUnwritten) {
+		this(0, isValid, isUnwritten);
 	}
+	
 }

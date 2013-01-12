@@ -18,6 +18,7 @@ public abstract class BaseRobot {
 		// Initialize BroadcastSystem
 		NavSystem.init(this);
 		BroadcastSystem.init(this);
+		EncampmentJobSystem.init(this);
 		while (true) {
 			try {
 				run();

@@ -152,44 +152,50 @@ public class RobotPlayer{
 	}
 	
 	private static void goDirectionAndDefuse(Direction dir) throws GameActionException {
-		int[] directionOffsets = {0,1,-1,2,-2};
-		Direction lookingAtCurrently = dir;
-		lookAround: for (int d:directionOffsets){
-			lookingAtCurrently = Direction.values()[(dir.ordinal()+d+8)%8];
-			if(rc.canMove(lookingAtCurrently)){
-				if (badBomb(rc.getLocation().add(lookingAtCurrently))) {
-					rc.defuseMine(rc.getLocation().add(lookingAtCurrently));
-				} else {
-					rc.move(lookingAtCurrently);
-					rc.setIndicatorString(0, "Last direction moved: "+lookingAtCurrently.toString());
+		if (rc.isActive()) {
+			int[] directionOffsets = {0,1,-1,2,-2};
+			Direction lookingAtCurrently = dir;
+			lookAround: for (int d:directionOffsets){
+				lookingAtCurrently = Direction.values()[(dir.ordinal()+d+8)%8];
+				if(rc.canMove(lookingAtCurrently)){
+					if (badBomb(rc.getLocation().add(lookingAtCurrently))) {
+						rc.defuseMine(rc.getLocation().add(lookingAtCurrently));
+					} else {
+						rc.move(lookingAtCurrently);
+						rc.setIndicatorString(0, "Last direction moved: "+lookingAtCurrently.toString());
+					}
+					break lookAround;
 				}
-				break lookAround;
 			}
 		}
+		
 	}
 	
 	private static void goDirectionAvoidMines(Direction dir) throws GameActionException {
-		int[] directionOffsets = {0,1,-1,2,-2};
-		Direction lookingAtCurrently = dir;
-		boolean movedYet = false;
-		lookAround: for (int d:directionOffsets){
-			lookingAtCurrently = Direction.values()[(dir.ordinal()+d+8)%8];
-			if(rc.canMove(lookingAtCurrently)){
-				if (!badBomb(rc.getLocation().add(lookingAtCurrently))) {
-					movedYet = true;
-					rc.move(lookingAtCurrently);
-					rc.setIndicatorString(0, "Last direction moved: "+lookingAtCurrently.toString());
+		if (rc.isActive()) {
+			int[] directionOffsets = {0,1,-1,2,-2};
+			Direction lookingAtCurrently = dir;
+			boolean movedYet = false;
+			lookAround: for (int d:directionOffsets){
+				lookingAtCurrently = Direction.values()[(dir.ordinal()+d+8)%8];
+				if(rc.canMove(lookingAtCurrently)){
+					if (!badBomb(rc.getLocation().add(lookingAtCurrently))) {
+						movedYet = true;
+						rc.move(lookingAtCurrently);
+						rc.setIndicatorString(0, "Last direction moved: "+lookingAtCurrently.toString());
+					}
+					break lookAround;
 				}
-				break lookAround;
-			}
-			if (movedYet == false) { // if it still hasn't moved
-				if (rc.senseNearbyGameObjects(Robot.class, 2, rc.getTeam().opponent()).length == 0) {
-					//if not getting shot at
-					rangedDefuseMine();
+				if (movedYet == false) { // if it still hasn't moved
+					if (rc.senseNearbyGameObjects(Robot.class, 2, rc.getTeam().opponent()).length == 0) {
+						//if not getting shot at
+						rangedDefuseMine();
+					}
+					
 				}
-				
 			}
 		}
+		
 	}
 	
 	private static void rangedDefuseMine() throws GameActionException {
