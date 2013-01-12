@@ -73,7 +73,7 @@ public class RobotPlayer{
 						
 //						numEncampments = rc.readBroadcast(9000);
 						
-						if (alliedRobots.length - numEncampments < 25){ // if < 25 allied robots
+						if (alliedRobots.length - numEncampments < 30){ // if < 25 allied robots
 							if (Math.random() < 0.1 && rc.isActive()) {
 								if (rc.senseMine(rc.getLocation()) == null) {
 									rc.layMine();
@@ -91,13 +91,16 @@ public class RobotPlayer{
 
 						Robot[] nearbyAllies= rc.senseNearbyGameObjects(Robot.class,64,rc.getTeam());
 						if (nearbyAllies.length > 3 * enemyRobots.length) { // if we outnumber them by a lot
+							boolean defused = false;
 							if (closestDist > 4) {
 								if (rc.hasUpgrade(Upgrade.DEFUSION) && Math.random() < 0.05) { // defuse randomly
 									MapLocation[] mines = rc.senseMineLocations(rc.getLocation(), 14, rc.getTeam().opponent());
-									if (mines.length > 0) {
+									if (rc.isActive() && mines.length > 0) {
+										defused = true;
 										rc.defuseMine(mines[0]);
 									}
-								} else { // if not defusing
+								} 
+								if (!defused) {
 									goToLocation(closestEnemy);
 								}
 							}
@@ -298,25 +301,33 @@ public class RobotPlayer{
 			channel4337.write(rc, new Message(9, designatedCapturer));
 		}
 		
-		if (numAlliedSoldiers > 25 && Clock.getRoundNum() > 500) {
-			if (!rc.hasUpgrade(Upgrade.FUSION)) {
-				rc.researchUpgrade(Upgrade.FUSION);
-			} else if (!rc.hasUpgrade(Upgrade.DEFUSION)) {
-				rc.researchUpgrade(Upgrade.DEFUSION);
-			} else if (!rc.hasUpgrade(Upgrade.PICKAXE)) {
-				rc.researchUpgrade(Upgrade.PICKAXE);
-			}
-		}
 
 		
 		if (rc.isActive()) {
-			// Spawn a soldier
-			Direction desiredDir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
-			Direction dir = getSpawnDirection(rc, desiredDir);
-			if (dir != null) {
-				rc.spawn(dir);
+			boolean upgrade = false;
+			if (!rc.hasUpgrade(Upgrade.DEFUSION) && rc.senseEnemyNukeHalfDone() && numAlliedSoldiers > 20) {
+				rc.researchUpgrade(Upgrade.DEFUSION);
+				upgrade = true;
+			} else if (numAlliedSoldiers > 25 && Clock.getRoundNum() > 500) {
+				if (!rc.hasUpgrade(Upgrade.DEFUSION)) {
+					upgrade = true;
+					rc.researchUpgrade(Upgrade.DEFUSION);
+				} else if (!rc.hasUpgrade(Upgrade.PICKAXE)) {
+					upgrade = true;
+					rc.researchUpgrade(Upgrade.PICKAXE);
+				} else if (!rc.hasUpgrade(Upgrade.FUSION)) {
+					upgrade = true;
+					rc.researchUpgrade(Upgrade.FUSION);
+				}
+			} 
+			if (!upgrade) {
+				// Spawn a soldier
+				Direction desiredDir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
+				Direction dir = getSpawnDirection(rc, desiredDir);
+				if (dir != null) {
+					rc.spawn(dir);
+				}
 			}
-			
 		}
 	}
 	

@@ -12,7 +12,7 @@ public class RobotPlayer{
 		rallyPoint = findRallyPoint();
 		while(true){
 			try{
-				if (rc.getType()==RobotType.SOLDIER){
+				if (rc.getType()==RobotType.SOLDIER && rc.isActive()){
 					if (rc.senseAlliedEncampmentSquares().length<3 && rc.senseEncampmentSquare(rc.getLocation())){
 						rc.captureEncampment(RobotType.SUPPLIER);
 					}else{
@@ -50,7 +50,7 @@ public class RobotPlayer{
 							goToLocationAvoidMines(closestEnemy);
 						}
 					}
-				}else{
+				}else if (rc.getType() == RobotType.HQ){
 					hqCode();
 				}
 			}catch (Exception e){
