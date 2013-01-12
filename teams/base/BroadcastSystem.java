@@ -10,6 +10,7 @@ import battlecode.common.RobotController;
  */
 public class BroadcastSystem {
 	
+	public static BaseRobot robot;
 	public static RobotController rc;
 	public static byte signature = 0x3D; // TODO: Better signature verification (based on round number, channel type, etc.)
 	public static final int signatureMask = 0x00FFFFFF;
@@ -18,8 +19,9 @@ public class BroadcastSystem {
 	 * Initializes BroadcastSystem by setting rc
 	 * @param myRC
 	 */
-	public static void init(RobotController myRC) {
-		rc = myRC;
+	public static void init(BaseRobot myRobot) {
+		robot = myRobot;
+		rc = robot.rc;
 	}
 	
 	public static Message read(ChannelType channelType) {

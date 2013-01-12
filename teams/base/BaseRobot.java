@@ -16,8 +16,8 @@ public abstract class BaseRobot {
 	
 	public void loop() {
 		// Initialize BroadcastSystem
-		NavSystem.init(rc);
-		BroadcastSystem.init(rc);
+		NavSystem.init(this);
+		BroadcastSystem.init(this);
 		while (true) {
 			try {
 				run();

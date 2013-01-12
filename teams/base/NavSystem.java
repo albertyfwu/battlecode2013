@@ -3,26 +3,104 @@ package base;
 import java.util.ArrayList;
 
 import battlecode.common.Clock;
+import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.GameConstants;
 import battlecode.common.MapLocation;
+import battlecode.common.Robot;
 import battlecode.common.RobotController;
+import battlecode.common.Team;
+import battlecode.common.Upgrade;
 
 public class NavSystem {
 
+	public static BaseRobot robot;
 	public static RobotController rc;
+	public static int[] directionOffsets;
 	
-	public static void init(RobotController myRC) {
-		rc = myRC;
+	/**
+	 * MUST CALL THIS METHOD BEFORE USING NavSystem
+	 * @param myRC
+	 */
+	public static void init(BaseRobot myRobot) {
+		robot = myRobot;
+		rc = robot.rc;
+		int robotID = rc.getRobot().getID();
+		// Randomly assign soldiers priorities for trying to move left or right
+		if (robotID % 4 == 0 || robotID % 4 == 1) {
+			directionOffsets = new int[]{0,1,-1,2,-2};
+		} else {
+			directionOffsets = new int[]{0, -1,1,-2,2};
+		}
 	}
 	
 	/**
-	 * Tells rc to go to location
+	 * Tells rc to go to a location while defusing mines along the way
 	 * @param location
 	 * @throws GameActionException
 	 */
 	public static void goToLocation(MapLocation location) throws GameActionException {
-		// 
+		Direction dir = rc.getLocation().directionTo(location);
+		if (dir != Direction.OMNI) {
+			goDirectionAndDefuse(dir);
+		}
+	}
+	
+	public static void goToLocationAvoidMines(MapLocation location) throws GameActionException {
+		Direction dir = rc.getLocation().directionTo(location);
+		if (dir != Direction.OMNI){
+			goDirectionAvoidMines(dir);
+		}
+	}
+	
+	public static void goDirectionAndDefuse(Direction dir) throws GameActionException {
+		Direction lookingAtCurrently = dir;
+		lookAround: for (int d : directionOffsets) {
+			lookingAtCurrently = Direction.values()[(dir.ordinal() + d + 8) % 8];
+			if (rc.canMove(lookingAtCurrently)) {
+				if (hasBadMine(rc.getLocation().add(lookingAtCurrently))) {
+					rc.defuseMine(rc.getLocation().add(lookingAtCurrently));
+				} else {
+					rc.move(lookingAtCurrently);
+				}
+				break lookAround;
+			}
+		}
+	}
+	
+	public static void goDirectionAvoidMines(Direction dir) throws GameActionException {
+		Direction lookingAtCurrently = dir;
+		boolean movedYet = false;
+		lookAround: for (int d : directionOffsets) {
+			lookingAtCurrently = Direction.values()[(dir.ordinal() + d + 8) % 8];
+			if (rc.canMove(lookingAtCurrently)) {
+				if (!hasBadMine(rc.getLocation().add(lookingAtCurrently))) {
+					movedYet = true;
+					rc.move(lookingAtCurrently);
+				}
+				break lookAround;
+			}
+			if (!movedYet) { // if the robot still hasn't moved
+				if (rc.senseNearbyGameObjects(Robot.class, 2, rc.getTeam().opponent()).length == 0) {
+					// if there are no nearby enemies
+					rangedDefuseMine();
+				}
+			}
+		}
+	}
+	
+	public static void rangedDefuseMine() throws GameActionException {
+		if (rc.hasUpgrade(Upgrade.DEFUSION)) {
+			MapLocation[] mines = rc.senseMineLocations(rc.getLocation(), 14, rc.getTeam().opponent());
+			if (mines.length > 0) {
+				rc.defuseMine(mines[0]);
+			}
+		}
+	}
+	
+	private static boolean hasBadMine(MapLocation location) {
+		Team bombTeam = rc.senseMine(location);
+		return !(bombTeam == null || bombTeam == rc.getTeam());
 	}
 	
 	
