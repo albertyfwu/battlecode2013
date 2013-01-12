@@ -7,10 +7,10 @@ import battlecode.common.GameConstants;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 
-public class PathFinder {
+public class Nav {
 
 	// default constructor
-	public PathFinder() {
+	public Nav() {
 	}
 	
 	// HPA Pathfinding
@@ -116,18 +116,19 @@ public class PathFinder {
 	// (Distance to end) + (mineCount / TeamConstants.HPA_BOX_LEN * GameConstants.MINE_DEFUSE_DELAY)
 	// TODO: Choose MINE_DEFUSE_DELAY OR MINE_DEFUSE_DEFUSION_DELAY correctly
 	// TODO: Also, don't let it move backwards? Make distance even more imperative.
+	// TODO: make a better scoring function, and make sure the path search terminates
 	public static int heuristic(int mineCount, int[] startBox, int[] endBox) {
 		// if a box is TeamConstants.PATH_BOX_LEN away, and has the maximum TeamConstants.PATH_BOX_LEN^2 fewer bombs, we should still prefer
 		// moving towards the destination if we're close enough
-		return (int)(15*GameConstants.MINE_DEFUSE_DELAY * Math.pow(manhattanDistanceBetweenBoxes(startBox, endBox), 0.25)) + mineCount * GameConstants.MINE_DEFUSE_DELAY / TeamConstants.PATH_BOX_LEN;
-//		return (int)Math.pow(distanceBetweenBoxes(startBox, endBox), 2) + mineCount * GameConstants.MINE_DEFUSE_DELAY / TeamConstants.PATH_BOX_LEN;
+		return (int)(15*GameConstants.MINE_DEFUSE_DELAY * Math.pow(manhattanDistance(startBox, endBox), 0.25)) + mineCount * GameConstants.MINE_DEFUSE_DELAY / TeamConstants.PATH_BOX_LEN;
+//		return (int)Math.pow(distance(startBox, endBox), 2) + mineCount * GameConstants.MINE_DEFUSE_DELAY / TeamConstants.PATH_BOX_LEN;
 	}
 	
-	public static int manhattanDistanceBetweenBoxes(int[] startBox, int[] endBox) {
+	public static int manhattanDistance(int[] startBox, int[] endBox) {
 		return Math.abs(endBox[0] - startBox[0]) + Math.abs(endBox[1] - startBox[1]);
 	}
 	
-	public static int distanceBetweenBoxes(int[] startBox, int[] endBox) {
+	public static int distance(int[] startBox, int[] endBox) {
 		return (int)(Math.sqrt(Math.pow(startBox[0]-endBox[0], 2) + Math.pow(startBox[1]-endBox[1], 2)));
 	}
 	
