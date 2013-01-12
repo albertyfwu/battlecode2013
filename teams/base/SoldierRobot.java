@@ -36,14 +36,14 @@ public class SoldierRobot extends BaseRobot {
 //			}
 
 			// Check to see if we're already moving along waypoints
-			if (NavSystem.followingWaypoints) {
-				NavSystem.followWaypoints();
+			if (NavSystem.followingWaypoint) {
+				NavSystem.followWaypoint();
 //				rc.setIndicatorString(0, "following");
 			} else {
 				// do other stuff
 				MapLocation end = rc.senseEnemyHQLocation();
 				NavSystem.calculateSmartWaypoint(end);
-				NavSystem.followWaypoints();
+				NavSystem.followWaypoint();
 //				rc.setIndicatorString(0, "not following");
 			}
 			

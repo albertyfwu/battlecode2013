@@ -18,7 +18,7 @@ public class NavSystem {
 	public static RobotController rc;
 	public static int[] directionOffsets;
 	
-	public static boolean followingWaypoints = false;
+	public static boolean followingWaypoint = false;
 	public static MapLocation currentWaypoint;
 	public static MapLocation waypointDestination;
 	
@@ -107,12 +107,12 @@ public class NavSystem {
 		return !(bombTeam == null || bombTeam == rc.getTeam());
 	}
 	
-	public static void followWaypoints() throws GameActionException {
+	public static void followWaypoint() throws GameActionException {
 		// If we're close to the current waypoint, find the next one
 		if (rc.getLocation().distanceSquaredTo(currentWaypoint) <= 5) {
 			if (currentWaypoint.distanceSquaredTo(waypointDestination) <= 5) {
 				// We're done following waypoints!
-				followingWaypoints = false;
+				followingWaypoint = false;
 				goToLocation(waypointDestination);
 			} else {
 				calculateSmartWaypoint(waypointDestination);
@@ -125,9 +125,13 @@ public class NavSystem {
 	}
 	
 	public static void calculateSmartWaypoint(MapLocation endLocation) throws GameActionException {
-		followingWaypoints = true; // we are now following waypoints to get to endLocation
+		followingWaypoint = true; // we are now following waypoints to get to endLocation
 		waypointDestination = endLocation;
 		MapLocation currentLocation = rc.getLocation();
+//		if (currentLocation.distanceSquaredTo(endLocation) <= TeamConstants.PATH_GO_ALL_IN_SQ_RADIUS) {
+//			currentWaypoint = endLocation;
+//			return;
+//		}
 		// Count how many mines are in each of the directions we could move
 		int bestScore = Integer.MAX_VALUE;
 		MapLocation bestLocation = null;
@@ -161,6 +165,12 @@ public class NavSystem {
 		int numMines = rc.senseNonAlliedMineLocations(location, radius * radius).length;
 		// maximum number of mines within this radius should be 3 * radius^2
 		int distanceSquared = location.distanceSquaredTo(endLocation);
-		return distanceSquared + 10 * numMines;
+		int mineDelay;
+		if (rc.hasUpgrade(Upgrade.DEFUSION)) {
+			mineDelay = GameConstants.MINE_DEFUSE_DEFUSION_DELAY;
+		} else {
+			mineDelay = GameConstants.MINE_DEFUSE_DELAY;
+		}
+		return distanceSquared + (int)(0.83 * mineDelay * numMines);
 	}
 }
