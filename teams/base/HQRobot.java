@@ -5,12 +5,8 @@ import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
-import battlecode.common.Upgrade;
 
 public class HQRobot extends BaseRobot {
-
-	public Upgrade[] upgrades;
-	HQStrategy strategy;
 	
 	public MapLocation[] encampmentJobs;
 	public int numEncampmentsNeeded; // must be less than encampmentJobChannelList.length
@@ -19,7 +15,6 @@ public class HQRobot extends BaseRobot {
 	
 	public HQRobot(RobotController rc) {
 		super(rc);
-		this.strategy = strategy;
 		HQLocation = rc.getLocation();
 		EnemyHQLocation = rc.senseEnemyHQLocation();
 		numEncampmentsNeeded = TeamConstants.INITIAL_NUM_ENCAMPMENTS_NEEDED; 
