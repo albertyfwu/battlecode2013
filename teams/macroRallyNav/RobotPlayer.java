@@ -1,9 +1,9 @@
-package macroRallyHalf;
+package macroRallyNav;
 
-import macroRallyHalf.BroadcastChannel;
-import macroRallyHalf.BroadcastSystem;
-import macroRallyHalf.ChannelType;
-import macroRallyHalf.Message;
+import macroRallyNav.BroadcastChannel;
+import macroRallyNav.BroadcastSystem;
+import macroRallyNav.ChannelType;
+import macroRallyNav.Message;
 import battlecode.common.*;
 
 public class RobotPlayer{
@@ -36,6 +36,12 @@ public class RobotPlayer{
 //	private static int channelCaptureToHQ = 1339;
 //	private static int channelHQToCapture = 4339;
 //	private static int channelNearestEnc = 3001;
+	
+	private static int[][] BFSBoard = new int[5][5];
+	
+	private static boolean BFSMode = false;
+	private static int BFSRound = 0;
+	private static int[] BFSTurns;
 	
 	public static void run(RobotController myRC){
 		rc = myRC;
@@ -93,7 +99,7 @@ public class RobotPlayer{
 							//							rc.captureEncampment(RobotType.SUPPLIER);
 							//						}
 							boolean layedMine = false;
-							if (alliedRobots.length - numEncampments < 25){ // if < 25 allied robots
+							if (alliedRobots.length - numEncampments < 30){ // if < 25 allied robots
 								if (rc.senseMine(rc.getLocation()) == null) {
 									if (Math.random() < 0.1) {
 										layedMine = true;
@@ -231,38 +237,99 @@ public class RobotPlayer{
 	
 	public static void captureCode() throws GameActionException {
 		currentCaptureToHQ += 1;
-
+		
 		BroadcastChannel channelCaptureToHQ = BroadcastSystem.getChannelByType(ChannelType.CHANNEL1);
 		channelCaptureToHQ.write(rc, new Message(0, (short)currentCaptureToHQ));
-
+		
 		if (rc.isActive()) {
+			if (BFSMode) {
+				System.out.println("BFSMODE!");
+				System.out.println(rc.getLocation().equals(nextEncampment));
+				System.out.println(rc.getLocation().x == nextEncampment.x);
+				System.out.println(rc.getLocation().y == nextEncampment.y);
 
-			if (nextEncampment == null) {
-				BroadcastChannel channelNearestEnc = BroadcastSystem.getChannelByType(ChannelType.CHANNEL4);
-				int hashedLoc = 0;
-				Message message = channelNearestEnc.read(rc);
-				if (message != null) {
-					hashedLoc = message.body;
-				}
-
-				if (hashedLoc != 0) {
-					int y = (byte) hashedLoc;
-					int x = (byte)(hashedLoc >> 8);
-					nextEncampment = new MapLocation(x,y);
-				}
-			}
-			if (rc.senseEncampmentSquare(rc.getLocation())) {
-				if (Math.random() < ratioSuppliers) {
-					rc.captureEncampment(RobotType.SUPPLIER);
+				if (rc.getLocation().x == nextEncampment.x && rc.getLocation().y == nextEncampment.y  && rc.senseEncampmentSquare(rc.getLocation())) {
+					if (Math.random() < ratioSuppliers) {
+						rc.captureEncampment(RobotType.SUPPLIER);
+					} else {
+						rc.captureEncampment(RobotType.GENERATOR);
+					}
 				} else {
-					rc.captureEncampment(RobotType.GENERATOR);
+					System.out.println("Direction: " + BFSTurns[BFSRound]);
+					Direction dir = Direction.values()[BFSTurns[BFSRound]];
+					if (rc.canMove(dir)) {
+						rc.move(dir);
+						BFSRound++;
+					}
 				}
+			} else if (currentCaptureToHQ > 40 && rc.getLocation().distanceSquaredTo(nextEncampment) < 8){
+				if (rc.getLocation().x == nextEncampment.x && rc.getLocation().y == nextEncampment.y  && rc.senseEncampmentSquare(rc.getLocation())) {
+					// if already standing on it, just go
+					if (Math.random() < ratioSuppliers) {
+						rc.captureEncampment(RobotType.SUPPLIER);
+					} else {
+						rc.captureEncampment(RobotType.GENERATOR);
+					}
+				} else {
+					// first try to get closer
+					double distance = rc.getLocation().distanceSquaredTo(nextEncampment);
+					boolean moved = false;
+					moveloop: for (int i=0; i<8; i++) {
+						if (rc.canMove(Direction.values()[i])) {
+							MapLocation nextLoc = rc.getLocation().add(Direction.values()[i]);
+							if (nextLoc.distanceSquaredTo(nextEncampment) < distance) {
+								moved = true;
+								rc.move(Direction.values()[i]);
+								break moveloop;
+							}
+						}
+					}
 
+					if (moved == false) {
+						System.out.println("nextEncampment.x: " + nextEncampment.x);
+						System.out.println("nextEncampment.x: " + nextEncampment.y);
+
+						BFSMode = true;
+						int[][] encArray = populate5by5board();
+						int[] nextEncCoord = locToIndex(rc.getLocation(), nextEncampment, 2);
+						BFSTurns = runBFS(encArray, nextEncCoord[1], nextEncCoord[0]);
+						BFSRound = 0;
+					}
+
+					//				Direction dir = Direction.values()[BFSTurns[BFSRound]];
+					//				if (rc.canMove(dir)) {
+					//					rc.move(dir);
+					//					BFSRound++;
+					//				}
+				}
 			} else {
-				goToLocation(nextEncampment);
-			}
-		}
+				if (nextEncampment == null) {
+					BroadcastChannel channelNearestEnc = BroadcastSystem.getChannelByType(ChannelType.CHANNEL4);
+					int hashedLoc = 0;
+					Message message = channelNearestEnc.read(rc);
+					if (message != null) {
+						hashedLoc = message.body;
+					}
 
+					if (hashedLoc != 0) {
+						int y = (byte) hashedLoc;
+						int x = (byte)(hashedLoc >> 8);
+						nextEncampment = new MapLocation(x,y);
+					}
+				}
+				if (rc.senseEncampmentSquare(rc.getLocation())) {
+					if (Math.random() < ratioSuppliers) {
+						rc.captureEncampment(RobotType.SUPPLIER);
+					} else {
+						rc.captureEncampment(RobotType.GENERATOR);
+					}
+
+				} else {
+					goToLocation(nextEncampment);
+				}
+			}
+
+		} 
 	}
 
 	public static void hqCode() throws GameActionException{
@@ -330,17 +397,23 @@ public class RobotPlayer{
 
 		
 		if (rc.isActive()) {
+			boolean upgrade = false;
 			if (!rc.hasUpgrade(Upgrade.DEFUSION) && rc.senseEnemyNukeHalfDone() && numAlliedSoldiers > 20) {
+				upgrade = true;
 				rc.researchUpgrade(Upgrade.DEFUSION);
 			} else if (numAlliedSoldiers > 25 && Clock.getRoundNum() > 500) {
 				if (!rc.hasUpgrade(Upgrade.DEFUSION)) {
+					upgrade = true;
 					rc.researchUpgrade(Upgrade.DEFUSION);
 				} else if (!rc.hasUpgrade(Upgrade.PICKAXE)) {
+					upgrade = true;
 					rc.researchUpgrade(Upgrade.PICKAXE);
 				} else if (!rc.hasUpgrade(Upgrade.FUSION)) {
+					upgrade = true;
 					rc.researchUpgrade(Upgrade.FUSION);
 				}
-			} else {
+			}
+			if (!upgrade) {
 				// Spawn a soldier
 				Direction desiredDir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
 				Direction dir = getSpawnDirection(rc, desiredDir);
