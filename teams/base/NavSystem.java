@@ -3,15 +3,28 @@ package base;
 import java.util.ArrayList;
 
 import battlecode.common.Clock;
+import battlecode.common.GameActionException;
 import battlecode.common.GameConstants;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 
-public class Nav {
+public class NavSystem {
 
-	// default constructor
-	public Nav() {
+	public static RobotController rc;
+	
+	public static void init(RobotController myRC) {
+		rc = myRC;
 	}
+	
+	/**
+	 * Tells rc to go to location
+	 * @param location
+	 * @throws GameActionException
+	 */
+	public static void goToLocation(MapLocation location) throws GameActionException {
+		// 
+	}
+	
 	
 	// HPA Pathfinding
 	// Good reference: http://aigamedev.com/open/article/clearance-based-pathfinding/

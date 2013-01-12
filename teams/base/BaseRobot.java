@@ -4,7 +4,7 @@ import battlecode.common.RobotController;
 
 public abstract class BaseRobot {
 	
-	public static RobotController rc;
+	public RobotController rc;
 	
 	// Default constructor
 	public BaseRobot(RobotController myRC) {
@@ -16,6 +16,7 @@ public abstract class BaseRobot {
 	
 	public void loop() {
 		// Initialize BroadcastSystem
+		NavSystem.init(rc);
 		BroadcastSystem.init(rc);
 		while (true) {
 			try {

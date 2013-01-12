@@ -12,6 +12,7 @@ public class BroadcastSystem {
 	
 	public static RobotController rc;
 	public static byte signature = 0x3D; // TODO: Better signature verification (based on round number, channel type, etc.)
+	public static final int signatureMask = 0x00FFFFFF;
 	
 	/**
 	 * Initializes BroadcastSystem by setting rc
@@ -29,9 +30,8 @@ public class BroadcastSystem {
 					int rawMessage = rc.readBroadcast(channelNo);
 					byte testSignature = (byte)(rawMessage >> 24);
 					if (signature == testSignature) { // verified
-						byte header = (byte)(rawMessage >> 16);
-						short body = (short)rawMessage;
-						return new Message(header, body, true); // true means message is valid
+						int body = rawMessage & signatureMask;
+						return new Message(body, true); // true means message is valid
 					}
 				}
 			}
@@ -42,14 +42,15 @@ public class BroadcastSystem {
 	}
 	
 	/**
-	 * Writes a message to channelType
+	 * Writes a message to channelType.
+	 * WARNING: Only can use 24 low-order bits from the body
 	 * @param channelType
 	 * @param header
 	 * @param body
 	 */
-	public static void write(ChannelType channelType, byte header, short body) {
+	public static void write(ChannelType channelType, int body) {
 		if (rc != null) {
-			int result = (((signature << 8) + header) << 16) + body;
+			int result = (signature << 24) + (signatureMask & body);
 			try {
 				for (int channelNo : getChannelNos(channelType)){
 					rc.broadcast(channelNo, result);
@@ -58,10 +59,6 @@ public class BroadcastSystem {
 				//
 			}
 		}
-	}
-	
-	public static void write(ChannelType channelType, Message message) {
-		write(channelType, message.header, message.body);
 	}
 	
 	/**
