@@ -2,11 +2,8 @@ package base;
 
 import java.util.ArrayList;
 
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
-import battlecode.common.Team;
 
 public class SoldierRobot extends BaseRobot {
 

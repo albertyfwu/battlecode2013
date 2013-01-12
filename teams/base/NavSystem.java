@@ -1,8 +1,5 @@
 package base;
 
-import java.util.ArrayList;
-
-import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.GameConstants;
@@ -128,31 +125,23 @@ public class NavSystem {
 		followingWaypoint = true; // we are now following waypoints to get to endLocation
 		waypointDestination = endLocation;
 		MapLocation currentLocation = rc.getLocation();
-//		if (currentLocation.distanceSquaredTo(endLocation) <= TeamConstants.PATH_GO_ALL_IN_SQ_RADIUS) {
-//			currentWaypoint = endLocation;
-//			return;
-//		}
+		if (currentLocation.distanceSquaredTo(endLocation) <= TeamConstants.PATH_GO_ALL_IN_SQ_RADIUS) {
+			currentWaypoint = endLocation;
+			return;
+		}
 		// Count how many mines are in each of the directions we could move
 		int bestScore = Integer.MAX_VALUE;
 		MapLocation bestLocation = null;
-		System.out.println("start score");
-		String s = "";
 		Direction dirLookingAt = currentLocation.directionTo(endLocation);
 		for (int i = -2; i <= 2; i++) {
 			Direction dir = Direction.values()[(dirLookingAt.ordinal() + i + 8) % 8];
 			MapLocation iterLocation = currentLocation.add(dir, TeamConstants.PATH_OFFSET_RADIUS);
-			int currentScore = smartScore(iterLocation, TeamConstants.PATH_CHECK_RADIUS, endLocation);			
-			
-			int numMines = rc.senseNonAlliedMineLocations(iterLocation, TeamConstants.PATH_CHECK_RADIUS * TeamConstants.PATH_CHECK_RADIUS).length;
-			s += "dir: " + dir.ordinal() + ", mines: " + numMines + ", score: " + currentScore + " # ";			
-			
+			int currentScore = smartScore(iterLocation, TeamConstants.PATH_CHECK_RADIUS, endLocation);	
 			if (currentScore < bestScore) {
 				bestScore = currentScore;
 				bestLocation = iterLocation;
 			}
 		}
-		rc.setIndicatorString(0, s);
-		System.out.println("end score");
 		currentWaypoint = bestLocation;
 	}
 	
