@@ -25,8 +25,6 @@ public class NavSystem {
 	public static int mapHeight;
 	public static int mapWidth;
 	
-	public static MapSymmetry mapSymmetry;
-	
 	/**
 	 * MUST CALL THIS METHOD BEFORE USING NavSystem
 	 * @param myRC
@@ -46,18 +44,9 @@ public class NavSystem {
 		// Get locations of our HQ and enemy HQ
 		ourHQ = rc.senseHQLocation();
 		enemyHQ = rc.senseEnemyHQLocation();
-		// Figure out if the map is horizontally or rotationally symmetric
+		// Get map dimensions
 		mapHeight = rc.getMapHeight();
 		mapWidth = rc.getMapWidth();
-		// Map must have one of the following symmetries:
-		if (ourHQ.x == enemyHQ.x) {
-			mapSymmetry = MapSymmetry.HORIZONTAL;
-		} else if (ourHQ.y == enemyHQ.y){
-			mapSymmetry = MapSymmetry.VERTICAL;
-		} else {
-			mapSymmetry = MapSymmetry.ROTATIONAL;
-		}
-		System.out.println("Hello: " + mapSymmetry);
 	}
 	
 	/**
