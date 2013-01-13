@@ -18,13 +18,11 @@ public abstract class BaseRobot {
 	abstract public void run();
 	
 	public void loop() {
-		while (true) {
-			try {
-				run();
-			} catch (Exception e) {
-				// Deal with exception
-			}
-			rc.yield();
+		try {
+			run();
+		} catch (Exception e) {
+			// Deal with exception
 		}
+		rc.yield();
 	}
 }

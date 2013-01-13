@@ -2,7 +2,7 @@ package base;
 
 import battlecode.common.RobotController;
 
-public class GeneratorRobot extends BaseRobot {
+public class GeneratorRobot extends EncampmentRobot {
 
 	public GeneratorRobot(RobotController rc) {
 		super(rc);
@@ -11,8 +11,16 @@ public class GeneratorRobot extends BaseRobot {
 
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
-
+		try {
+			if (!hasCleanedUp) {
+				turnCounter++;
+				if (turnCounter >= cleanUpWait) {
+					cleanUp();
+				}
+			}
+		} catch(Exception e) {
+			
+		}
 	}
 
 }

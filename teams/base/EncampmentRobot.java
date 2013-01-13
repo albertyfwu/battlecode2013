@@ -5,19 +5,25 @@ import battlecode.common.RobotController;
 
 public abstract class EncampmentRobot extends BaseRobot{
 	
-	public boolean hasSentCompletion = false;
+	public boolean hasCleanedUp = false;
+	public int turnCounter = 0;
+	public ChannelType cleanUpChannel;
+	public int cleanUpWait = Constants.CLEAN_UP_WAIT_TIME;
 
 	public EncampmentRobot(RobotController rc) {
 		super(rc);
+		sendCompletionMessage();
+		
 		// TODO Auto-generated constructor stub
 	}
 	
 	public void sendCompletionMessage() {
-		EncampmentJobSystem.postCompletionMessage(rc.getLocation());
+		cleanUpChannel = EncampmentJobSystem.postCompletionMessage(rc.getLocation());
 	}
 	
-	public void cleanUp(ChannelType channel) {
-		EncampmentJobSystem.postCleanUp(channel);
+	public void cleanUp() {
+		EncampmentJobSystem.postCleanUp(cleanUpChannel);
+		hasCleanedUp = true;
 	}
 	
 	

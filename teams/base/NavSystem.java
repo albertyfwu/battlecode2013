@@ -6,6 +6,8 @@ import battlecode.common.GameConstants;
 import battlecode.common.MapLocation;
 import battlecode.common.Robot;
 import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
+import battlecode.common.RobotType;
 import battlecode.common.Team;
 import battlecode.common.Upgrade;
 
@@ -57,7 +59,7 @@ public class NavSystem {
 		} else {
 			mapSymmetry = MapSymmetry.ROTATIONAL;
 		}
-		System.out.println("Hello: " + mapSymmetry);
+//		System.out.println("Hello: " + mapSymmetry);
 	}
 	
 	/**
@@ -224,4 +226,164 @@ public class NavSystem {
 		}
 		return distanceSquared + (int)(0.83 * mineDelay * numMines);
 	}
+	
+	
+	/**
+	 * Moves to a square that is closer to the goal
+	 * returns true if was able to move, false otherwise
+	 * @param goalLoc
+	 * @return
+	 * @throws GameActionException
+	 */
+	public static boolean moveCloser(MapLocation goalLoc) throws GameActionException {
+		// first try to get closer
+		double distance = rc.getLocation().distanceSquaredTo(goalLoc);
+		moveloop: for (int i=0; i<8; i++) {
+			if (rc.canMove(Direction.values()[i])) {
+				MapLocation nextLoc = rc.getLocation().add(Direction.values()[i]);
+				if (nextLoc.distanceSquaredTo(goalLoc) < distance) {
+					rc.move(Direction.values()[i]);
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	/** 5 by 5 bffs
+	 * 
+	 * @param encArray
+	 * @param goalx
+	 * @param goaly
+	 * @return
+	 */
+	public static int[] runBFS(int[][] encArray, int goalx, int goaly) {
+		int[][] distanceArray = new int[encArray.length][encArray[0].length];
+		distanceArray[2][2] = 1;
+		for (int y = 0; y<5; y++) {
+			for (int x=0; x<5; x++) {
+				if (encArray[y][x] > 0) {
+					distanceArray[y][x] = -1;
+				}
+			}
+		}
+		
+		int currValue = 1;
+		
+		whileLoop: while(currValue < 25) {			
+			for (int y = 0; y<5; y++) {
+				for (int x=0; x<5; x++) {
+					if (distanceArray[y][x] == currValue) {
+						if (y == goaly && x == goalx) {
+							break whileLoop;
+						} else {
+							propagate(distanceArray, x, y, currValue + 1);
+						}
+					}
+				}
+			}
+			currValue++;
+		}
+		
+		int shortestDist = distanceArray[goaly][goalx] - 1;
+		int[] output = new int[shortestDist];
+		currValue = shortestDist;
+		int currx = goalx;
+		int curry = goaly;
+		int turn = 0;
+		
+		while(currValue > 1) {
+			int[][] neighbors = getNeighbors(currx, curry);
+			forloop: for (int[] neighbor: neighbors) {
+				int nx = neighbor[0];
+				int ny = neighbor[1];
+				if (ny < 5 && ny >= 0 && nx < 5 && nx >= 0) {
+					if (distanceArray[ny][nx] == currValue) {
+						turn = computeTurn(currx, curry, nx, ny);						
+						output[currValue-1] = turn;
+						currx = nx;
+						curry = ny;
+						currValue--;
+						break forloop;
+					}
+				}
+			}
+		}
+		output[0] = computeTurn(currx, curry, 2, 2);
+		return output;
+	}
+	
+	/**
+	 * given an array and a coordinate and a value, propagate value to the neighbors of the coordinate
+	 * @param distanceArray
+	 * @param y
+	 * @param x
+	 * @param value
+	 */
+	public static void propagate(int[][] distanceArray, int x, int y, int value) {
+		int[][] neighbors = getNeighbors(x,y);
+		for (int[] neighbor: neighbors) {
+			int ny = neighbor[1];
+			int nx = neighbor[0];
+			if (ny < 5 && ny >= 0 && nx < 5 && nx >= 0) {
+				if (distanceArray[ny][nx] > value || distanceArray[ny][nx] == 0) {
+					distanceArray[ny][nx] = value;
+					
+				}
+			}
+		}
+	}
+	
+	public static int[][] getNeighbors(int x, int y) {
+		int[][] output = {{x-1, y}, {x-1, y+1}, {x, y+1}, {x+1, y+1},{x+1, y}, {x+1, y-1}, {x, y-1}, {x-1, y-1}};
+		return output;
+	}
+	
+	public static int computeTurn(int x, int y, int nx, int ny) {
+		if (ny == y+1 && nx == x) {
+			return 0;
+		} else if (ny == y+1 && nx == x-1) {
+			return 1;
+		} else if (ny == y && nx == x-1) {
+			return 2;
+		} else if (ny == y-1 && nx == x-1) {
+			return 3;
+		} else if (ny == y-1 && nx == x) {
+			return 4;
+		} else if (ny == y-1 && nx == x+1) {
+			return 5;
+		} else if (ny == y && nx == x+1) {
+			return 6;
+		} else if (ny == y+1 && nx == x+1) {
+			return 7;
+		} else {
+			return 8;
+		}
+	}
+	
+	public static int[] locToIndex(MapLocation ref, MapLocation test,int offset){
+		int[] index = new int[2];
+		index[0] = test.y-ref.y+offset;
+		index[1] = test.x-ref.x+offset;
+		return index;
+	}
+	
+	public static int[][] populate5by5board() throws GameActionException{
+		
+		MapLocation myLoc=rc.getLocation();
+		int[][] array = new int[5][5];
+
+		Robot[] nearbyRobots = rc.senseNearbyGameObjects(Robot.class,8);
+//		rc.setIndicatorString(2, "number of bots: "+nearbyRobots.length);
+		for (Robot aRobot:nearbyRobots){
+			RobotInfo info = rc.senseRobotInfo(aRobot);
+			int[] index = locToIndex(myLoc,info.location,2);
+			if(index[0]>=0&&index[0]<=4&&index[1]>=0&&index[1]<=4){
+				if (info.type != RobotType.SOLDIER) {
+					array[index[0]][index[1]]=100;
+				}
+			}
+		}
+		return array;
+	}
+
 }

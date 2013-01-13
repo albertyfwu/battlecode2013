@@ -85,4 +85,13 @@ public class BroadcastSystem {
 		}
 		return channelNos;
 	}
+	
+	/**
+	 * Writes constant.MAX_MESSAGE into the channel
+	 * @param channelType
+	 */
+	public static void writeMaxMessage(ChannelType channelType) {
+		write(channelType, Constants.MAX_MESSAGE);
+	}
+
 }
