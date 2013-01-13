@@ -76,7 +76,6 @@ public class HQRobot extends BaseRobot {
 					updateJobs();
 					rc.spawn(dir);
 				}
-
 			}
 			
 			for (int i=0; i<3; i++) {
