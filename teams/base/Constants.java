@@ -10,7 +10,7 @@ public interface Constants {
 	
 	// how frequently we change the channels we use for broadcasting
 	// var = n means channel will cycle every n turns
-	public static final int CHANNEL_CYCLE = 10000;
+	public static final int CHANNEL_CYCLE = 13;
 	
 	public static final int MAX_MESSAGE = 0xFFFFFF;
 	
@@ -46,5 +46,9 @@ public interface Constants {
 	 */
 	public static final int INITIAL_NUM_ENCAMPMENTS_NEEDED = 3;
 	
-	public static final int CLEAN_UP_WAIT_TIME = 2;
+	/**
+	 * IMPORTANT: clean up time must exceed the number of turns it takes HQ to execute
+	 * run at the worst case
+	 */
+	public static final int CLEAN_UP_WAIT_TIME = 3; 
 }

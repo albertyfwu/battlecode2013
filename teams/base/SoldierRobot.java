@@ -57,30 +57,40 @@ public class SoldierRobot extends BaseRobot {
 			currentLocation = rc.getLocation();
 
 			if (unassigned && rc.isActive()) {
-				if (NavSystem.navMode == NavMode.NEUTRAL) {
-					NavSystem.setupBackdoorNav(NavSystem.enemyHQLocation);
-					NavSystem.followWaypoints();
-				} else {
-					NavSystem.followWaypoints();
-				}
+//				if (NavSystem.navMode == NavMode.NEUTRAL) {
+//					NavSystem.setupBackdoorNav(new MapLocation(20, 20));
+//					NavSystem.followWaypoints();
+//				} else {
+//					NavSystem.followWaypoints();
+//				}
+				
+				NavSystem.goToLocation(new MapLocation(20, 20));
 			} else { // is assigned to an encampment job
-				EncampmentJobSystem.updateJobTaken(assignedChannel);
+				if (!unassigned) { // if assigned to something
+					EncampmentJobSystem.updateJobTaken(assignedChannel);
+				}
 				if (rc.isActive()) {
 					if (rc.senseEncampmentSquare(currentLocation) && currentLocation.equals(goalLoc)) {
 						rc.captureEncampment(RobotType.GENERATOR);
 					} else {
 						if (BFSMode) {
-//							System.out.println("Direction: " + BFSTurns[BFSRound]);
-							Direction dir = Direction.values()[BFSTurns[BFSRound]];
-							if (rc.canMove(dir)) {
-								rc.move(dir);
-								BFSRound++;
+							if (BFSIdle >= 50) { // if idle for 50 turns or more
+								BFSMode = false;
 							} else {
-								BFSIdle++;
+								System.out.println("Direction: " + BFSTurns[BFSRound]);
+								Direction dir = Direction.values()[BFSTurns[BFSRound]];
+								if (rc.canMove(dir)) {
+									rc.move(dir);
+									BFSRound++;
+								} else {
+									BFSIdle++;
+								}
 							}
+							
 							
 						} else if (rc.getLocation().distanceSquaredTo(goalLoc) <= 8) {
 							// first try to get closer
+							BFSIdle = 0;
 							boolean moved = NavSystem.moveCloser(goalLoc);
 							System.out.println("moved: " + moved);
 							if (moved == false) {
@@ -109,7 +119,9 @@ public class SoldierRobot extends BaseRobot {
 
 			
 		} catch (Exception e) {
-			// Deal with exception
+			System.out.println("caught exception before it killed us:");
+			System.out.println(rc.getRobot().getID());
+			e.printStackTrace();
 		}
 	}
 	

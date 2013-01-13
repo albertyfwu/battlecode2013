@@ -7,6 +7,17 @@ import battlecode.common.MapLocation;
 import battlecode.common.Robot;
 import battlecode.common.RobotController;
 
+/**
+ * TODO: make the HQ update every cycle call, but have a modified update
+ * where we check the previous cycle's channels to see if any jobs weren't taken
+ * 
+ * if any jobs were not taken, then copy the message over to the new channels
+ * 
+ * Also check whether or not this repair fixes the other issue with the 
+ * completion channel half of this problem. Previous solution was to update every time it spawns.
+ * @author asdfryan
+ *
+ */
 public class EncampmentJobSystem {
 	public static BaseRobot robot;
 	public static RobotController rc;
