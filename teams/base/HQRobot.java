@@ -1,13 +1,19 @@
 package base;
 
+import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
+import battlecode.common.Team;
 
 public class HQRobot extends BaseRobot {
 	
-	public MapLocation[] encampmentJobs;
+	// these two arrays must have bijective correspondence
+	// the job associated with encampmentJobs[i] must always write to channelList[i] for each i
+	public MapLocation[] encampmentJobs = new MapLocation[EncampmentJobSystem.maxEncampmentJobs]; // length is constant
+	public ChannelType[] encampmentChannels = new ChannelType[EncampmentJobSystem.maxEncampmentJobs]; // length is constant
+	
 	public int numEncampmentsNeeded; // must be less than encampmentJobChannelList.length
 	public MapLocation HQLocation;
 	public MapLocation EnemyHQLocation;
@@ -23,13 +29,41 @@ public class HQRobot extends BaseRobot {
 			numEncampmentsNeeded = allEncampments.length;
 		}
 		
-		encampmentJobs = getClosestMapLocations(HQLocation, allEncampments, numEncampmentsNeeded);
+		MapLocation[] closestEncampments = getClosestMapLocations(HQLocation, allEncampments, numEncampmentsNeeded);
+		
+		for (int i=0; i<numEncampmentsNeeded; i++) {
+			// save in list of jobs
+			encampmentJobs[i] = closestEncampments[i];
+			
+			// broadcast job opening
+			encampmentChannels[i] = EncampmentJobSystem.encampmentJobChannelList[i];
+			EncampmentJobSystem.postJob(encampmentChannels[i], encampmentJobs[i]);
+		}
+
 	}
 
 	@Override
 	public void run() {
 		try {
-			
+			if (Clock.getRoundNum() > 200) {
+				rc.resign();
+			}
+//			if (message.isValid) {
+//				if (message.body == 0xFFFFFF) {
+//					System.out.println("HQ 0xFFFFFF");
+//				} else {
+//					int locY = message.body & 0xFF;
+//					int locX = message.body >> 8;
+//					System.out.println("HQ locy: " + locY + " locx: " + locX);
+//				}
+//			}
+			updateJobsAfterChecking();
+
+//			if (Clock.getRoundNum() % 10 == 0) {
+//				updateJobs();
+//			} else {
+//			}
+
 			// Spawn a soldier
 			Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
 			if (rc.canMove(dir)) {
@@ -85,6 +119,106 @@ public class HQRobot extends BaseRobot {
 		}
 	}
 	
+	
+	/**
+	 * checks nearby encampments to see if jobs need to be changed
+	 * @throws GameActionException
+	 */
+	public void updateJobs() throws GameActionException {
+		System.out.println("Before update: " + Clock.getBytecodeNum());
+		MapLocation[] neutralEncampments = rc.senseEncampmentSquares(HQLocation,100000, Team.NEUTRAL);
+		if (numEncampmentsNeeded > neutralEncampments.length){
+			numEncampmentsNeeded = neutralEncampments.length;
+		}
+		
+		MapLocation[] newJobsList = getClosestMapLocations(HQLocation, neutralEncampments, numEncampmentsNeeded);
+		System.out.println("new jobs list: " + Clock.getBytecodeNum());
+
+		ChannelType[] channelList = assignChannels(newJobsList, encampmentJobs, encampmentChannels);
+	
+		for (int i=0; i<numEncampmentsNeeded; i++) { // update lists
+			encampmentJobs[i] = newJobsList[i];
+			encampmentChannels[i] = channelList[i];
+		}			
+		
+		System.out.println("update lists: " + Clock.getBytecodeNum());
+
+		// clear unused channels
+		for (ChannelType channel: EncampmentJobSystem.encampmentJobChannelList) {
+			if (arrayIndex(channel, encampmentChannels) == -1) { // if unused
+				BroadcastSystem.writeMaxMessage(channel); // reset the channel
+			}
+		}
+		System.out.println("After update: " + Clock.getRoundNum());
+	}
+	/**
+	 * HQ uses this to check if any jobs are completed, and then updates new jobs
+	 * @throws GameActionException
+	 */
+	public void updateJobsAfterChecking() throws GameActionException {
+		MapLocation[] completedJobs = EncampmentJobSystem.checkAllCompletion();
+		int numNonNull = completedJobs[completedJobs.length-1].x;
+		if (numNonNull > 0) { // if it contains non-null elements
+			updateJobs();
+		}
+		
+	}
+	
+	public static ChannelType[] assignChannels(MapLocation[] newJobsList, MapLocation[] oldJobsList, ChannelType[] oldChannelsList) {
+		ChannelType[] channelList = new ChannelType[EncampmentJobSystem.maxEncampmentJobs];
+		
+		int arrayIndices[] = new int[newJobsList.length];
+		
+		for (int i=0; i<newJobsList.length; i++) {
+			arrayIndices[i] = arrayIndex(newJobsList[i], oldJobsList);
+		}
+		
+			
+		int channelIndex = -1;
+		// keep old channels for non-new jobs
+		for (int i=0; i<newJobsList.length; i++) {
+			if (arrayIndices[i] != -1 && newJobsList[i] != null) { // if the job is not new, keep the same channel
+				channelList[i] = oldChannelsList[arrayIndices[i]];
+			}
+		}
+		
+		// allocate unused channels for new jobs
+		for (int i=0; i<newJobsList.length; i++) {
+			if (arrayIndices[i] == -1 && newJobsList[i] != null) {
+				channelLoop: for (ChannelType channel: EncampmentJobSystem.encampmentJobChannelList) {
+					channelIndex = arrayIndex(channel, channelList);
+					if (channelIndex == -1) { // if not already used, use it and post job
+						channelList[i] = channel;
+						EncampmentJobSystem.postJob(channel, newJobsList[i]);
+						break channelLoop;
+					}
+				}
+			}
+		}
+		return channelList;
+	}
+	
+	/** 
+	 * returns index of element e in array
+	 * @param e
+	 * @param array
+	 * @return
+	 */
+	public static int arrayIndex(Object e, Object[] array) {
+		if (e == null) {
+			return -1;
+		}
+		
+		for (int i = 0; i<array.length; i++) {
+			if (array[i] != null) {
+				if (array[i].equals(e)) {
+					return i;
+				}
+			}
+		}
+		return -1;
+	}
+	
 	/**
 	 * Finds array of closest MapLocations to rc.getLocation()
 	 * in decreasing order
@@ -127,24 +261,26 @@ public class HQRobot extends BaseRobot {
 		return currentTopLocations;
 	}
 	
-//	public static void main(String[] arg0) {
-//		MapLocation origin = new MapLocation(0,0);
-//		
-//		MapLocation test1 = new MapLocation(5,0);
-//		MapLocation test2 = new MapLocation(4,1);
-//		MapLocation test3 = new MapLocation(3,2);
-//		MapLocation test4 = new MapLocation(1,3);
-//		MapLocation test5 = new MapLocation(6,2);
-//		MapLocation test6 = new MapLocation(0,5);
-//		MapLocation test7 = new MapLocation(2,3);
-//		
-//		MapLocation[] allLoc = {test1, test2, test3, test4, test5, test6, test7};
-//		
-//		MapLocation[] results = getClosestMapLocations(origin, allLoc, 5);
-//		
-//		for (int i=0; i<results.length; i++) {
-//			System.out.println("result " + i + ": " + results[i]);
-//		}
-//		
-//	}
+	public static void main(String[] arg0) {
+		MapLocation origin = new MapLocation(0,0);
+		
+		MapLocation test1 = new MapLocation(5,0);
+		MapLocation test2 = new MapLocation(4,1);
+		MapLocation test3 = new MapLocation(3,2);
+		MapLocation test4 = new MapLocation(1,3);
+		MapLocation test5 = new MapLocation(6,2);
+		MapLocation test6 = new MapLocation(0,5);
+		MapLocation test7 = new MapLocation(2,3);
+		
+		MapLocation[] oldJobsList = {test1, test2, test3, test4, null};
+		MapLocation[] newJobsList = {test2, test4, test5, null, null};
+		ChannelType[] oldChannelsList = {ChannelType.ENC1, ChannelType.ENC2, ChannelType.ENC3, ChannelType.ENC4, ChannelType.ENC5};
+		
+		ChannelType[] newChannelsList = assignChannels(newJobsList, oldJobsList, oldChannelsList);
+		
+		for (int i=0; i<newChannelsList.length; i++) {
+			System.out.println("result " + i + ": " + newChannelsList[i]);
+		}
+		
+	}
 }

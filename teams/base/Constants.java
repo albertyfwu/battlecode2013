@@ -10,7 +10,9 @@ public interface Constants {
 	
 	// how frequently we change the channels we use for broadcasting
 	// var = n means channel will cycle every n turns
-	public static final int CHANNEL_CYCLE = 10;
+	public static final int CHANNEL_CYCLE = 10000;
+	
+	public static final int MAX_MESSAGE = 0xFFFFFF;
 	
 	/**
 	 * All Waypoints
@@ -43,4 +45,6 @@ public interface Constants {
 	 * Encampments
 	 */
 	public static final int INITIAL_NUM_ENCAMPMENTS_NEEDED = 3;
+	
+	public static final int CLEAN_UP_WAIT_TIME = 2;
 }
