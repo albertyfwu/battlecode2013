@@ -10,11 +10,10 @@ import battlecode.common.RobotController;
 import battlecode.common.RobotType;
 
 public class SoldierRobot extends BaseRobot {
-
-	public Platoon platoon = null;
+	
+	public Platoon platoon;
 	public boolean calculatedPath = false;
 	
-	// TODO: Testing
 	public ArrayList<MapLocation> wayPoints;
 	public int wayPointsSize;
 	public int wayPointsIndex;
@@ -59,22 +58,12 @@ public class SoldierRobot extends BaseRobot {
 			currentLocation = rc.getLocation();
 
 			if (unassigned && rc.isActive()) {
-				if (NavSystem.followingWaypoint) {
-					NavSystem.followWaypoint();
-//					rc.setIndicatorString(0, "following");
+				if (NavSystem.navMode == NavMode.NEUTRAL) {
+					NavSystem.setupBackdoorNav(NavSystem.enemyHQLocation);
+					NavSystem.followWaypoints();
 				} else {
-					// do other stuff
-					MapLocation end = rc.senseEnemyHQLocation();
-//					NavSystem.calculateSmartWaypoint(end);
-					NavSystem.calculateBackdoorWaypoint(end);
-					NavSystem.followWaypoint();
-//					rc.setIndicatorString(0, "not following");
+					NavSystem.followWaypoints();
 				}
-//				
-//				Message message = BroadcastSystem.read(ChannelType.CHANNEL1);
-//				if (message.isValid){
-//					rc.setIndicatorString(0, Integer.toString(message.body));
-//				}
 			} else { // is assigned to an encampment job
 				EncampmentJobSystem.updateJobTaken(assignedChannel);
 				if (rc.isActive()) {
@@ -119,6 +108,7 @@ public class SoldierRobot extends BaseRobot {
 			
 			
 
+			
 		} catch (Exception e) {
 			// Deal with exception
 		}
