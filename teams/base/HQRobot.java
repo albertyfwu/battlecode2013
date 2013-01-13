@@ -66,7 +66,7 @@ public class HQRobot extends BaseRobot {
 
 			// Spawn a soldier
 			Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
-			if (rc.canMove(dir)) {
+			if (rc.isActive() && rc.canMove(dir)) {
 				rc.spawn(dir);
 			}
 			
@@ -107,7 +107,7 @@ public class HQRobot extends BaseRobot {
 //				}
 //			}
 		} catch (Exception e) {
-			//
+			e.printStackTrace();
 		}
 	}
 	

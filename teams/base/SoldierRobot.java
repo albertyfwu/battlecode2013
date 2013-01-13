@@ -110,6 +110,7 @@ public class SoldierRobot extends BaseRobot {
 			
 		} catch (Exception e) {
 			// Deal with exception
+			e.printStackTrace();
 		}
 	}
 	

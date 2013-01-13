@@ -33,11 +33,6 @@ public class RobotPlayer {
 			default:
 				break;
 			}
-		} catch (Exception e) {
-			//
-		}
-		
-		try {
 			robot.loop();
 		} catch (Exception e) {
 			e.printStackTrace();

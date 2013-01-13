@@ -46,7 +46,7 @@ public class NavSystem {
 		if (robotID % 4 == 0 || robotID % 4 == 1) {
 			directionOffsets = new int[]{0,1,-1,2,-2};
 		} else {
-			directionOffsets = new int[]{0, -1,1,-2,2};
+			directionOffsets = new int[]{0,-1,1,-2,2};
 		}
 		
 		// Get locations of our HQ and enemy HQ
