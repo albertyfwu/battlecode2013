@@ -8,7 +8,6 @@ import battlecode.common.RobotController;
 public class SoldierRobot extends BaseRobot {
 	
 	public Platoon platoon;
-	public boolean calculatedPath = false;
 	
 	public ArrayList<MapLocation> wayPoints;
 	public int wayPointsSize;
