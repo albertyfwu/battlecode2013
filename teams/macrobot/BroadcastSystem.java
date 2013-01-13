@@ -44,6 +44,21 @@ public class BroadcastSystem {
 		return result;
 	}
 	
+	public static int[] getChannelNosLastCycle(ChannelType channelType, int teamID) {
+		int[] result = new int[TeamConstants.REDUNDANT_CHANNELS];
+		int roundNum = Clock.getRoundNum() - 1;
+		int mod = GameConstants.BROADCAST_MAX_CHANNELS / ChannelType.size;
+		int bigOffset = channelType.ordinal() * mod;
+		for (int i = 0; i < TeamConstants.REDUNDANT_CHANNELS; i++) {
+			int offset = (((channelType.hashCode() * i) ^ (roundNum / (GameConstants.ROUND_MAX_LIMIT / TeamConstants.CHANNEL_CYCLE_FREQ))) + teamID) % mod;
+			if (offset < 0) {
+				offset += mod;
+			}
+			result[i] = offset + bigOffset;
+		}
+		return result;
+	}
+	
 	// For debugging
 	public static void main(String[] args) {
 		System.out.println("bye");
