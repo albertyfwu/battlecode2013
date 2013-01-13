@@ -9,10 +9,6 @@ public abstract class BaseRobot {
 	public RobotController rc;
 	public int id;
 	
-	// Round variables
-	int currentRound;
-	MapLocation currentLocation;
-	
 	// Default constructor
 	public BaseRobot(RobotController myRC) {
 		rc = myRC;
@@ -28,7 +24,7 @@ public abstract class BaseRobot {
 	public void loop() {
 		while (true) {
 			try {
-				updateRoundVariables();
+//				updateRoundVariables();
 				run();
 			} catch (Exception e) {
 				// Deal with exception
@@ -38,10 +34,8 @@ public abstract class BaseRobot {
 	}
 	
 	/**
-	 * Updates round variables that we shouldn't call over and over again
+	 * Updates round variables
 	 */
 	public void updateRoundVariables() {
-		currentRound = Clock.getRoundNum();
-		currentLocation = rc.getLocation();
 	}
 }
