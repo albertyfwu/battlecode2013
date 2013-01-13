@@ -37,12 +37,10 @@ public class RobotPlayer {
 			//
 		}
 		
-		while (true) {
-			try {
-				robot.loop();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+		try {
+			robot.loop();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 }
