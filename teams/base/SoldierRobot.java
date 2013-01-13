@@ -25,7 +25,7 @@ public class SoldierRobot extends BaseRobot {
 	public void run() {
 		try {
 			if (NavSystem.navMode == NavMode.NEUTRAL) {
-				NavSystem.setupSmartNav(NavSystem.enemyHQLocation);
+				NavSystem.setupBackdoorNav(NavSystem.enemyHQLocation);
 				NavSystem.followWaypoints();
 			} else {
 				NavSystem.followWaypoints();

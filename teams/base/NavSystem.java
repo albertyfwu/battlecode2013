@@ -15,10 +15,14 @@ public class NavSystem {
 	public static RobotController rc;
 	public static int[] directionOffsets;
 	
+	// Used by both smart and backdoor nav
 	public static MapLocation currentWaypoint;
-	
 	public static NavMode navMode = NavMode.NEUTRAL;
 	public static MapLocation destination;
+	
+	// Used to store the waypoints of a backdoor nav computation
+	public static MapLocation[] backdoorWaypoints; // Should always have four MapLocations
+	public static int backdoorWaypointsIndex;
 	
 	public static MapLocation HQLocation;
 	public static MapLocation enemyHQLocation;
@@ -128,19 +132,19 @@ public class NavSystem {
 	 */
 	public static void followWaypoints() throws GameActionException {
 		// If we're close to currentWaypoint, find the next one
-		if (rc.getLocation().distanceSquaredTo(destination) <= 5) {
+		if (rc.getLocation().distanceSquaredTo(destination) <= Constants.WAYPOINT_SQUARED_DISTANCE_CHECK) {
 			// Stop nav-ing?
 			navMode = NavMode.NEUTRAL;
 			// We're done following waypoints
 			goToLocation(destination);
-		} else if (rc.getLocation().distanceSquaredTo(currentWaypoint) <= 5){
+		} else if (rc.getLocation().distanceSquaredTo(currentWaypoint) <= Constants.WAYPOINT_SQUARED_DISTANCE_CHECK){
 			// We're close to currentWaypoint, so find the next one
 			switch (navMode) {
 			case SMART:
-				calculateSmartWaypoint();
+				getSmartWaypoint();
 				break;
 			case BACKDOOR:
-				calculateBackdoorWaypoint();
+				getBackdoorWaypoint();
 				break;
 			default:
 				break;
@@ -160,8 +164,66 @@ public class NavSystem {
 	public static void setupBackdoorNav(MapLocation endLocation) throws GameActionException {
 		navMode = NavMode.BACKDOOR;
 		destination = endLocation;
-		// TODO: Calculate all the waypoints first and save them (this is different from smart nav)
-		calculateBackdoorWaypoint();
+		// Calculate all the waypoints first and save them (this is different from smart nav)
+		MapLocation currentLocation = rc.getLocation();
+		Direction dirToEndLocation = currentLocation.directionTo(endLocation);
+		// How close are we to the wall?
+		int horzDistanceToWall = mapWidth / 2 - Math.abs(endLocation.x - mapCenter.x);
+		int vertDistanceToWall = mapHeight / 2 - Math.abs(endLocation.y - mapCenter.y);
+		int distanceToWall = (int)(0.8 * Math.min(horzDistanceToWall, vertDistanceToWall));
+		MapLocation firstWaypoint = currentLocation.add(dirToEndLocation, -distanceToWall);
+		MapLocation lastWaypoint = endLocation.add(dirToEndLocation, distanceToWall);
+		backdoorWaypoints = new MapLocation[]{firstWaypoint, null, null, lastWaypoint};
+		// Now let's try to find some intermediate waypoints to follow
+		// Let's see if we should move horizontally first or vertically first
+		int dx = endLocation.x - currentLocation.x;
+		int dy = endLocation.y - currentLocation.y;
+		if (Math.abs(dx) > Math.abs(dy)) {
+			// We're vertically really close, but not horizontally, so move vertically first
+			if (Util.Random() < 0.5) {
+				// Try moving up, then horizontally, then down to endLocation
+				backdoorWaypoints[1] = new MapLocation(currentLocation.x, Constants.BACKDOOR_WALL_BUFFER);
+				// We need to know if endLocation is closer to the left wall or the right wall
+				if (endLocation.x < mapWidth - endLocation.x) { // left wall
+					backdoorWaypoints[2] = new MapLocation(Constants.BACKDOOR_WALL_BUFFER, Constants.BACKDOOR_WALL_BUFFER);
+				} else { // right wall
+					backdoorWaypoints[2] = new MapLocation(mapWidth - Constants.BACKDOOR_WALL_BUFFER, Constants.BACKDOOR_WALL_BUFFER);
+				}
+			} else {
+				// Try moving down, then horizontally, then up to endLocation
+				backdoorWaypoints[1] = new MapLocation(currentLocation.x, mapHeight - Constants.BACKDOOR_WALL_BUFFER);
+				// We need to know if endLocation is closer to the left wall or the right wall
+				if (endLocation.x < mapWidth - endLocation.x) { // left wall
+					backdoorWaypoints[2] = new MapLocation(Constants.BACKDOOR_WALL_BUFFER, mapHeight - Constants.BACKDOOR_WALL_BUFFER);
+				} else { // right wall
+					backdoorWaypoints[2] = new MapLocation(mapWidth - Constants.BACKDOOR_WALL_BUFFER, mapHeight - Constants.BACKDOOR_WALL_BUFFER);
+				}
+			}
+		} else {
+			// We're horizontally really close, but not vertically, so move horizontally first
+			if (Util.Random() < 0.5) {
+				// Try moving left, then vertically, then right to endLocation
+				backdoorWaypoints[1] = new MapLocation(Constants.BACKDOOR_WALL_BUFFER, currentLocation.y);
+				// We need to know if endLocation is closer to the top wall or the bottom wall
+				if (endLocation.y < mapHeight - endLocation.y) { // top wall
+					backdoorWaypoints[2] = new MapLocation(Constants.BACKDOOR_WALL_BUFFER, Constants.BACKDOOR_WALL_BUFFER);
+				} else { // bottom wall
+					backdoorWaypoints[2] = new MapLocation(Constants.BACKDOOR_WALL_BUFFER, mapHeight - Constants.BACKDOOR_WALL_BUFFER);
+				}
+			} else {
+				// Try moving right, then vertically, then left to endLocation
+				backdoorWaypoints[1] = new MapLocation(mapWidth - Constants.BACKDOOR_WALL_BUFFER, currentLocation.y);
+				// We need to know if endLocation is closer to the top wall or the bottom wall
+				if (endLocation.y < mapHeight - endLocation.y) { // top wall
+					backdoorWaypoints[2] = new MapLocation(mapWidth - Constants.BACKDOOR_WALL_BUFFER, Constants.BACKDOOR_WALL_BUFFER);
+				} else { // bottom wall
+					backdoorWaypoints[2] = new MapLocation(mapWidth - Constants.BACKDOOR_WALL_BUFFER, mapHeight - Constants.BACKDOOR_WALL_BUFFER);
+				}
+			}
+		}
+		// Upon calling getBackdoorWaypoint(), backdoorWaypointsIndex will be incremented by 1
+		backdoorWaypointsIndex = -1;
+		getBackdoorWaypoint();
 	}
 	
 	/**
@@ -173,22 +235,28 @@ public class NavSystem {
 	public static void setupSmartNav(MapLocation endLocation) throws GameActionException {
 		navMode = NavMode.SMART;
 		destination = endLocation;
-		calculateSmartWaypoint();
+		getSmartWaypoint();
 	}
 	
 	/**
 	 * Gets the next backdoor waypoint that was calculated when setupBackdoorNav() was called.
 	 * @throws GameActionException
 	 */
-	public static void calculateBackdoorWaypoint() throws GameActionException {
-		//
+	public static void getBackdoorWaypoint() throws GameActionException {
+		if (backdoorWaypointsIndex == backdoorWaypoints.length - 1){
+			// We're at the last waypoint, so just go straight to the destination
+			currentWaypoint = destination;
+		} else {
+			// Get the next waypoint
+			currentWaypoint = backdoorWaypoints[++backdoorWaypointsIndex];
+		}
 	}
 	
 	/**
 	 * Calculates the next smart waypoint to take and writes it to currentWaypoint.
 	 * @throws GameActionException
 	 */
-	public static void calculateSmartWaypoint() throws GameActionException {
+	public static void getSmartWaypoint() throws GameActionException {
 		MapLocation currentLocation = rc.getLocation();
 		if (currentLocation.distanceSquaredTo(destination) <= Constants.PATH_GO_ALL_IN_SQ_RADIUS) {
 			// If we're already really close to the destination, just go straight in

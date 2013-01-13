@@ -13,6 +13,13 @@ public interface Constants {
 	public static final int CHANNEL_CYCLE = 10;
 	
 	/**
+	 * All Waypoints
+	 */
+	
+	// The squared distance away from a waypoint at which we can safely go onto the next waypoint
+	public static final int WAYPOINT_SQUARED_DISTANCE_CHECK = 2;
+	
+	/**
 	 * Smart Waypoints
 	 */
 	
@@ -24,6 +31,13 @@ public interface Constants {
 	
 	// The squared radius distance at which we stop over-valuing mines, and just go straight for the endLocation
 	public static final int PATH_GO_ALL_IN_SQ_RADIUS = 64;
+	
+	/**
+	 * Backdoor Waypoints
+	 */
+	
+	// How close we should be to the wall while doing a backdoor navigation
+	public static final int BACKDOOR_WALL_BUFFER = 1;
 	
 	/**
 	 * Encampments
