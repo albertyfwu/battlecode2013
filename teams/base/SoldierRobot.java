@@ -26,11 +26,8 @@ public class SoldierRobot extends BaseRobot {
 	public MapLocation goalLoc;
 	
 	public MapLocation currentLocation;
+
 	
-	private static boolean BFSMode = false;
-	private static int BFSRound = 0;
-	private static int[] BFSTurns;
-	private static int BFSIdle = 0;
 	
 	
 
@@ -71,6 +68,7 @@ public class SoldierRobot extends BaseRobot {
 //					mineInCircle();
 //				}
 				
+			}
 //			} else {
 ////				if (NavSystem.navMode == NavMode.NEUTRAL) {
 ////					NavSystem.setupSmartNav(rc.senseEnemyHQLocation());
@@ -82,6 +80,18 @@ public class SoldierRobot extends BaseRobot {
 //				if (rc.getLocation().x == 10 && rc.getLocation().y == 10) {
 //					rc.suicide();
 //				}
+			
+			currentLocation = rc.getLocation();
+			
+			if (unassigned && rc.isActive()) {
+				if (NavSystem.navMode == NavMode.NEUTRAL) {
+					NavSystem.setupSmartNav(new MapLocation(10, 10));
+				}
+				NavSystem.followWaypoints();
+			
+				if (rc.getLocation().x == 10 && rc.getLocation().y == 10) {
+					rc.suicide();
+				}
 			} else { // is assigned to an encampment job
 				if (!unassigned) { // if assigned to something
 					EncampmentJobSystem.updateJobTaken(assignedChannel);
@@ -90,128 +100,28 @@ public class SoldierRobot extends BaseRobot {
 					if (rc.senseEncampmentSquare(currentLocation) && currentLocation.equals(goalLoc)) {
 						rc.captureEncampment(RobotType.GENERATOR);
 					} else {
-						if (BFSMode) {
-							if (BFSIdle >= 50) { // if idle for 50 turns or more
-								BFSMode = false;
-							} else {
-								System.out.println("Direction: " + BFSTurns[BFSRound]);
-								Direction dir = Direction.values()[BFSTurns[BFSRound]];
-								boolean hasMoved = NavSystem.moveOrDefuse(dir);
-								if (hasMoved) {
-									BFSRound++;
-								} else {
-									BFSIdle++;
-								}
-							}
-							
-							
+						if (NavSystem.navMode == NavMode.BFSMODE) {
+							NavSystem.tryBFSNextTurn();
+						} else if (NavSystem.navMode == NavMode.GETCLOSER){
+							NavSystem.tryMoveCloser();
 						} else if (rc.getLocation().distanceSquaredTo(goalLoc) <= 8) {
-							// first try to get closer
-							BFSIdle = 0;
-							boolean moved = NavSystem.moveCloser(goalLoc);
-							System.out.println("moved: " + moved);
-							if (moved == false) {
-//								System.out.println("goalLoc.x: " + goalLoc.x);
-//								System.out.println("goalLoc.y: " + goalLoc.y);
-								
-								
-								BFSMode = true;
-								int[][] encArray = NavSystem.populate5by5board();
-								int[] goalCoord = NavSystem.locToIndex(rc.getLocation(), goalLoc, 2);
-								BFSRound = 0;
-								BFSTurns = NavSystem.runBFS(encArray, goalCoord[1], goalCoord[0]);
-								System.out.println("BFSTurns :" + BFSTurns.length);
-								if (BFSTurns.length == 0) { // if unreachable, tell to HQ and unassign himself
-									EncampmentJobSystem.postUnreachableMessage(goalLoc);
-									unassigned = true;
-								}
-								
-								
-							}
+							NavSystem.setupGetCloser(goalLoc);
+							NavSystem.tryMoveCloser();
 						} else {
-//							NavSystem.goToLocation(goalLoc);
-							if (NavSystem.navMode == NavMode.NEUTRAL){
-								NavSystem.setupSmartNav(goalLoc);
-								NavSystem.followWaypoints();
-							} else {
-								NavSystem.followWaypoints();
-							}
+							NavSystem.goToLocation(goalLoc);
+//							if (NavSystem.navMode == NavMode.NEUTRAL){
+//								NavSystem.setupSmartNav(goalLoc);
+//								NavSystem.followWaypoints();
+//							} else {
+//								NavSystem.followWaypoints();
+//							}
 						}
 							
 					}
 					
 				}
 			}
-			
-			
-//			if (NavSystem.navMode == NavMode.NEUTRAL) {
-//				NavSystem.setupSmartNav(new MapLocation(29, 27));
-//				NavSystem.followWaypoints();
-//			} else {
-//				NavSystem.followWaypoints();
-//			}
-				
-//			currentLocation = rc.getLocation();
-//
-//			if (unassigned && rc.isActive()) {
-////				if (NavSystem.navMode == NavMode.NEUTRAL) {
-////					NavSystem.setupBackdoorNav(new MapLocation(20, 20));
-////					NavSystem.followWaypoints();
-////				} else {
-////					NavSystem.followWaypoints();
-////				}
-//				
-//				NavSystem.goToLocation(new MapLocation(20, 20));
-//			} else { // is assigned to an encampment job
-//				if (!unassigned) { // if assigned to something
-//					EncampmentJobSystem.updateJobTaken(assignedChannel);
-//				}
-//				if (rc.isActive()) {
-//					if (rc.senseEncampmentSquare(currentLocation) && currentLocation.equals(goalLoc)) {
-//						rc.captureEncampment(RobotType.GENERATOR);
-//					} else {
-//						if (BFSMode) {
-//							if (BFSIdle >= 50) { // if idle for 50 turns or more
-//								BFSMode = false;
-//							} else {
-//								System.out.println("Direction: " + BFSTurns[BFSRound]);
-//								Direction dir = Direction.values()[BFSTurns[BFSRound]];
-//								if (rc.canMove(dir)) {
-//									rc.move(dir);
-//									BFSRound++;
-//								} else {
-//									BFSIdle++;
-//								}
-//							}
-//							
-//							
-//						} else if (rc.getLocation().distanceSquaredTo(goalLoc) <= 8) {
-//							// first try to get closer
-//							BFSIdle = 0;
-//							boolean moved = NavSystem.moveCloser(goalLoc);
-//							System.out.println("moved: " + moved);
-//							if (moved == false) {
-////								System.out.println("goalLoc.x: " + goalLoc.x);
-////								System.out.println("goalLoc.y: " + goalLoc.y);
-//								
-//								
-//								BFSMode = true;
-//								int[][] encArray = NavSystem.populate5by5board();
-//								int[] goalCoord = NavSystem.locToIndex(rc.getLocation(), goalLoc, 2);
-//								BFSTurns = NavSystem.runBFS(encArray, goalCoord[1], goalCoord[0]);
-//								BFSRound = 0;
-//								
-//								print2Darray(encArray);
-//							}
-//						} else {
-//							NavSystem.goToLocation(goalLoc);
-//						}
-//					}
-//					
-//				}
-//				
-//			}
-			
+						
 			
 		} catch (Exception e) {
 			System.out.println("caught exception before it killed us:");
