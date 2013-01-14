@@ -60,12 +60,16 @@ public class SoldierRobot extends BaseRobot {
 	public void run() {
 		try {
 			if (Clock.getRoundNum() < 2500) {
-				if (soldierState != SoldierState.MINING_IN_CIRCLE) {
-					setupCircleMining(new MapLocation(15, 27), 10);
+				if (NavSystem.navMode == NavMode.NEUTRAL) {
+					NavSystem.setupSmartNav(rc.senseEnemyHQLocation());
 				}
-				if (rc.isActive()) {
-					mineInCircle();
-				}
+				NavSystem.followWaypoints();
+//				if (soldierState != SoldierState.MINING_IN_CIRCLE) {
+//					setupCircleMining(new MapLocation(15, 27), 10);
+//				}
+//				if (rc.isActive()) {
+//					mineInCircle();
+//				}
 				
 //			} else {
 ////				if (NavSystem.navMode == NavMode.NEUTRAL) {

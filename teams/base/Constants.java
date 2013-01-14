@@ -26,7 +26,7 @@ public interface Constants {
 	 */
 	
 	// How far off we should look each time we need to calculate a new waypoint
-	public static final int PATH_OFFSET_RADIUS = 3;
+	public static final int PATH_OFFSET_RADIUS = 4;
 	
 	// How large of a circle we should be checking each time we calculate a new waypoint
 	public static final int PATH_CHECK_RADIUS = 3;

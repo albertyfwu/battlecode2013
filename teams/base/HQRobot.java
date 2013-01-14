@@ -57,11 +57,15 @@ public class HQRobot extends BaseRobot {
 				//				} else {
 				//				}
 
-				// Spawn a soldier
-				Direction desiredDir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
-				Direction dir = getSpawnDirection(rc, desiredDir);
-				if (dir != null) {
-					EncampmentJobSystem.updateJobs();
+//				// Spawn a soldier
+//				Direction desiredDir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
+//				Direction dir = getSpawnDirection(rc, desiredDir);
+//				if (dir != null) {
+//					EncampmentJobSystem.updateJobs();
+//					rc.spawn(dir);
+//				}
+				if (Clock.getRoundNum() < 5) {
+					Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
 					rc.spawn(dir);
 				}
 			}
