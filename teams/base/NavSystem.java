@@ -221,16 +221,16 @@ public class NavSystem {
 				if (endLocation.x < mapWidth - endLocation.x) { // left wall
 					backdoorWaypoints[2] = new MapLocation(Constants.BACKDOOR_WALL_BUFFER, Constants.BACKDOOR_WALL_BUFFER);
 				} else { // right wall
-					backdoorWaypoints[2] = new MapLocation(mapWidth - Constants.BACKDOOR_WALL_BUFFER, Constants.BACKDOOR_WALL_BUFFER);
+					backdoorWaypoints[2] = new MapLocation(mapWidth - 1 - Constants.BACKDOOR_WALL_BUFFER, Constants.BACKDOOR_WALL_BUFFER);
 				}
 			} else {
 				// Try moving down, then horizontally, then up to endLocation
 				backdoorWaypoints[1] = new MapLocation(currentLocation.x, mapHeight - Constants.BACKDOOR_WALL_BUFFER);
 				// We need to know if endLocation is closer to the left wall or the right wall
 				if (endLocation.x < mapWidth - endLocation.x) { // left wall
-					backdoorWaypoints[2] = new MapLocation(Constants.BACKDOOR_WALL_BUFFER, mapHeight - Constants.BACKDOOR_WALL_BUFFER);
+					backdoorWaypoints[2] = new MapLocation(Constants.BACKDOOR_WALL_BUFFER, mapHeight - 1 - Constants.BACKDOOR_WALL_BUFFER);
 				} else { // right wall
-					backdoorWaypoints[2] = new MapLocation(mapWidth - Constants.BACKDOOR_WALL_BUFFER, mapHeight - Constants.BACKDOOR_WALL_BUFFER);
+					backdoorWaypoints[2] = new MapLocation(mapWidth - 1 - Constants.BACKDOOR_WALL_BUFFER, mapHeight - 1 - Constants.BACKDOOR_WALL_BUFFER);
 				}
 			}
 		} else {
@@ -242,16 +242,16 @@ public class NavSystem {
 				if (endLocation.y < mapHeight - endLocation.y) { // top wall
 					backdoorWaypoints[2] = new MapLocation(Constants.BACKDOOR_WALL_BUFFER, Constants.BACKDOOR_WALL_BUFFER);
 				} else { // bottom wall
-					backdoorWaypoints[2] = new MapLocation(Constants.BACKDOOR_WALL_BUFFER, mapHeight - Constants.BACKDOOR_WALL_BUFFER);
+					backdoorWaypoints[2] = new MapLocation(Constants.BACKDOOR_WALL_BUFFER, mapHeight - 1 - Constants.BACKDOOR_WALL_BUFFER);
 				}
 			} else {
 				// Try moving right, then vertically, then left to endLocation
 				backdoorWaypoints[1] = new MapLocation(mapWidth - Constants.BACKDOOR_WALL_BUFFER, currentLocation.y);
 				// We need to know if endLocation is closer to the top wall or the bottom wall
 				if (endLocation.y < mapHeight - endLocation.y) { // top wall
-					backdoorWaypoints[2] = new MapLocation(mapWidth - Constants.BACKDOOR_WALL_BUFFER, Constants.BACKDOOR_WALL_BUFFER);
+					backdoorWaypoints[2] = new MapLocation(mapWidth - 1 - Constants.BACKDOOR_WALL_BUFFER, Constants.BACKDOOR_WALL_BUFFER);
 				} else { // bottom wall
-					backdoorWaypoints[2] = new MapLocation(mapWidth - Constants.BACKDOOR_WALL_BUFFER, mapHeight - Constants.BACKDOOR_WALL_BUFFER);
+					backdoorWaypoints[2] = new MapLocation(mapWidth - 1 - Constants.BACKDOOR_WALL_BUFFER, mapHeight - 1 - Constants.BACKDOOR_WALL_BUFFER);
 				}
 			}
 		}
@@ -328,7 +328,7 @@ public class NavSystem {
 		} else {
 			mineDelay = GameConstants.MINE_DEFUSE_DELAY;
 		}
-		return distanceSquared + (int)(0.83 * mineDelay * numMines);
+		return distanceSquared + (int)(0.7 * mineDelay * numMines);
 	}
 	
 	
