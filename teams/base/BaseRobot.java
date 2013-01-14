@@ -14,6 +14,7 @@ public abstract class BaseRobot {
 	public BaseRobot(RobotController myRC) {
 		rc = myRC;
 		id = rc.getRobot().getID();
+//		DataCache.init(this);
 		NavSystem.init(this);
 		BroadcastSystem.init(this);
 		EncampmentJobSystem.init(this);
@@ -25,6 +26,7 @@ public abstract class BaseRobot {
 	public void loop() {
 		while (true) {
 			try {
+//				DataCache.updateRoundVariables();
 //				updateRoundVariables();
 				run();
 			} catch (Exception e) {

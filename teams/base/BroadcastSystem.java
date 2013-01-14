@@ -86,7 +86,7 @@ public class BroadcastSystem {
 	 */
 	public static int[] getChannelNos(ChannelType channelType) {
 		int round = Clock.getRoundNum();
-		int round_cycle = Clock.getRoundNum() / Constants.CHANNEL_CYCLE;
+		int round_cycle = round / Constants.CHANNEL_CYCLE;
 		if (round < Constants.MAX_PRECOMPUTED_ROUNDS) {
 			return getChannelNosPrecomputed(channelType, round_cycle);
 		}
@@ -110,7 +110,7 @@ public class BroadcastSystem {
 	 */
 	public static int[] getChannelNosLastCycle(ChannelType channelType) {
 		int round = Clock.getRoundNum();
-		int round_cycle = Clock.getRoundNum() / Constants.CHANNEL_CYCLE - 1;
+		int round_cycle = round / Constants.CHANNEL_CYCLE - 1;
 		if (round < Constants.MAX_PRECOMPUTED_ROUNDS) {
 			return getChannelNosPrecomputed(channelType, round_cycle);
 		}
