@@ -234,13 +234,17 @@ public class SoldierRobot extends BaseRobot {
 	
 	/**
 	 * This method tells the soldier to mine in a circle (as set up by setupCircleMining())
+	 * @return true if we can still mine, and false if the circle radius has exceeded the maxMiningRadius
 	 * @throws GameActionException
 	 */
-	private void mineInCircle() throws GameActionException {
+	private boolean mineInCircle() throws GameActionException {
 		if (rc.isActive()) {
 			if (minesDenselyPacked(miningCenter, miningRadiusSquared)) {
 				// mines are fairly dense, so expand the circle in which to mine
 				miningRadius += Constants.MINING_RADIUS_DELTA;
+				if (miningRadius > miningMaxRadius) {
+					return false;
+				}
 				miningRadiusSquared = miningRadius * miningRadius;
 			}
 			if (rc.getLocation().distanceSquaredTo(miningCenter) >= miningRadiusSquared) {
@@ -259,6 +263,7 @@ public class SoldierRobot extends BaseRobot {
 				NavSystem.goDirectionAndDefuse(dir);
 			}
 		}
+		return true;
 	}
 	
 	/**
