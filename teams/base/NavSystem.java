@@ -75,10 +75,24 @@ public class NavSystem {
 		}
 	}
 	
+	public static void goAwayFromLocation(MapLocation location) throws GameActionException {
+		Direction dir = rc.getLocation().directionTo(location).opposite();
+		if (dir != Direction.OMNI) {
+			goDirectionAndDefuse(dir);
+		}
+	}
+	
 	public static void goToLocationAvoidMines(MapLocation location) throws GameActionException {
 		Direction dir = rc.getLocation().directionTo(location);
 		if (dir != Direction.OMNI){
 			goDirectionAvoidMines(dir);
+		}
+	}
+	
+	public static void goAwayFromLocationAvoidMines(MapLocation location) throws GameActionException {
+		Direction dir = rc.getLocation().directionTo(location).opposite();
+		if (dir != Direction.OMNI) {
+			goDirectionAndDefuse(dir);
 		}
 	}
 	

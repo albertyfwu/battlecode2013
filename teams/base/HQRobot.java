@@ -44,23 +44,17 @@ public class HQRobot extends BaseRobot {
 				
 
 
-//				// Spawn a soldier
-//				Direction desiredDir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
-//				Direction dir = getSpawnDirection(rc, desiredDir);
-//				if (dir != null) {
-//					EncampmentJobSystem.updateJobs();
-//					rc.spawn(dir);
-//				}
-				if (Clock.getRoundNum() < 5) {
-					Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
+				// Spawn a soldier
+				Direction desiredDir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
+				Direction dir = getSpawnDirection(rc, desiredDir);
+				if (dir != null) {
+					EncampmentJobSystem.updateJobs();
 					rc.spawn(dir);
 				}
-			}
-			
-			for (int i=0; i<3; i++) {
-				MapLocation job = EncampmentJobSystem.encampmentJobs[i];
-				rc.setIndicatorString(i, "jobx: " + job.x + "joby: " + job.y);
-
+//				if (Clock.getRoundNum() < 5) {
+//					Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
+//					rc.spawn(dir);
+//				}
 			}
 
 			//			// TODO: find out what strategy to switch to?
