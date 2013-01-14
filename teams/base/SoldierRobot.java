@@ -88,33 +88,7 @@ public class SoldierRobot extends BaseRobot {
 					rc.suicide();
 				}
 			} else { // is assigned to an encampment job
-				if (!unassigned) { // if assigned to something
-					EncampmentJobSystem.updateJobTaken(assignedChannel);
-				}
-				if (rc.isActive()) {
-					if (rc.senseEncampmentSquare(currentLocation) && currentLocation.equals(goalLoc)) {
-						rc.captureEncampment(RobotType.GENERATOR);
-					} else {
-						if (NavSystem.navMode == NavMode.BFSMODE) {
-							NavSystem.tryBFSNextTurn();
-						} else if (NavSystem.navMode == NavMode.GETCLOSER){
-							NavSystem.tryMoveCloser();
-						} else if (rc.getLocation().distanceSquaredTo(goalLoc) <= 8) {
-							NavSystem.setupGetCloser(goalLoc);
-							NavSystem.tryMoveCloser();
-						} else {
-							NavSystem.goToLocation(goalLoc);
-//							if (NavSystem.navMode == NavMode.NEUTRAL){
-//								NavSystem.setupSmartNav(goalLoc);
-//								NavSystem.followWaypoints();
-//							} else {
-//								NavSystem.followWaypoints();
-//							}
-						}
-							
-					}
-					
-				}
+				captureCode();
 			}
 						
 			
@@ -175,6 +149,35 @@ public class SoldierRobot extends BaseRobot {
 		return true;
 	}
 	
+	private void captureCode() throws GameActionException {
+		if (!unassigned) { // if assigned to something
+			EncampmentJobSystem.updateJobTaken(assignedChannel);
+		}
+		if (rc.isActive()) {
+			if (rc.senseEncampmentSquare(currentLocation) && currentLocation.equals(goalLoc)) {
+				rc.captureEncampment(RobotType.GENERATOR);
+			} else {
+				if (NavSystem.navMode == NavMode.BFSMODE) {
+					NavSystem.tryBFSNextTurn();
+				} else if (NavSystem.navMode == NavMode.GETCLOSER){
+					NavSystem.tryMoveCloser();
+				} else if (rc.getLocation().distanceSquaredTo(goalLoc) <= 8) {
+					NavSystem.setupGetCloser(goalLoc);
+					NavSystem.tryMoveCloser();
+				} else {
+					NavSystem.goToLocation(goalLoc);
+//					if (NavSystem.navMode == NavMode.NEUTRAL){
+//						NavSystem.setupSmartNav(goalLoc);
+//						NavSystem.followWaypoints();
+//					} else {
+//						NavSystem.followWaypoints();
+//					}
+				}
+					
+			}
+			
+		}
+	}
 	/**
 	 * Given a center MapLocation and a radiusSquared, returns true if the circle is densely packed with allied mines.
 	 * @param center
