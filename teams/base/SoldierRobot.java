@@ -225,24 +225,31 @@ public class SoldierRobot extends BaseRobot {
 	 * @param center
 	 */
 	private void setupCircleMining(MapLocation center) {
+		soldierState = SoldierState.MINING_IN_CIRCLE;
 		miningCenter = center;
 		miningRadius = 2;
 	}
 	
 	private void mineInCircle() throws GameActionException {
+		for(int i = 0; i < 3; i++) {
+			rc.setIndicatorString(i, "");
+		}
 		int radiusSquared = miningRadius * miningRadius;
 		if (minesDenselyPacked(miningCenter, miningRadius)) {
 			// mines are fairly dense, so expand the circle in which to mine
 			miningRadius += Constants.MINING_RADIUS_DELTA;
-			System.out.println("start");
-			System.out.println("miningRadius: " + miningRadius);
-			System.out.println("mines: " + rc.senseMineLocations(miningCenter, radiusSquared, rc.getTeam()).length);
+			radiusSquared = miningRadius * miningRadius;
+			rc.setIndicatorString(0, "miningRadius: " + miningRadius);
+			rc.setIndicatorString(1, "mines: " + rc.senseMineLocations(miningCenter, radiusSquared, rc.getTeam()).length);
 		}
+		radiusSquared = miningRadius * miningRadius;
 		if (rc.getLocation().distanceSquaredTo(miningCenter) >= radiusSquared) {
+			rc.setIndicatorString(2, "too far!: " + rc.getLocation().distanceSquaredTo(miningCenter) + ", " + radiusSquared);
 			NavSystem.goToLocation(miningCenter);
 		} else {
+			rc.setIndicatorString(2, "trying to lay mine");
 			// Lay a mine if possible
-			if (rc.getLocation().distanceSquaredTo(miningCenter) <= radiusSquared && rc.senseMine(rc.getLocation()) == null) {
+			if (rc.senseMine(rc.getLocation()) == null) {
 				rc.layMine();
 			}
 			// Walk around the circle
