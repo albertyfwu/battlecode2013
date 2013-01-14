@@ -86,6 +86,42 @@ public class BroadcastSystem {
 		return channelNos;
 	}
 	
+	public static Message readLastCycle(ChannelType channelType) {
+		try {
+			if (rc != null) {
+				for (int channelNo : getChannelNosLastCycle(channelType)) {
+					int rawMessage = rc.readBroadcast(channelNo);
+					if (rawMessage == 0) {
+						return new Message(false, true);
+					}
+					byte testSignature = (byte)(rawMessage >> 24);
+					if (signature == testSignature) { // verified
+						int body = rawMessage & signatureMask;
+						return new Message(body, true, false); // true means message is valid
+					}
+				}
+			}
+			return new Message(false, false);
+		} catch (Exception e) {
+			return new Message(false, false);
+		}
+	}
+	
+	public static int[] getChannelNosLastCycle(ChannelType channelType) {
+		int[] channelNos = new int[Constants.REDUNDANT_CHANNELS];
+		int rangeStart = channelType.ordinal() * ChannelType.range;
+		int constant = Clock.getRoundNum() / Constants.CHANNEL_CYCLE - 1;
+		for (int i = 0; i < Constants.REDUNDANT_CHANNELS; i++) {
+			int offset = ((channelType.ordinal() * i) ^ constant) % ChannelType.range;
+			// ensure that the offset is nonnegative
+			if (offset < 0) {
+				offset += ChannelType.range;
+			}
+			channelNos[i] = rangeStart + offset;
+		}
+		return channelNos;
+	}
+	
 	/**
 	 * Writes constant.MAX_MESSAGE into the channel
 	 * @param channelType
