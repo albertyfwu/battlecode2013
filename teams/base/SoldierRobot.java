@@ -18,19 +18,14 @@ public class SoldierRobot extends BaseRobot {
 	// For mining
 	private MapLocation miningCenter;
 	private int miningRadius;
+	private int miningRadiusSquared;
 	private int miningMaxRadius;
-	
-	public ArrayList<MapLocation> wayPoints;
-	public int wayPointsSize;
-	public int wayPointsIndex;
 	
 	public boolean unassigned = true;
 	public ChannelType assignedChannel;
 	public MapLocation goalLoc;
 	
 	public MapLocation currentLocation;
-
-	
 	
 	private static boolean BFSMode = false;
 	private static int BFSRound = 0;
@@ -234,18 +229,25 @@ public class SoldierRobot extends BaseRobot {
 		miningCenter = center;
 		miningMaxRadius = maxRadius;
 		miningRadius = Constants.INITIAL_MINING_RADIUS;
+		miningRadiusSquared = miningRadius * miningRadius;
 	}
 	
+	/**
+	 * This method tells the soldier to mine in a circle (as set up by setupCircleMining())
+	 * @throws GameActionException
+	 */
 	private void mineInCircle() throws GameActionException {
 		if (rc.isActive()) {
-			int radiusSquared = miningRadius * miningRadius;
-			if (minesDenselyPacked(miningCenter, miningRadius)) {
+			if (minesDenselyPacked(miningCenter, miningRadiusSquared)) {
 				// mines are fairly dense, so expand the circle in which to mine
 				miningRadius += Constants.MINING_RADIUS_DELTA;
+				miningRadiusSquared = miningRadius * miningRadius;
 			}
-			if (rc.getLocation().distanceSquaredTo(miningCenter) >= radiusSquared) {
+			if (rc.getLocation().distanceSquaredTo(miningCenter) >= miningRadiusSquared) {
+				// If we're too far from the center, move closer
 				NavSystem.goToLocation(miningCenter);
-			} else if (rc.getLocation().distanceSquaredTo(miningCenter) <= Math.pow(miningRadius - 2, 2)) {
+			} else if (rc.getLocation().distanceSquaredTo(miningCenter) <= Math.pow(miningRadius - Constants.MINING_CIRCLE_DR_TOLERANCE, 2)) {
+				// If we're too close to the center, move away
 				NavSystem.goDirectionAndDefuse(rc.getLocation().directionTo(miningCenter).opposite());
 			} else {
 				// Lay a mine if possible
@@ -265,9 +267,8 @@ public class SoldierRobot extends BaseRobot {
 	 * @param radiusSquared
 	 * @return
 	 */
-	private boolean minesDenselyPacked(MapLocation center, int miningRadius) {
-		int radiusSquared = miningRadius * miningRadius;
-		return rc.senseMineLocations(center, radiusSquared, rc.getTeam()).length >= (int)(2.1 * radiusSquared);
+	private boolean minesDenselyPacked(MapLocation center, int radiusSquared) {
+		return rc.senseMineLocations(center, radiusSquared, rc.getTeam()).length >= (int)(2 * radiusSquared);
 	}
 	
 	private static void print2Darray(int[][] array) {

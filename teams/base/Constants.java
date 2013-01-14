@@ -50,6 +50,9 @@ public interface Constants {
 	
 	// Amount to increase mining radius by when expanding mining radius
 	public static final int MINING_RADIUS_DELTA = 2;
+
+	// The band within which soldiers should stay when they're moving around a circle mining
+	public static final int MINING_CIRCLE_DR_TOLERANCE = 2;
 	
 	/**
 	 * Encampments
