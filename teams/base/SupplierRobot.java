@@ -12,17 +12,6 @@ public class SupplierRobot extends EncampmentRobot {
 
 	@Override
 	public void run() {
-		try {
-			if (!hasCleanedUp) {
-				turnCounter++;
-				if (turnCounter >= cleanUpWait) {
-					cleanUp();
-				}
-			}
-		} catch(Exception e) {
-			
-		}
-		// TODO Auto-generated method stub
 
 	}
 

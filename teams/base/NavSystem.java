@@ -114,6 +114,20 @@ public class NavSystem {
 		}
 	}
 	
+	public static boolean moveOrDefuse(Direction dir) throws GameActionException {
+		boolean hasMoved = false;
+		if (rc.canMove(dir)) {
+			if (!hasBadMine(rc.getLocation().add(dir))) {
+				rc.move(dir);
+				return true;
+			} else {
+				rc.defuseMine(rc.getLocation().add(dir));
+				return false;
+			}
+		} 
+		return false;
+	}
+	
 	public static void rangedDefuseMine() throws GameActionException {
 		if (rc.hasUpgrade(Upgrade.DEFUSION)) {
 			MapLocation[] mines = rc.senseMineLocations(rc.getLocation(), 14, rc.getTeam().opponent());
@@ -314,7 +328,7 @@ public class NavSystem {
 			if (rc.canMove(Direction.values()[i])) {
 				MapLocation nextLoc = rc.getLocation().add(Direction.values()[i]);
 				if (nextLoc.distanceSquaredTo(goalLoc) < distance) {
-					rc.move(Direction.values()[i]);
+					NavSystem.moveOrDefuse(Direction.values()[i]);
 					return true;
 				}
 			}
@@ -340,12 +354,13 @@ public class NavSystem {
 		}
 		
 		int currValue = 1;
-		
-		whileLoop: while(currValue < 25) {			
+		boolean reached = false;
+		whileLoop: while(currValue < 20) {			
 			for (int y = 0; y<5; y++) {
 				for (int x=0; x<5; x++) {
 					if (distanceArray[y][x] == currValue) {
 						if (y == goaly && x == goalx) {
+							reached = true;
 							break whileLoop;
 						} else {
 							propagate(distanceArray, x, y, currValue + 1);
@@ -354,6 +369,10 @@ public class NavSystem {
 				}
 			}
 			currValue++;
+		}
+		
+		if (!reached || currValue == 1) { // if unreachable
+			return new int[0]; // return empty list
 		}
 		
 		int shortestDist = distanceArray[goaly][goalx] - 1;
@@ -381,9 +400,10 @@ public class NavSystem {
 			}
 		}
 		output[0] = computeTurn(currx, curry, 2, 2);
+
 		return output;
-	}
-	
+		
+	}	
 	/**
 	 * given an array and a coordinate and a value, propagate value to the neighbors of the coordinate
 	 * @param distanceArray

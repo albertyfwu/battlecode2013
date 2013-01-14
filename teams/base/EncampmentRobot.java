@@ -7,8 +7,8 @@ public abstract class EncampmentRobot extends BaseRobot{
 	
 	public boolean hasCleanedUp = false;
 	public int turnCounter = 0;
-	public ChannelType cleanUpChannel;
-	public int cleanUpWait = Constants.CLEAN_UP_WAIT_TIME;
+//	public ChannelType cleanUpChannel;
+//	public int cleanUpWait = Constants.CLEAN_UP_WAIT_TIME;
 
 	public EncampmentRobot(RobotController rc) {
 		super(rc);
@@ -18,13 +18,13 @@ public abstract class EncampmentRobot extends BaseRobot{
 	}
 	
 	public void sendCompletionMessage() {
-		cleanUpChannel = EncampmentJobSystem.postCompletionMessage(rc.getLocation());
+		EncampmentJobSystem.postCompletionMessage(rc.getLocation());
 	}
 	
-	public void cleanUp() {
-		EncampmentJobSystem.postCleanUp(cleanUpChannel);
-		hasCleanedUp = true;
-	}
+//	public void cleanUp() {
+//		EncampmentJobSystem.postCleanUp(cleanUpChannel);
+//		hasCleanedUp = true;
+//	}
 	
 	
 
