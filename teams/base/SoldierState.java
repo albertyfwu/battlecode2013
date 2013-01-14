@@ -1,6 +1,6 @@
 package base;
 
 public enum SoldierState {
-	MINING,
+	MINING_IN_CIRCLE,
 	DEFUSING;
 }

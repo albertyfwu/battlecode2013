@@ -42,6 +42,12 @@ public interface Constants {
 	public static final int BACKDOOR_WALL_BUFFER = 1;
 	
 	/**
+	 * Mining
+	 */
+	// Amount to increase mining radius by when expanding mining radius
+	public static final int MINING_RADIUS_DELTA = 4; 
+	
+	/**
 	 * Encampments
 	 */
 	public static final int INITIAL_NUM_ENCAMPMENTS_NEEDED = 3;
@@ -50,5 +56,5 @@ public interface Constants {
 	 * IMPORTANT: clean up time must exceed the number of turns it takes HQ to execute
 	 * run at the worst case
 	 */
-	public static final int CLEAN_UP_WAIT_TIME = 3; 
+	public static final int CLEAN_UP_WAIT_TIME = 3;
 }

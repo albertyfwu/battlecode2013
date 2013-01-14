@@ -45,6 +45,8 @@ public class HQRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
+//			BroadcastSystem.write(ChannelType.CHANNEL1, 3493);
+			
 			
 			updateJobsAfterChecking();
 			
@@ -300,8 +302,10 @@ public class HQRobot extends BaseRobot {
 			return dir.rotateLeft().opposite();
 		} else if (rc.canMove(dir.rotateRight().opposite())) {
 			return dir.rotateRight().opposite();
-		} else {
+		} else if (rc.canMove(dir.opposite())) {
 			return dir.opposite();
+		} else {
+			return null;
 		}
 	}
 
