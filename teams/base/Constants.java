@@ -10,7 +10,7 @@ public interface Constants {
 	
 	// how frequently we change the channels we use for broadcasting
 	// var = n means channel will cycle every n turns
-	public static final int CHANNEL_CYCLE = 13;
+	public static final int CHANNEL_CYCLE = 10000;
 	
 	public static final int MAX_MESSAGE = 0xFFFFFF;
 	

@@ -589,12 +589,13 @@ public class RobotPlayer{
 		}
 		
 		int currValue = 1;
-		
-		whileLoop: while(currValue < 25) {			
+		boolean reached = false;
+		whileLoop: while(currValue < 20) {			
 			for (int y = 0; y<5; y++) {
 				for (int x=0; x<5; x++) {
 					if (distanceArray[y][x] == currValue) {
 						if (y == goaly && x == goalx) {
+							reached = true;
 							break whileLoop;
 						} else {
 							propagate(distanceArray, x, y, currValue + 1);
@@ -603,6 +604,11 @@ public class RobotPlayer{
 				}
 			}
 			currValue++;
+		}
+		System.out.println("reached: " + reached);
+		
+		if (!reached || currValue == 1) { // if unreachable
+			return new int[0]; // return empty list
 		}
 		
 		int shortestDist = distanceArray[goaly][goalx] - 1;
@@ -734,10 +740,13 @@ public class RobotPlayer{
 		}
 	}
 	
-//	public static void main(String[] args) {
-//		
-//		int[][] array = {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{0,1,1,1,0},{0,0,0,1,0}};
-//		
-//		
-//	}
+	public static void main(String[] args) {
+		
+		int[][] array = {{0,0,0,0,0},{0,0,0,0,0},{0,0,0,0,0},{1,1,1,1,0},{0,0,0,1,0}};
+		int[] result = runBFS(array, 2, 4);
+		
+		for (int dir: result) {
+			System.out.println(dir);
+		}
+	}
 }

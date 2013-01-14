@@ -28,6 +28,8 @@ public class SoldierRobot extends BaseRobot {
 	private static int BFSRound = 0;
 	private static int[] BFSTurns;
 	private static int BFSIdle = 0;
+	
+	
 
 	
 	
@@ -65,6 +67,9 @@ public class SoldierRobot extends BaseRobot {
 //				}
 				
 				NavSystem.goToLocation(new MapLocation(10, 10));
+				if (rc.getLocation().x == 10 && rc.getLocation().y == 10) {
+					rc.suicide();
+				}
 			} else { // is assigned to an encampment job
 				if (!unassigned) { // if assigned to something
 					EncampmentJobSystem.updateJobTaken(assignedChannel);
@@ -79,8 +84,8 @@ public class SoldierRobot extends BaseRobot {
 							} else {
 								System.out.println("Direction: " + BFSTurns[BFSRound]);
 								Direction dir = Direction.values()[BFSTurns[BFSRound]];
-								if (rc.canMove(dir)) {
-									rc.move(dir);
+								boolean hasMoved = NavSystem.moveOrDefuse(dir);
+								if (hasMoved) {
 									BFSRound++;
 								} else {
 									BFSIdle++;
@@ -101,14 +106,26 @@ public class SoldierRobot extends BaseRobot {
 								BFSMode = true;
 								int[][] encArray = NavSystem.populate5by5board();
 								int[] goalCoord = NavSystem.locToIndex(rc.getLocation(), goalLoc, 2);
-								BFSTurns = NavSystem.runBFS(encArray, goalCoord[1], goalCoord[0]);
 								BFSRound = 0;
+								BFSTurns = NavSystem.runBFS(encArray, goalCoord[1], goalCoord[0]);
+								System.out.println("BFSTurns :" + BFSTurns.length);
+								if (BFSTurns.length == 0) { // if unreachable, tell to HQ and unassign himself
+									EncampmentJobSystem.postUnreachableMessage(goalLoc);
+									unassigned = true;
+								}
 								
-								print2Darray(encArray);
+								
 							}
 						} else {
-							NavSystem.goToLocation(goalLoc);
+//							NavSystem.goToLocation(goalLoc);
+							if (NavSystem.navMode == NavMode.NEUTRAL){
+								NavSystem.setupSmartNav(goalLoc);
+								NavSystem.followWaypoints();
+							} else {
+								NavSystem.followWaypoints();
+							}
 						}
+							
 					}
 					
 				}

@@ -6,6 +6,7 @@ import battlecode.common.GameObject;
 import battlecode.common.MapLocation;
 import battlecode.common.Robot;
 import battlecode.common.RobotController;
+import battlecode.common.Team;
 
 /**
  * TODO: make the HQ update every cycle call, but have a modified update
@@ -40,7 +41,17 @@ public class EncampmentJobSystem {
 	public static int maxEncampmentJobs = encampmentJobChannelList.length;
 	public static int maxMessage = Constants.MAX_MESSAGE; //24-bit message all 1s
 	
+	// these two arrays must have bijective correspondence
+	// the job associated with encampmentJobs[i] must always write to channelList[i] for each i
+	public static MapLocation[] encampmentJobs = new MapLocation[EncampmentJobSystem.maxEncampmentJobs]; // length is constant
+	public static ChannelType[] encampmentChannels = new ChannelType[EncampmentJobSystem.maxEncampmentJobs]; // length is constant
+
+	public static int numEncampmentsNeeded; // must be less than encampmentJobChannelList.length
 	
+	public static MapLocation[] unreachableEncampments;
+	public static int numUnreachableEncampments;
+	
+	public static MapLocation HQLocation;
 	
 	/**
 	 * Initializes BroadcastSystem by setting rc
@@ -49,6 +60,29 @@ public class EncampmentJobSystem {
 	public static void init(BaseRobot myRobot) {
 		robot = myRobot;
 		rc = robot.rc;
+	}
+	
+	public static void initializeConstants(MapLocation hqloc) {
+		HQLocation = hqloc;
+		numEncampmentsNeeded = Constants.INITIAL_NUM_ENCAMPMENTS_NEEDED; 
+		numUnreachableEncampments = 0;
+		unreachableEncampments = new MapLocation[100];
+		
+		MapLocation[] allEncampments = rc.senseAllEncampmentSquares();
+		if (allEncampments.length < numEncampmentsNeeded) {
+			numEncampmentsNeeded = allEncampments.length;
+		}
+
+		MapLocation[] closestEncampments = getClosestMapLocations(HQLocation, allEncampments, numEncampmentsNeeded);
+
+		for (int i=0; i<numEncampmentsNeeded; i++) {
+			// save in list of jobs
+			encampmentJobs[i] = closestEncampments[i];
+
+			// broadcast job opening
+			encampmentChannels[i] = encampmentJobChannelList[i];
+			postJob(EncampmentJobSystem.encampmentChannels[i], encampmentJobs[i]);
+		}
 	}
 	
 	/**
@@ -134,6 +168,18 @@ public class EncampmentJobSystem {
 		}
 	}
 	
+	public static void postUnreachableMessage(MapLocation goalLoc) {
+		forloop: for (ChannelType channel: encampmentCompletionChannelList) {
+			Message message = BroadcastSystem.read(channel);
+			if (message.isUnwritten || (message.isValid && message.body == maxMessage)){
+				int newmsg = (1 << 16) + (goalLoc.x << 8) + goalLoc.y;
+//				System.out.println("unreachable msg: " + newmsg);
+				BroadcastSystem.write(channel, newmsg);
+				break forloop; 
+			}
+		}
+	}
+	
 	/**
 	 * In the round after its birth (or 5 after), the encampment "cleans up after itself"
 	 * and posts 0 in the channel
@@ -149,40 +195,205 @@ public class EncampmentJobSystem {
 	 * @param channel
 	 * @return
 	 */
-	public static MapLocation checkCompletion(ChannelType channel) {
+	public static EncampmentJobMessageType checkCompletion(ChannelType channel) {
 		Message message = BroadcastSystem.read(channel);
 		if (message.isValid && message.body != maxMessage) {
 			
 			int locY = message.body & 0xFF;
-			int locX = message.body >> 8;
-			System.out.println("locy: " + locY + " locx: " + locX);
-			
+			int locX = (message.body >> 8) & 0xFF;
+			int unreachableBit = message.body >> 16;
 			postCleanUp(channel); // cleanup
-			return new MapLocation(locY, locX);
+			System.out.println("locy: " + locY + " locx: " + locX);
+			if (unreachableBit == 1) { // if unreachable
+//				System.out.println("unreachable!!!");
+				unreachableEncampments[numUnreachableEncampments] = new MapLocation(locY, locX);
+				numUnreachableEncampments++;
+				return EncampmentJobMessageType.FAILURE;
+			} else { // it's a completion message
+				return EncampmentJobMessageType.COMPLETION;
+			}
 		}
-		return null;
+		return EncampmentJobMessageType.EMPTY;
 	}
 	
 	/** 
-	 * Returns list of map locations of encampment jobs that have been completed
-	 * IMPORTANT: Last element of the output returns a "map location" whose x and y values
-	 * corresponding to number of non-null elements
+	 * Returns a boolean: true if one of the channels has a 
+	 * completion or a failure message, false otherwise
 	 * @return
 	 */
-	public static MapLocation[] checkAllCompletion() {
-		MapLocation[] output = new MapLocation[encampmentCompletionChannelList.length+1];
-		int currIndex = 0;
+	public static boolean checkAllCompletion() {
 		for (ChannelType channel: encampmentCompletionChannelList) {
-			MapLocation loc = checkCompletion(channel);
-			if (loc != null) {
-				output[currIndex] = loc;
-				currIndex++;
+			EncampmentJobMessageType msgType = checkCompletion(channel);
+			if (msgType != EncampmentJobMessageType.EMPTY) { // if a completion or a failure message
+				return true;
 			} 
 		}
-		output[encampmentCompletionChannelList.length] = new MapLocation(currIndex, currIndex);
 
-		return output;
+		return false;
 	}
+	
+	/**
+	 * returns new list of channels corresponding to the new jobs
+	 * that will maintain the same channels for the old jobs
+	 * but find new channels for the new ones
+	 * @param newJobsList
+	 * @param oldJobsList
+	 * @param oldChannelsList
+	 * @return
+	 */
+	public static ChannelType[] assignChannels(MapLocation[] newJobsList, MapLocation[] oldJobsList, ChannelType[] oldChannelsList) {
+		ChannelType[] channelList = new ChannelType[maxEncampmentJobs];
+
+		int arrayIndices[] = new int[newJobsList.length];
+
+		for (int i=0; i<newJobsList.length; i++) {
+			arrayIndices[i] = arrayIndex(newJobsList[i], oldJobsList);
+		}
+
+
+		int channelIndex = -1;
+		// keep old channels for non-new jobs
+		for (int i=0; i<newJobsList.length; i++) {
+			if (arrayIndices[i] != -1 && newJobsList[i] != null) { // if the job is not new, keep the same channel
+				channelList[i] = oldChannelsList[arrayIndices[i]];
+			}
+		}
+
+		// allocate unused channels for new jobs
+		for (int i=0; i<newJobsList.length; i++) {
+			if (arrayIndices[i] == -1 && newJobsList[i] != null) {
+				channelLoop: for (ChannelType channel: encampmentJobChannelList) {
+					channelIndex = arrayIndex(channel, channelList);
+					if (channelIndex == -1) { // if not already used, use it and post job
+						channelList[i] = channel;
+						EncampmentJobSystem.postJob(channel, newJobsList[i]);
+						break channelLoop;
+					}
+				}
+			}
+		}
+		return channelList;
+	}
+	
+	/** 
+	 * returns index of element e in array
+	 * @param e
+	 * @param array
+	 * @return
+	 */
+	public static int arrayIndex(Object e, Object[] array) {
+		if (e == null) {
+			return -1;
+		}
+
+		for (int i = 0; i<array.length; i++) {
+			if (array[i] != null) {
+				if (array[i].equals(e)) {
+					return i;
+				}
+			}
+		}
+		return -1;
+	}
+	
+	/**
+	 * checks nearby encampments to see if jobs need to be changed
+	 * @throws GameActionException
+	 */
+	public static void updateJobs() throws GameActionException {
+		System.out.println("Before update: " + Clock.getBytecodeNum());
+		MapLocation[] neutralEncampments = rc.senseEncampmentSquares(HQLocation,100000, Team.NEUTRAL);
+		if (EncampmentJobSystem.numEncampmentsNeeded > neutralEncampments.length){
+			EncampmentJobSystem.numEncampmentsNeeded = neutralEncampments.length;
+		}
+
+		MapLocation[] newJobsList = getClosestMapLocations(HQLocation, neutralEncampments, EncampmentJobSystem.numEncampmentsNeeded);
+		System.out.println("new jobs list: " + Clock.getBytecodeNum());
+
+		ChannelType[] channelList = EncampmentJobSystem.assignChannels(newJobsList, EncampmentJobSystem.encampmentJobs, EncampmentJobSystem.encampmentChannels);
+
+		for (int i=0; i<EncampmentJobSystem.numEncampmentsNeeded; i++) { // update lists
+			EncampmentJobSystem.encampmentJobs[i] = newJobsList[i];
+			EncampmentJobSystem.encampmentChannels[i] = channelList[i];
+		}
+
+		System.out.println("update lists: " + Clock.getBytecodeNum());
+
+		// clear unused channels
+		for (ChannelType channel: EncampmentJobSystem.encampmentJobChannelList) {
+			if (arrayIndex(channel, EncampmentJobSystem.encampmentChannels) == -1) { // if unused
+				BroadcastSystem.writeMaxMessage(channel); // reset the channel
+			}
+		}
+		
+		
+		System.out.println("After update: " + Clock.getRoundNum());
+	}
+	/**
+	 * HQ uses this to check if any jobs are completed, and then updates new jobs
+	 * @throws GameActionException
+	 */
+	public static void updateJobsAfterChecking() throws GameActionException {
+		if (EncampmentJobSystem.checkAllCompletion()) { // if it contains non-null elements
+			updateJobs();
+		}
+
+	}
+	
+	/**
+	 * Finds array of closest MapLocations to rc.getLocation()
+	 * in decreasing order
+	 * 
+	 * Specification: k must be <= allLoc.length
+	 * Specification: array must not contain origin
+	 * @param origin
+	 * @param allLoc
+	 * @param k
+	 * @return
+	 * 
+	 * This still costs lots of bytecodes
+	 */
+	public static MapLocation[] getClosestMapLocations(MapLocation origin, MapLocation[] allLoc, int k) {
+		MapLocation[] currentTopLocations = new MapLocation[k];
+		
+		// make arrays of 0s and 1s corresponding to allLoc where 1 if unreachable
+		int[] unreachableCheckArray = new int[allLoc.length];
+		for (int j=0; j<numUnreachableEncampments; j++) {
+			for (int i=0; i<allLoc.length; i++) {
+				if (allLoc[i].equals(unreachableEncampments[j])) {
+					unreachableCheckArray[i] = 1;
+				}
+			}
+		}
+
+		int[] allDistances = new int[allLoc.length];
+		for (int i=0; i<allLoc.length; i++) {
+			allDistances[i] = origin.distanceSquaredTo(allLoc[i]);
+		}
+
+		int[] allLocIndex = new int[allLoc.length];
+
+		int runningDist = 1000000;
+		MapLocation runningLoc = null;
+		int runningIndex = 0;
+		for (int j = 0; j < k; j++) {
+			runningDist = 1000000;
+			for (int i=0; i<allLoc.length; i++) {
+				if (allDistances[i] < runningDist && allLocIndex[i] == 0 && unreachableCheckArray[i] == 0) {
+					runningDist = allDistances[i];
+					runningLoc = allLoc[i];
+					runningIndex = i;
+				}
+			}
+			currentTopLocations[j] = runningLoc;
+			allLocIndex[runningIndex] = 1;
+		}
+
+		return currentTopLocations;
+	}
+	
+	
+	
 	
 	/**
 	 * Creates a 22-bit job message to send from the goal location
