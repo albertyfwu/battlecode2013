@@ -28,13 +28,20 @@ public class HQRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {			
-			if (Clock.getRoundNum() < 20) {
-				BroadcastSystem.write(ChannelType.CHANNEL1, 0);
-				BroadcastSystem.read(ChannelType.CHANNEL1);
-				BroadcastSystem.write(ChannelType.CHANNEL1, 0);
-			} else {
-				rc.resign();
-			}
+//			if (Clock.getRoundNum() < 20) {
+//				BroadcastSystem.write(ChannelType.CHANNEL1, 0);
+//				BroadcastSystem.read(ChannelType.CHANNEL1);
+//				BroadcastSystem.write(ChannelType.CHANNEL1, 0);
+//			} else {
+//				rc.resign();
+//			}
+//			
+			
+			if (Clock.getRoundNum() % Constants.CHANNEL_CYCLE == 0) {
+                EncampmentJobSystem.updateJobsOnCycle();
+	        } else {
+	                EncampmentJobSystem.updateJobsAfterChecking();
+	        }
 			
 			if (rc.isActive()) {
 //				if (Clock.getRoundNum() > 500) {

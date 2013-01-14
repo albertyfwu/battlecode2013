@@ -64,7 +64,7 @@ public class SoldierRobot extends BaseRobot {
 	public void run() {
 		try {
 			currentLocation = rc.getLocation();
-			if (Clock.getRoundNum() < 2500) {
+			if (Clock.getRoundNum() < 0) {
 				if (Clock.getRoundNum() > 250) {
 					if (soldierState != SoldierState.FIGHTING){
 						soldierState = SoldierState.FIGHTING;

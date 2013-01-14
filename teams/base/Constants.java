@@ -10,7 +10,10 @@ public interface Constants {
 	
 	// how frequently we change the channels we use for broadcasting
 	// var = n means channel will cycle every n turns
-	public static final int CHANNEL_CYCLE = 14;
+	public static final int CHANNEL_CYCLE = 17;
+	
+	// the maximum number of precomputed rounds of channels (if too high, Java will spit out wrong numbers)
+	public static final int MAX_PRECOMPUTED_ROUNDS = 500;
 	
 	public static final int MAX_MESSAGE = 0xFFFFFF;
 	
