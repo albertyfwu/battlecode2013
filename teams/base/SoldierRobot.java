@@ -8,6 +8,7 @@ import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
+import battlecode.engine.instrumenter.RobotMonitor;
 
 public class SoldierRobot extends BaseRobot {
 	
@@ -52,15 +53,24 @@ public class SoldierRobot extends BaseRobot {
 //		super(rc);
 //		this.platoon = platoon;
 //	}
-
+	
 	@Override
 	public void run() {
 		try {
 			if (Clock.getRoundNum() < 2500) {
-				if (NavSystem.navMode == NavMode.NEUTRAL) {
-					NavSystem.setupBackdoorNav(NavSystem.enemyHQLocation);
-				}
-				NavSystem.followWaypoints();
+				
+//				System.out.println("start: " + Clock.getBytecodeNum());
+//				BroadcastSystem.write(ChannelType.CHANNEL1, 0);
+//				System.out.println("end: " + Clock.getBytecodeNum());
+//				BroadcastSystem.read(ChannelType.CHANNEL1);
+//				System.out.println("after read: " + Clock.getBytecodeNum());
+				
+//				if (NavSystem.navMode == NavMode.NEUTRAL) {
+//					NavSystem.setupSmartNav(NavSystem.enemyHQLocation);
+//				}
+//				NavSystem.followWaypoints();
+				
+				
 //				if (soldierState != SoldierState.MINING_IN_CIRCLE) {
 //					setupCircleMining(new MapLocation(15, 27), 10);
 //				}

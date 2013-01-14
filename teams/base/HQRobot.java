@@ -26,79 +26,90 @@ public class HQRobot extends BaseRobot {
 
 	}
 
+	public void testingFunction() {
+		int x = 3;
+	}
+	
 	@Override
 	public void run() {
-		try {
-			
-			if (Clock.getRoundNum() % Constants.CHANNEL_CYCLE == 0) {
-				EncampmentJobSystem.updateJobsOnCycle();
+		try {			
+			if (Clock.getRoundNum() < 20) {
+				BroadcastSystem.write(ChannelType.CHANNEL1, 0);
+				BroadcastSystem.read(ChannelType.CHANNEL1);
+				BroadcastSystem.write(ChannelType.CHANNEL1, 0);
 			} else {
-				EncampmentJobSystem.updateJobsAfterChecking();
+				rc.resign();
 			}
 			
-			
-			if (rc.isActive()) {
-//				if (Clock.getRoundNum() > 500) {
-//					rc.resign();
-//				}
-				
-
-
-//				// Spawn a soldier
-//				Direction desiredDir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
-//				Direction dir = getSpawnDirection(rc, desiredDir);
-//				if (dir != null) {
-//					EncampmentJobSystem.updateJobs();
+//			if (Clock.getRoundNum() % Constants.CHANNEL_CYCLE == 0) {
+//				EncampmentJobSystem.updateJobsOnCycle();
+//			} else {
+//				EncampmentJobSystem.updateJobsAfterChecking();
+//			}
+//			
+//			
+//			if (rc.isActive()) {
+////				if (Clock.getRoundNum() > 500) {
+////					rc.resign();
+////				}
+//				
+//
+//
+////				// Spawn a soldier
+////				Direction desiredDir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
+////				Direction dir = getSpawnDirection(rc, desiredDir);
+////				if (dir != null) {
+////					EncampmentJobSystem.updateJobs();
+////					rc.spawn(dir);
+////				}
+//				if (Clock.getRoundNum() < 5) {
+//					Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
 //					rc.spawn(dir);
 //				}
-				if (Clock.getRoundNum() < 5) {
-					Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
-					rc.spawn(dir);
-				}
-			}
-			
-			for (int i=0; i<3; i++) {
-				MapLocation job = EncampmentJobSystem.encampmentJobs[i];
-				rc.setIndicatorString(i, "jobx: " + job.x + "joby: " + job.y);
-
-			}
-
-			//			// TODO: find out what strategy to switch to?
-			//			// this.strategy = HQStrategy.xxx
-			//			if (rc.isActive()) {
-			//				switch (strategy) {
-			//				case CREATE_SOLDIER:
-			//					create_soldier();
-			//					break;
-			//				case RESEARCH_DEFUSION:
-			//					if (!rc.hasUpgrade(Upgrade.DEFUSION)) {
-			//						rc.researchUpgrade(Upgrade.DEFUSION);
-			//					}
-			//					break;
-			//				case RESEARCH_FUSION:
-			//					if (!rc.hasUpgrade(Upgrade.FUSION)) {
-			//						rc.researchUpgrade(Upgrade.FUSION);
-			//					}
-			//					break;
-			//				case RESEARCH_NUKE:
-			//					if (!rc.hasUpgrade(Upgrade.NUKE)) {
-			//						rc.researchUpgrade(Upgrade.NUKE);
-			//					}
-			//					break;
-			//				case RESEARCH_PICKAXE:
-			//					if (!rc.hasUpgrade(Upgrade.PICKAXE)) {
-			//						rc.researchUpgrade(Upgrade.PICKAXE);
-			//					}
-			//					break;
-			//				case RESEARCH_VISION:
-			//					if (!rc.hasUpgrade(Upgrade.VISION)) {
-			//						rc.researchUpgrade(Upgrade.VISION);
-			//					}
-			//					break;
-			//				default:
-			//					break;
-			//				}
-			//			}
+//			}
+//			
+//			for (int i=0; i<3; i++) {
+//				MapLocation job = EncampmentJobSystem.encampmentJobs[i];
+//				rc.setIndicatorString(i, "jobx: " + job.x + "joby: " + job.y);
+//
+//			}
+//
+//			//			// TODO: find out what strategy to switch to?
+//			//			// this.strategy = HQStrategy.xxx
+//			//			if (rc.isActive()) {
+//			//				switch (strategy) {
+//			//				case CREATE_SOLDIER:
+//			//					create_soldier();
+//			//					break;
+//			//				case RESEARCH_DEFUSION:
+//			//					if (!rc.hasUpgrade(Upgrade.DEFUSION)) {
+//			//						rc.researchUpgrade(Upgrade.DEFUSION);
+//			//					}
+//			//					break;
+//			//				case RESEARCH_FUSION:
+//			//					if (!rc.hasUpgrade(Upgrade.FUSION)) {
+//			//						rc.researchUpgrade(Upgrade.FUSION);
+//			//					}
+//			//					break;
+//			//				case RESEARCH_NUKE:
+//			//					if (!rc.hasUpgrade(Upgrade.NUKE)) {
+//			//						rc.researchUpgrade(Upgrade.NUKE);
+//			//					}
+//			//					break;
+//			//				case RESEARCH_PICKAXE:
+//			//					if (!rc.hasUpgrade(Upgrade.PICKAXE)) {
+//			//						rc.researchUpgrade(Upgrade.PICKAXE);
+//			//					}
+//			//					break;
+//			//				case RESEARCH_VISION:
+//			//					if (!rc.hasUpgrade(Upgrade.VISION)) {
+//			//						rc.researchUpgrade(Upgrade.VISION);
+//			//					}
+//			//					break;
+//			//				default:
+//			//					break;
+//			//				}
+//			//			}
 		} catch (Exception e) {
 			System.out.println("caught exception before it killed us:");
 			System.out.println(rc.getRobot().getID());
