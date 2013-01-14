@@ -29,33 +29,20 @@ public class HQRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
-//			BroadcastSystem.write(ChannelType.CHANNEL1, 3493);
 			
-			
-//			updateJobsAfterChecking();
-//			System.out.println("unreachables: " + EncampmentJobSystem.numUnreachableEncampments);
-//			EncampmentJobSystem.updateJobsAfterChecking();
+			if (Clock.getRoundNum() % Constants.CHANNEL_CYCLE == 0) {
+				EncampmentJobSystem.updateJobsOnCycle();
+			} else {
+				EncampmentJobSystem.updateJobsAfterChecking();
+			}
 			
 			
 			if (rc.isActive()) {
-//				if (Clock.getRoundNum() > 2250) {
+//				if (Clock.getRoundNum() > 500) {
 //					rc.resign();
 //				}
-				//				if (message.isValid) {
-				//					if (message.body == 0xFFFFFF) {
-				//						System.out.println("HQ 0xFFFFFF");
-				//					} else {
-				//						int locY = message.body & 0xFF;
-				//						int locX = message.body >> 8;
-				//						System.out.println("HQ locy: " + locY + " locx: " + locX);
-				//					}
-				//				}
 				
 
-				//				if (Clock.getRoundNum() % 10 == 0) {
-				//					updateJobs();
-				//				} else {
-				//				}
 
 				// Spawn a soldier
 				Direction desiredDir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());

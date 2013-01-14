@@ -33,6 +33,10 @@ public class NavSystem {
 	public static int mapWidth;
 	public static MapLocation mapCenter;
 	
+	public static int BFSRound = 0;
+	public static int[] BFSTurns;
+	public static int BFSIdle = 0; 
+	
 	/**
 	 * MUST CALL THIS METHOD BEFORE USING NavSystem
 	 * @param myRC
@@ -314,6 +318,10 @@ public class NavSystem {
 	}
 	
 	
+	public static void setupGetCloser(MapLocation endLocation) throws GameActionException {
+		navMode = NavMode.GETCLOSER;
+		destination = endLocation;
+	}
 	/**
 	 * Moves to a square that is closer to the goal
 	 * returns true if was able to move, false otherwise
@@ -321,19 +329,57 @@ public class NavSystem {
 	 * @return
 	 * @throws GameActionException
 	 */
-	public static boolean moveCloser(MapLocation goalLoc) throws GameActionException {
+	public static boolean moveCloser() throws GameActionException {
 		// first try to get closer
-		double distance = rc.getLocation().distanceSquaredTo(goalLoc);
-		moveloop: for (int i=0; i<8; i++) {
+		double distance = rc.getLocation().distanceSquaredTo(destination);
+		for (int i=0; i<8; i++) {
 			if (rc.canMove(Direction.values()[i])) {
 				MapLocation nextLoc = rc.getLocation().add(Direction.values()[i]);
-				if (nextLoc.distanceSquaredTo(goalLoc) < distance) {
+				if (nextLoc.distanceSquaredTo(destination) < distance) {
 					NavSystem.moveOrDefuse(Direction.values()[i]);
 					return true;
 				}
 			}
 		}
 		return false;
+	}
+	
+	public static void tryMoveCloser() throws GameActionException {
+		boolean moved = NavSystem.moveCloser();
+//		System.out.println("moved: " + moved);
+		if (moved == false) {	
+			NavSystem.setupBFSMode(destination);
+		}
+	}
+	public static void setupBFSMode(MapLocation endLocation) throws GameActionException {
+		navMode = NavMode.BFSMODE;
+		destination = endLocation;
+		int[][] encArray = NavSystem.populate5by5board();
+		int[] goalCoord = NavSystem.locToIndex(rc.getLocation(), destination, 2);
+		BFSRound = 0;
+		BFSIdle = 0;
+		BFSTurns = NavSystem.runBFS(encArray, goalCoord[1], goalCoord[0]);
+//		System.out.println("BFSTurns :" + BFSTurns.length);
+		if (BFSTurns.length == 0) { // if unreachable, tell to HQ and unassign himself
+			EncampmentJobSystem.postUnreachableMessage(destination);
+			robot.unassigned = true;
+		}
+	}
+	
+	public static void tryBFSNextTurn() throws GameActionException{
+		if (BFSIdle >= 50) { // if idle for 50 turns or more
+			// we retry destination
+			setupGetCloser(destination);
+		} else {
+			System.out.println("Direction: " + BFSTurns[BFSRound]);
+			Direction dir = Direction.values()[BFSTurns[BFSRound]];
+			boolean hasMoved = NavSystem.moveOrDefuse(dir);
+			if (hasMoved) {
+				BFSRound++;
+			} else {
+				BFSIdle++;
+			}
+		}
 	}
 	/** 5 by 5 bffs
 	 * 

@@ -216,6 +216,32 @@ public class EncampmentJobSystem {
 		return EncampmentJobMessageType.EMPTY;
 	}
 	
+	/**
+	 * HQ uses this to see if a certain channel contains a maplocation
+	 * of a certain completed encampment. Returns null if 
+	 * @param channel
+	 * @return
+	 */
+	public static EncampmentJobMessageType checkCompletionOnCycle(ChannelType channel) {
+		Message message = BroadcastSystem.readLastCycle(channel);
+		if (message.isValid && message.body != maxMessage) {
+			
+			int locY = message.body & 0xFF;
+			int locX = (message.body >> 8) & 0xFF;
+			int unreachableBit = message.body >> 16;
+			System.out.println("locy: " + locY + " locx: " + locX);
+			if (unreachableBit == 1) { // if unreachable
+				unreachableEncampments[numUnreachableEncampments] = new MapLocation(locY, locX);
+				numUnreachableEncampments++;
+				return EncampmentJobMessageType.FAILURE;
+			} else { // it's a completion message
+				return EncampmentJobMessageType.COMPLETION;
+			}
+		}
+		return EncampmentJobMessageType.EMPTY;
+	}
+	
+	
 	/** 
 	 * Returns a boolean: true if one of the channels has a 
 	 * completion or a failure message, false otherwise
@@ -232,6 +258,32 @@ public class EncampmentJobSystem {
 		return false;
 	}
 	
+	public static boolean checkAllCompletionOnCycle() {
+		for (ChannelType channel: encampmentCompletionChannelList) {
+			EncampmentJobMessageType msgType = checkCompletionOnCycle(channel);
+			if (msgType != EncampmentJobMessageType.EMPTY) { // if a completion or a failure message
+				return true;
+			} 
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * The HQ calls this at the beginning of every broadcast cycle
+	 * to persist old job messages that were untaken
+	 */
+	public static void persistChannelsOnCycle() {
+		for (ChannelType channel: encampmentChannels) {
+			Message msgLastCycle = BroadcastSystem.readLastCycle(channel);
+			if (msgLastCycle.isValid && msgLastCycle.body != maxMessage) {
+				// check if the job was on and was untaken
+				if (parseOnOrOff(msgLastCycle.body) == 1 && parseTaken(msgLastCycle.body) == 0) {
+					postJob(channel, parseLocation(msgLastCycle.body));
+				}
+			}
+		}
+	}
 	/**
 	 * returns new list of channels corresponding to the new jobs
 	 * that will maintain the same channels for the old jobs
@@ -338,6 +390,12 @@ public class EncampmentJobSystem {
 			updateJobs();
 		}
 
+	}
+	
+	public static void updateJobsOnCycle() throws GameActionException {
+		persistChannelsOnCycle();
+		checkAllCompletionOnCycle();
+		updateJobs();
 	}
 	
 	/**

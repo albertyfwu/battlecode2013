@@ -3,5 +3,7 @@ package base;
 public enum NavMode {
 	NEUTRAL,
 	SMART,
-	BACKDOOR;
-}
+	BACKDOOR,
+	GETCLOSER,
+	BFSMODE;
+	}

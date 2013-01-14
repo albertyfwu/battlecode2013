@@ -8,6 +8,7 @@ public abstract class BaseRobot {
 	
 	public RobotController rc;
 	public int id;
+	public boolean unassigned;
 	
 	// Default constructor
 	public BaseRobot(RobotController myRC) {
