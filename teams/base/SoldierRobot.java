@@ -58,7 +58,7 @@ public class SoldierRobot extends BaseRobot {
 		try {
 			if (Clock.getRoundNum() < 2500) {
 				if (NavSystem.navMode == NavMode.NEUTRAL) {
-					NavSystem.setupSmartNav(rc.senseEnemyHQLocation());
+					NavSystem.setupSmartNav(new MapLocation(30, 27));
 				}
 				NavSystem.followWaypoints();
 //				if (soldierState != SoldierState.MINING_IN_CIRCLE) {
