@@ -44,8 +44,12 @@ public interface Constants {
 	/**
 	 * Mining
 	 */
+
+	// Radius of the initial mining circle
+	public static final int INITIAL_MINING_RADIUS = 2;
+	
 	// Amount to increase mining radius by when expanding mining radius
-	public static final int MINING_RADIUS_DELTA = 4; 
+	public static final int MINING_RADIUS_DELTA = 2;
 	
 	/**
 	 * Encampments

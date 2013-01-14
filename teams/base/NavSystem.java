@@ -82,7 +82,7 @@ public class NavSystem {
 		Direction lookingAtCurrently = dir;
 		lookAround: for (int d : directionOffsets) {
 			lookingAtCurrently = Direction.values()[(dir.ordinal() + d + 8) % 8];
-			if (rc.canMove(lookingAtCurrently)) {
+			if (rc.isActive() && rc.canMove(lookingAtCurrently)) {
 				if (hasBadMine(rc.getLocation().add(lookingAtCurrently))) {
 					rc.defuseMine(rc.getLocation().add(lookingAtCurrently));
 				} else {
