@@ -18,24 +18,15 @@ public class SoldierRobot extends BaseRobot {
 	// For mining
 	private MapLocation miningCenter;
 	private int miningRadius;
-	
-	public ArrayList<MapLocation> wayPoints;
-	public int wayPointsSize;
-	public int wayPointsIndex;
+	private int miningRadiusSquared;
+	private int miningMaxRadius;
 	
 	public boolean unassigned = true;
 	public ChannelType assignedChannel;
 	public MapLocation goalLoc;
 	
 	public MapLocation currentLocation;
-	
-	public MapLocation[] lastFourLocations;
-	
-	
-	private static boolean BFSMode = false;
-	private static int BFSRound = 0;
-	private static int[] BFSTurns;
-	private static int BFSIdle = 0;
+
 	
 	
 	
@@ -65,11 +56,14 @@ public class SoldierRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
-//			if (Clock.getRoundNum() < 2500) {
-//				if (soldierState != SoldierState.MINING_IN_CIRCLE) {
-//					setupCircleMining(new MapLocation(20, 20));
-//				}
-//				mineInCircle();
+			if (Clock.getRoundNum() < 0) {
+				if (soldierState != SoldierState.MINING_IN_CIRCLE) {
+					setupCircleMining(new MapLocation(15, 27), 10);
+				}
+				if (rc.isActive()) {
+					mineInCircle();
+				}
+			}
 //			} else {
 ////				if (NavSystem.navMode == NavMode.NEUTRAL) {
 ////					NavSystem.setupSmartNav(rc.senseEnemyHQLocation());
@@ -139,38 +133,46 @@ public class SoldierRobot extends BaseRobot {
 	 * Set up a center MapLocation for mining in a circle
 	 * @param center
 	 */
-	private void setupCircleMining(MapLocation center) {
+	private void setupCircleMining(MapLocation center, int maxRadius) {
 		soldierState = SoldierState.MINING_IN_CIRCLE;
 		miningCenter = center;
-		miningRadius = 2;
+		miningMaxRadius = maxRadius;
+		miningRadius = Constants.INITIAL_MINING_RADIUS;
+		miningRadiusSquared = miningRadius * miningRadius;
 	}
 	
-	private void mineInCircle() throws GameActionException {
-		for(int i = 0; i < 3; i++) {
-			rc.setIndicatorString(i, "");
-		}
-		int radiusSquared = miningRadius * miningRadius;
-		if (minesDenselyPacked(miningCenter, miningRadius)) {
-			// mines are fairly dense, so expand the circle in which to mine
-			miningRadius += Constants.MINING_RADIUS_DELTA;
-			radiusSquared = miningRadius * miningRadius;
-			rc.setIndicatorString(0, "miningRadius: " + miningRadius);
-			rc.setIndicatorString(1, "mines: " + rc.senseMineLocations(miningCenter, radiusSquared, rc.getTeam()).length);
-		}
-		radiusSquared = miningRadius * miningRadius;
-		if (rc.getLocation().distanceSquaredTo(miningCenter) >= radiusSquared) {
-			rc.setIndicatorString(2, "too far!: " + rc.getLocation().distanceSquaredTo(miningCenter) + ", " + radiusSquared);
-			NavSystem.goToLocation(miningCenter);
-		} else {
-			rc.setIndicatorString(2, "trying to lay mine");
-			// Lay a mine if possible
-			if (rc.senseMine(rc.getLocation()) == null) {
-				rc.layMine();
+	/**
+	 * This method tells the soldier to mine in a circle (as set up by setupCircleMining())
+	 * @return true if we can still mine, and false if the circle radius has exceeded the maxMiningRadius
+	 * @throws GameActionException
+	 */
+	private boolean mineInCircle() throws GameActionException {
+		if (rc.isActive()) {
+			if (minesDenselyPacked(miningCenter, miningRadiusSquared)) {
+				// mines are fairly dense, so expand the circle in which to mine
+				miningRadius += Constants.MINING_RADIUS_DELTA;
+				if (miningRadius > miningMaxRadius) {
+					return false;
+				}
+				miningRadiusSquared = miningRadius * miningRadius;
 			}
-			// Walk around the circle
-			Direction dir = rc.getLocation().directionTo(miningCenter).rotateLeft().rotateLeft(); // move counterclockwise around circle
-			NavSystem.goDirectionAndDefuse(dir);
+			if (rc.getLocation().distanceSquaredTo(miningCenter) >= miningRadiusSquared) {
+				// If we're too far from the center, move closer
+				NavSystem.goToLocation(miningCenter);
+			} else if (rc.getLocation().distanceSquaredTo(miningCenter) <= Math.pow(miningRadius - Constants.MINING_CIRCLE_DR_TOLERANCE, 2)) {
+				// If we're too close to the center, move away
+				NavSystem.goDirectionAndDefuse(rc.getLocation().directionTo(miningCenter).opposite());
+			} else {
+				// Lay a mine if possible
+				if (rc.senseMine(rc.getLocation()) == null) {
+					rc.layMine();
+				}
+				// Walk around the circle
+				Direction dir = rc.getLocation().directionTo(miningCenter).rotateLeft().rotateLeft(); // move counterclockwise around circle
+				NavSystem.goDirectionAndDefuse(dir);
+			}
 		}
+		return true;
 	}
 	
 	/**
@@ -179,9 +181,8 @@ public class SoldierRobot extends BaseRobot {
 	 * @param radiusSquared
 	 * @return
 	 */
-	private boolean minesDenselyPacked(MapLocation center, int miningRadius) {
-		int radiusSquared = miningRadius * miningRadius;
-		return rc.senseMineLocations(center, radiusSquared, rc.getTeam()).length >= 1 * radiusSquared;
+	private boolean minesDenselyPacked(MapLocation center, int radiusSquared) {
+		return rc.senseMineLocations(center, radiusSquared, rc.getTeam()).length >= (int)(2 * radiusSquared);
 	}
 	
 	private static void print2Darray(int[][] array) {
