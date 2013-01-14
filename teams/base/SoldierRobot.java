@@ -62,7 +62,7 @@ public class SoldierRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
-			if (Clock.getRoundNum() < 300) {
+			if (Clock.getRoundNum() < 2500) {
 				if (soldierState != SoldierState.MINING_IN_CIRCLE) {
 					setupCircleMining(new MapLocation(20, 20));
 				}

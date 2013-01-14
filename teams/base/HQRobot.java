@@ -33,8 +33,8 @@ public class HQRobot extends BaseRobot {
 			
 			
 //			updateJobsAfterChecking();
-			System.out.println("unreachables: " + EncampmentJobSystem.numUnreachableEncampments);
-			EncampmentJobSystem.updateJobsAfterChecking();
+//			System.out.println("unreachables: " + EncampmentJobSystem.numUnreachableEncampments);
+//			EncampmentJobSystem.updateJobsAfterChecking();
 			
 			
 			if (rc.isActive()) {
