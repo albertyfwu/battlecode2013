@@ -123,16 +123,15 @@ public class EncampmentJobSystem {
 	 * @param currLoc
 	 * @return ChannelType
 	 */
-	public static ChannelType postCompletionMessage(MapLocation currLoc) {
-		for (ChannelType channel: encampmentCompletionChannelList) {
+	public static void postCompletionMessage(MapLocation currLoc) {
+		forloop: for (ChannelType channel: encampmentCompletionChannelList) {
 			Message message = BroadcastSystem.read(channel);
 			if (message.isUnwritten || (message.isValid && message.body == maxMessage)){
 				int newmsg = (currLoc.x << 8) + currLoc.y;
 				BroadcastSystem.write(channel, newmsg);
-				return channel;
+				break forloop; 
 			}
 		}
-		return null;
 	}
 	
 	/**
@@ -157,6 +156,8 @@ public class EncampmentJobSystem {
 			int locY = message.body & 0xFF;
 			int locX = message.body >> 8;
 			System.out.println("locy: " + locY + " locx: " + locX);
+			
+			postCleanUp(channel); // cleanup
 			return new MapLocation(locY, locX);
 		}
 		return null;

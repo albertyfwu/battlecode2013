@@ -64,7 +64,7 @@ public class SoldierRobot extends BaseRobot {
 //					NavSystem.followWaypoints();
 //				}
 				
-				NavSystem.goToLocation(new MapLocation(20, 20));
+				NavSystem.goToLocation(new MapLocation(10, 10));
 			} else { // is assigned to an encampment job
 				if (!unassigned) { // if assigned to something
 					EncampmentJobSystem.updateJobTaken(assignedChannel);

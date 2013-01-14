@@ -11,16 +11,7 @@ public class GeneratorRobot extends EncampmentRobot {
 
 	@Override
 	public void run() {
-		try {
-			if (!hasCleanedUp) {
-				turnCounter++;
-				if (turnCounter >= cleanUpWait) {
-					cleanUp();
-				}
-			}
-		} catch(Exception e) {
-			
-		}
+		
 	}
 
 }
