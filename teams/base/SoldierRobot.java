@@ -85,7 +85,8 @@ public class SoldierRobot extends BaseRobot {
 					// If there are enemies nearby, trigger FIGHTING SoldierState
 					if (DataCache.numTotalEnemyRobots > 0) {
 						soldierState = SoldierState.FIGHTING;
-					} else if (DataCache.numAlliedSoldiers > Constants.RALLYING_SOLDIER_THRESHOLD) {
+//					} else if (DataCache.numAlliedSoldiers > Constants.RALLYING_SOLDIER_THRESHOLD) {
+					} else if (rc.getTeamPower() < 100) {
 						soldierState = SoldierState.FIGHTING;
 					} else {
 						if (currentLocation.distanceSquaredTo(rallyPoint) < 63) {

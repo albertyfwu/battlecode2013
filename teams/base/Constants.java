@@ -12,7 +12,7 @@ public interface Constants {
 	// var = n means channel will cycle every n turns
 	// IMPORTANT: YOU MUST RUN THE MAIN FUNCTION IN BROADCASTSYSTEM.JAVA IF YOU CHANGE THIS CONSTANT
 	// IMPORTANT: ADDITIONALLY, MAKE SURE TO ADJUST MAX_PRECOMPUTED_ROUNDS SO JAVA DOES NOT COMPLAIN
-	public static final int CHANNEL_CYCLE = 10000;	
+	public static final int CHANNEL_CYCLE = 17;	
 	
 	// the maximum number of precomputed rounds of channels (if too high, Java will spit out wrong numbers)
 	public static final int MAX_PRECOMPUTED_ROUNDS = 0;
