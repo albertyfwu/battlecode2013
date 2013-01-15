@@ -24,7 +24,6 @@ public abstract class BaseRobot {
 	public void loop() {
 		while (true) {
 			try {
-				DataCache.updateRoundVariables();
 				run();
 			} catch (Exception e) {
 				// Deal with exception

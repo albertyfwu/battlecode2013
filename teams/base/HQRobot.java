@@ -17,7 +17,7 @@ public class HQRobot extends BaseRobot {
 	public MapLocation HQLocation;
 	public MapLocation EnemyHQLocation;
 
-	public HQRobot(RobotController rc) {
+	public HQRobot(RobotController rc) throws GameActionException {
 		super(rc);
 		HQLocation = rc.getLocation();
 		EnemyHQLocation = rc.senseEnemyHQLocation();
@@ -37,13 +37,14 @@ public class HQRobot extends BaseRobot {
 //			}
 //			
 			
-			if (Clock.getRoundNum() % Constants.CHANNEL_CYCLE == 0) {
+			if (Clock.getRoundNum() % Constants.CHANNEL_CYCLE == 0 && Clock.getRoundNum() % Constants.CHANNEL_CYCLE > 0) {
                 EncampmentJobSystem.updateJobsOnCycle();
 	        } else {
 	                EncampmentJobSystem.updateJobsAfterChecking();
 	        }
 			
 			if (rc.isActive()) {
+
 //				if (Clock.getRoundNum() > 500) {
 //					rc.resign();
 //				}

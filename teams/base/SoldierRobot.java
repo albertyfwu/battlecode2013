@@ -250,7 +250,7 @@ public class SoldierRobot extends BaseRobot {
 			Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
 			int[] closestEnemyInfo = getClosestEnemy(enemiesList);
 			MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
-			if (rc.senseNearbyGameObjects(Robot.class, 18, rc.getTeam().opponent()).length > 0) {
+			if (DataCache.numNearbyEnemyRobots > 0) {
 				double[] our23 = getEnemies2Or3StepsAway();
 				double[] enemy23 = getEnemies2Or3StepsAwaySquare(closestEnemyLocation, rc.getTeam().opponent());
 				Direction dir = currentLocation.directionTo(closestEnemyLocation);

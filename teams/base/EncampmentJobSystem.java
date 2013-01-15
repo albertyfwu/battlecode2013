@@ -60,6 +60,8 @@ public class EncampmentJobSystem {
 	public static RobotType assignedRobotType;
 	public static ChannelType assignedChannel;
 	
+	public static int encampmentRadius;
+	
 	/**
 	 * Initializes BroadcastSystem by setting rc
 	 * @param myRobot
@@ -69,15 +71,16 @@ public class EncampmentJobSystem {
 		rc = robot.rc;
 	}
 	
-	public static void initializeConstants(MapLocation hqloc, MapLocation enemyloc) {
+	public static void initializeConstants(MapLocation hqloc, MapLocation enemyloc) throws GameActionException {
 		HQLocation = hqloc;
 		EnemyHQLocation = enemyloc;
 		numEncampmentsNeeded = Constants.INITIAL_NUM_ENCAMPMENTS_NEEDED; 
 		numUnreachableEncampments = 0;
 		unreachableEncampments = new MapLocation[100];
-		int rushDist = hqloc.distanceSquaredTo(location);
+		int rushDist = hqloc.distanceSquaredTo(enemyloc);
+		encampmentRadius = (int) (0.55 * rushDist);
 		
-		MapLocation[] allEncampments = rc.senseEncampmentSquares(hqloc, );
+		MapLocation[] allEncampments = rc.senseEncampmentSquares(hqloc, encampmentRadius, Team.NEUTRAL);
 		if (allEncampments.length < numEncampmentsNeeded) {
 			numEncampmentsNeeded = allEncampments.length;
 		}
@@ -378,7 +381,7 @@ public class EncampmentJobSystem {
 	 */
 	public static void updateJobs() throws GameActionException {
 //		System.out.println("Before update: " + Clock.getBytecodeNum());
-		MapLocation[] neutralEncampments = rc.senseEncampmentSquares(HQLocation,100000, Team.NEUTRAL);
+		MapLocation[] neutralEncampments = rc.senseEncampmentSquares(HQLocation,encampmentRadius, Team.NEUTRAL);
 		if (EncampmentJobSystem.numEncampmentsNeeded > neutralEncampments.length){
 			EncampmentJobSystem.numEncampmentsNeeded = neutralEncampments.length;
 		}
