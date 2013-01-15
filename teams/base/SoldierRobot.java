@@ -49,21 +49,17 @@ public class SoldierRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
+			DataCache.updateRoundVariables();
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
 			if (unassigned) {
-				int numAlliedRobots = rc.senseNearbyGameObjects(Robot.class, 10000, rc.getTeam()).length;
-				int numAlliedEncampments = rc.senseEncampmentSquares(currentLocation, 10000, rc.getTeam()).length;
-				int numAlliedSoldiers = numAlliedRobots - numAlliedEncampments - 1 - EncampmentJobSystem.maxEncampmentJobs;
-				int numNearbyEnemyRobots = rc.senseNearbyGameObjects(Robot.class, Constants.RALLYING_RADIUS_SQUARED_CHECK, rc.getTeam().opponent()).length;
-				
-				rc.setIndicatorString(0, Integer.toString(numAlliedSoldiers));
-				rc.setIndicatorString(1, Integer.toString(numNearbyEnemyRobots));
+				rc.setIndicatorString(0, Integer.toString(DataCache.numAlliedSoldiers));
+				rc.setIndicatorString(1, Integer.toString(DataCache.numNearbyEnemyRobots));
 				
 				switch (soldierState) {
 				case FIGHTING:
 					microCode();
-					if (numNearbyEnemyRobots == 0) {
-						if (numAlliedRobots < Constants.FIGHTING_NOT_ENOUGH_ALLIED_SOLDIERS) {
+					if (DataCache.numNearbyEnemyRobots == 0) {
+						if (DataCache.numAlliedRobots < Constants.FIGHTING_NOT_ENOUGH_ALLIED_SOLDIERS) {
 							soldierState = SoldierState.RALLYING;
 						}
 						// Otherwise, just keep fighting
@@ -71,9 +67,9 @@ public class SoldierRobot extends BaseRobot {
 					break;
 				case RALLYING:
 					// If there are enemies nearby, trigger FIGHTING SoldierState
-					if (numNearbyEnemyRobots > 0) {
+					if (DataCache.numNearbyEnemyRobots > 0) {
 						soldierState = SoldierState.FIGHTING;
-					} else if (numAlliedSoldiers > Constants.RALLYING_SOLDIER_THRESHOLD) {
+					} else if (DataCache.numAlliedSoldiers > Constants.RALLYING_SOLDIER_THRESHOLD) {
 						// We have enough soldiers, so move out
 						Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class, 10000, rc.getTeam().opponent());
 						int[] closestEnemyNums = getClosestEnemy(enemyRobots);
