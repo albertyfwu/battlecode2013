@@ -321,7 +321,7 @@ public class NavSystem {
 	 */
 	public static int smartScore(MapLocation location, int radius, MapLocation endLocation) throws GameActionException {
 		int numMines = rc.senseNonAlliedMineLocations(location, radius * radius).length;
-		int numEncampments = rc.senseEncampmentSquares(location, radius * radius, null).length;
+		int numEncampments = rc.senseEncampmentSquares(location, radius * radius, rc.getTeam()).length;
 		int penalty = numMines + numEncampments;
 		// maximum number of mines within this radius should be 3 * radius^2
 		int distanceSquared = location.distanceSquaredTo(endLocation);
