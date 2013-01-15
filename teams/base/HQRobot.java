@@ -34,6 +34,15 @@ public class HQRobot extends BaseRobot {
 			BroadcastSystem.write(powerChannel, (int) rc.getTeamPower());
 //			System.out.println("end: " + Clock.getBytecodeNum());
 			DataCache.updateRoundVariables();
+			
+			// Check if enemy's nuke is half done
+			if (!enemyNukeHalfDone) {
+				enemyNukeHalfDone = rc.senseEnemyNukeHalfDone();
+			}
+			if (enemyNukeHalfDone) {
+				// Broadcast this
+				BroadcastSystem.write(ChannelType.ENEMY_NUKE_HALF_DONE, 1);
+			}
 
 //			if (Clock.getRoundNum() < 20) {
 //				BroadcastSystem.write(ChannelType.CHANNEL1, 0);

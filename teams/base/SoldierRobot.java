@@ -66,7 +66,14 @@ public class SoldierRobot extends BaseRobot {
 				rc.setIndicatorString(1, Integer.toString(DataCache.numNearbyEnemyRobots));
 				rc.setIndicatorString(2, soldierState.toString());
 				
-				if (DataCache.enemyNukeHalfDone) {
+				// Check if enemy nuke is half done
+				if (!enemyNukeHalfDone) {
+					Message message = BroadcastSystem.read(ChannelType.ENEMY_NUKE_HALF_DONE);
+					if (message.isValid && message.body == 1) {
+						enemyNukeHalfDone = true;
+					}
+				}
+				if (enemyNukeHalfDone) {
 					soldierState = SoldierState.FIGHTING;
 				}
 				
