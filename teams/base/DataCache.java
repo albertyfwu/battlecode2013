@@ -16,6 +16,8 @@ public class DataCache {
 	public static int numNearbyEnemyRobots;
 	public static int numTotalEnemyRobots;
 	
+	public static boolean enemyNukeHalfDone;
+	
 	public static void init(BaseRobot myRobot) {
 		robot = myRobot;
 		rc = robot.rc;
@@ -29,6 +31,8 @@ public class DataCache {
 		numAlliedEncampments = rc.senseEncampmentSquares(rc.getLocation(), 10000, rc.getTeam()).length;
 		numAlliedSoldiers = numAlliedRobots - numAlliedEncampments - 1 - EncampmentJobSystem.maxEncampmentJobs;
 		numNearbyEnemyRobots = rc.senseNearbyGameObjects(Robot.class, Constants.RALLYING_SOLDIER_THRESHOLD, rc.getTeam().opponent()).length;
-		numTotalEnemyRobots = rc.senseNearbyGameObjects(Robot.class, 10000, rc.getTeam().opponent()).length;		
+		numTotalEnemyRobots = rc.senseNearbyGameObjects(Robot.class, 10000, rc.getTeam().opponent()).length;
+		
+		enemyNukeHalfDone = rc.senseEnemyNukeHalfDone();
 	}
 }
