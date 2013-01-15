@@ -511,7 +511,7 @@ public class EncampmentJobSystem {
 	
 	public static int getRobotTypeToBuild(int alliedEncampmentsBuilt) {
 		if (alliedEncampmentsBuilt >= buildOrder.length) {
-			if (Util.Random() < 0.5) {
+			if (Util.Random() < 0.8) {
 				return 0;
 			} else {
 				return 1;
