@@ -77,6 +77,17 @@ public class SoldierRobot extends BaseRobot {
 				rc.setIndicatorString(1, Integer.toString(DataCache.numNearbyEnemyRobots));
 				rc.setIndicatorString(2, soldierState.toString());
 				
+				// Check if enemy nuke is half done
+				if (!enemyNukeHalfDone) {
+					Message message = BroadcastSystem.read(ChannelType.ENEMY_NUKE_HALF_DONE);
+					if (message.isValid && message.body == 1) {
+						enemyNukeHalfDone = true;
+					}
+				}
+				if (enemyNukeHalfDone) {
+					soldierState = SoldierState.FIGHTING;
+				}
+				
 				switch (soldierState) {
 				case FIGHTING:
 					if (DataCache.numTotalEnemyRobots == 0) {
@@ -103,7 +114,6 @@ public class SoldierRobot extends BaseRobot {
 					// If there are enemies nearby, trigger FIGHTING SoldierState
 					if (DataCache.numTotalEnemyRobots > 0) {
 						soldierState = SoldierState.FIGHTING;
-//					} else if (DataCache.numAlliedSoldiers > Constants.RALLYING_SOLDIER_THRESHOLD) {
 					} else if (hqPowerLevel < 100) {
 						soldierState = SoldierState.FIGHTING;
 					} else {
@@ -114,14 +124,6 @@ public class SoldierRobot extends BaseRobot {
 						} else {
 							NavSystem.goToLocation(rallyPoint);
 						}
-						
-//						if (currentLocation.distanceSquaredTo(rallyPoint) < 63) {
-//							// Close to rally point
-////							mineInCircle();
-//						} else {
-//							// Rally						
-//							NavSystem.goToLocation(rallyPoint);
-//						}
 					}
 					break;
 				default:

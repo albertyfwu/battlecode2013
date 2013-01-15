@@ -145,7 +145,9 @@ public class BroadcastSystem {
 		int[] channelNos = new int[Constants.REDUNDANT_CHANNELS];
 		int rangeStart = channelType.ordinal() * ChannelType.range;
 		for (int i = 0; i < Constants.REDUNDANT_CHANNELS; i++) {
+			System.out.println("start: " + Clock.getBytecodeNum());
 			int offset = (Integer.toString(((constant << 4 + 17 * channelType.ordinal()) << 4 + i)).hashCode() + rc.getTeam().ordinal()) % ChannelType.range;
+			System.out.println("end: " + Clock.getBytecodeNum());
 			// ensure that the offset is nonnegative
 			if (offset < 0) {
 				offset += ChannelType.range;
