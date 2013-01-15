@@ -1,11 +1,15 @@
 package base;
 
+import battlecode.common.Clock;
 import battlecode.common.RobotController;
 
 public class RobotPlayer {
 	
 	public static void run(RobotController rc) {
 		BaseRobot robot = null;
+		
+		int rseed = rc.getRobot().getID();
+		Util.randInit(rseed, rseed * Clock.getRoundNum());
 		
 		try {
 			switch(rc.getType()) {

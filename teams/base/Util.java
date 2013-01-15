@@ -3,6 +3,7 @@ package base;
 import battlecode.common.Clock;
 
 public class Util {
+	
 	static int m_z = Clock.getBytecodeNum();
 	static int m_w = Clock.getRoundNum();
 
