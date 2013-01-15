@@ -317,9 +317,12 @@ public class NavSystem {
 	 * Smart scoring function for calculating how favorable it is to move in a certain direction.
 	 * @param location
 	 * @param radius
+	 * @throws GameActionException 
 	 */
-	public static int smartScore(MapLocation location, int radius, MapLocation endLocation) {
+	public static int smartScore(MapLocation location, int radius, MapLocation endLocation) throws GameActionException {
 		int numMines = rc.senseNonAlliedMineLocations(location, radius * radius).length;
+		int numEncampments = rc.senseEncampmentSquares(location, radius * radius, null).length;
+		int penalty = numMines + numEncampments;
 		// maximum number of mines within this radius should be 3 * radius^2
 		int distanceSquared = location.distanceSquaredTo(endLocation);
 		int mineDelay;
@@ -328,7 +331,7 @@ public class NavSystem {
 		} else {
 			mineDelay = GameConstants.MINE_DEFUSE_DELAY;
 		}
-		return distanceSquared + (int)(0.7 * mineDelay * numMines);
+		return distanceSquared + (int)(0.7 * mineDelay * penalty);
 	}
 	
 	
