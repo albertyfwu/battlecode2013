@@ -46,11 +46,17 @@ public class SoldierRobot extends BaseRobot {
 			unassigned = false;
 			EncampmentJobSystem.updateJobTaken();
 		}
+
+		// Set up mining in a circle?
+		setupCircleMining(rallyPoint, 10);
+		soldierState = SoldierState.RALLYING;
 	}
 	
 	@Override
 	public void run() {
 		try {
+			rc.setIndicatorString(0, "new");
+			
 			DataCache.updateRoundVariables();
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
 			if (rc.getRobot().getID() == 158) {
@@ -61,7 +67,6 @@ public class SoldierRobot extends BaseRobot {
 				rc.setIndicatorString(0, Integer.toString(DataCache.numAlliedSoldiers));
 				rc.setIndicatorString(1, Integer.toString(DataCache.numNearbyEnemyRobots));
 				rc.setIndicatorString(2, soldierState.toString());
-
 				
 				switch (soldierState) {
 				case FIGHTING:
@@ -82,23 +87,18 @@ public class SoldierRobot extends BaseRobot {
 						soldierState = SoldierState.FIGHTING;
 					} else if (DataCache.numAlliedSoldiers > Constants.RALLYING_SOLDIER_THRESHOLD) {
 						soldierState = SoldierState.FIGHTING;
-//						// We have enough soldiers, so move out
-//						Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class, 10000, rc.getTeam().opponent());
-//						int[] closestEnemyNums = getClosestEnemy(enemyRobots);
-//						MapLocation enemyLocation = new MapLocation(closestEnemyNums[1], closestEnemyNums[2]);
-//						NavSystem.goToLocation(enemyLocation);
 					} else {
-						// Rally
-						
-						NavSystem.goToLocation(rallyPoint);
+						if (currentLocation.distanceSquaredTo(rallyPoint) < 63) {
+							// Close to rally point
+							mineInCircle();
+						} else {
+							// Rally						
+							NavSystem.goToLocation(rallyPoint);
+						}
 					}
 					break;
-				case MINING_IN_CIRCLE:
-					mineInCircle();
-					break;
 				default:
-					// Set up mining in a circle?
-					setupCircleMining(rallyPoint, 6);
+					break;
 				}
 			} else {
 				// This soldier has an encampment job, so it should go do that job
@@ -120,7 +120,7 @@ public class SoldierRobot extends BaseRobot {
 	 * @param center
 	 */
 	private void setupCircleMining(MapLocation center, int maxRadius) {
-		soldierState = SoldierState.MINING_IN_CIRCLE;
+//		soldierState = SoldierState.MINING_IN_CIRCLE;
 		miningCenter = center;
 		miningMaxRadius = maxRadius;
 		miningRadius = Constants.INITIAL_MINING_RADIUS;
@@ -133,6 +133,7 @@ public class SoldierRobot extends BaseRobot {
 	 * @throws GameActionException
 	 */
 	private boolean mineInCircle() throws GameActionException {
+		rc.setIndicatorString(0, "miningRadiusSquared " + miningRadiusSquared);
 		if (rc.isActive()) {
 			if (minesDenselyPacked(miningCenter, miningRadiusSquared)) {
 				// mines are fairly dense, so expand the circle in which to mine
