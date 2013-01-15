@@ -22,8 +22,6 @@ public class SoldierRobot extends BaseRobot {
 	private int miningMaxRadius;
 	
 	public boolean unassigned = true;
-	public ChannelType assignedChannel;
-	public MapLocation goalLoc;
 	
 	public MapLocation currentLocation;
 	
@@ -42,13 +40,8 @@ public class SoldierRobot extends BaseRobot {
 		
 		ChannelType channel = EncampmentJobSystem.findJob();
 		if (channel != null) {
-			assignedChannel = channel;
 			unassigned = false;
-			goalLoc = EncampmentJobSystem.goalLoc;
-			System.out.println("channel: " + channel);
-			System.out.println("goalLocx: " + goalLoc.x);
-			System.out.println("goalLocy: " + goalLoc.y);
-			EncampmentJobSystem.updateJobTaken(channel);
+			EncampmentJobSystem.updateJobTaken();
 		}
 	}
 	
@@ -242,12 +235,24 @@ public class SoldierRobot extends BaseRobot {
 
 	
 	private void microCode() throws GameActionException {
+		if (rc.getRobot().getID() == 147) {
+			System.out.println("before: " + Clock.getBytecodeNum());
+		}
 		Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
 		int[] closestEnemyInfo = getClosestEnemy(enemiesList);
 		MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
+		if (rc.getRobot().getID() == 147) {
+			System.out.println("closest Enemy: " + Clock.getBytecodeNum());
+		}
 		if (rc.senseNearbyGameObjects(Robot.class, 14, rc.getTeam().opponent()).length > 0) {
 			double[] our23 = getEnemies2Or3StepsAway();
+			if (rc.getRobot().getID() == 147) {
+				System.out.println("calculate our23: " + Clock.getBytecodeNum());
+			}
 			double[] enemy23 = getEnemies2Or3StepsAwaySquare(closestEnemyLocation, rc.getTeam().opponent());
+			if (rc.getRobot().getID() == 147) {
+				System.out.println("calculate enemy23: " + Clock.getBytecodeNum());
+			}
 			Direction dir = currentLocation.directionTo(closestEnemyLocation);
 //			int numAlliesNext = getNumAlliedNeighborsSquare(currentLocation.add(dir));
 //			int numAllies = getNumAlliedNeighbors();
@@ -259,6 +264,10 @@ public class SoldierRobot extends BaseRobot {
 		} else {
 			NavSystem.goToLocation(closestEnemyLocation);
 		}
+		if (rc.getRobot().getID() == 147) {
+			System.out.println("after: " + Clock.getBytecodeNum());
+		}
+
 	}
 	
 	
@@ -268,21 +277,21 @@ public class SoldierRobot extends BaseRobot {
 	 */
 	private void captureCode() throws GameActionException {
 		if (!unassigned) { // if assigned to something
-			EncampmentJobSystem.updateJobTaken(assignedChannel);
+			EncampmentJobSystem.updateJobTaken();
 		}
 		if (rc.isActive()) {
-			if (rc.senseEncampmentSquare(currentLocation) && currentLocation.equals(goalLoc)) {
-				rc.captureEncampment(RobotType.GENERATOR);
+			if (rc.senseEncampmentSquare(currentLocation) && currentLocation.equals(EncampmentJobSystem.goalLoc)) {
+				rc.captureEncampment(EncampmentJobSystem.assignedRobotType);
 			} else {
 				if (NavSystem.navMode == NavMode.BFSMODE) {
 					NavSystem.tryBFSNextTurn();
 				} else if (NavSystem.navMode == NavMode.GETCLOSER){
 					NavSystem.tryMoveCloser();
-				} else if (rc.getLocation().distanceSquaredTo(goalLoc) <= 8) {
-					NavSystem.setupGetCloser(goalLoc);
+				} else if (rc.getLocation().distanceSquaredTo(EncampmentJobSystem.goalLoc) <= 8) {
+					NavSystem.setupGetCloser(EncampmentJobSystem.goalLoc);
 					NavSystem.tryMoveCloser();
 				} else {
-					NavSystem.goToLocation(goalLoc);
+					NavSystem.goToLocation(EncampmentJobSystem.goalLoc);
 //					if (NavSystem.navMode == NavMode.NEUTRAL){
 //						NavSystem.setupSmartNav(goalLoc);
 //						NavSystem.followWaypoints();
