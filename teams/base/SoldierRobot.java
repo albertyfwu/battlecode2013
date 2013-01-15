@@ -1,6 +1,5 @@
 package base;
 
-import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
@@ -14,7 +13,7 @@ public class SoldierRobot extends BaseRobot {
 	
 	public Platoon platoon;
 	
-	public SoldierState soldierState;
+	public SoldierState soldierState = SoldierState.RALLYING;
 	
 	// For mining
 	private MapLocation miningCenter;
@@ -30,12 +29,8 @@ public class SoldierRobot extends BaseRobot {
 	
 	public MapLocation HQLocation;
 	public MapLocation EnemyHQLocation;
-
 	
-	
-	
-
-	
+	public MapLocation rallyPoint;
 	
 	public SoldierRobot(RobotController rc) throws GameActionException {
 		super(rc);
@@ -43,6 +38,8 @@ public class SoldierRobot extends BaseRobot {
 		HQLocation = rc.senseHQLocation();
 		EnemyHQLocation = rc.senseEnemyHQLocation();
 
+		rallyPoint = findRallyPoint();
+		
 		ChannelType channel = EncampmentJobSystem.findJob();
 		if (channel != null) {
 			assignedChannel = channel;
@@ -55,65 +52,55 @@ public class SoldierRobot extends BaseRobot {
 		}
 	}
 	
-//	public SoldierRobot(RobotController rc, Platoon platoon) {
-//		super(rc);
-//		this.platoon = platoon;
-//	}
-	
 	@Override
 	public void run() {
 		try {
-			currentLocation = rc.getLocation();
-			if (Clock.getRoundNum() < 0) {
-				if (Clock.getRoundNum() > 250) {
-					if (soldierState != SoldierState.FIGHTING){
-						soldierState = SoldierState.FIGHTING;
-					}
-					if (soldierState == SoldierState.FIGHTING) {
-						microCode();
-					}
-				} else {
-					NavSystem.goToLocation(findRallyPoint());
-				}
+			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
+			if (unassigned) {
+				int numAlliedRobots = rc.senseNearbyGameObjects(Robot.class, 10000, rc.getTeam()).length;
+				int numAlliedEncampments = rc.senseEncampmentSquares(currentLocation, 10000, rc.getTeam()).length;
+				int numAlliedSoldiers = numAlliedRobots - numAlliedEncampments - 1 - EncampmentJobSystem.maxEncampmentJobs;
+				int numNearbyEnemyRobots = rc.senseNearbyGameObjects(Robot.class, Constants.RALLYING_RADIUS_SQUARED_CHECK, rc.getTeam().opponent()).length;
 				
-
-				//				if (soldierState != SoldierState.MINING_IN_CIRCLE) {
-				//					setupCircleMining(new MapLocation(15, 27), 10);
-				//				}
-				//				if (rc.isActive()) {
-				//					mineInCircle();
-				//				}
-
-			} else {
-				//			} else {
-				////				if (NavSystem.navMode == NavMode.NEUTRAL) {
-				////					NavSystem.setupSmartNav(rc.senseEnemyHQLocation());
-				////				}
-				////				NavSystem.followWaypoints();
-				//				rc.suicide();
-				//				
-				//				NavSystem.goToLocation(new MapLocation(10, 10));
-				//				if (rc.getLocation().x == 10 && rc.getLocation().y == 10) {
-				//					rc.suicide();
-				//				}
-
-				currentLocation = rc.getLocation();
-
-				if (unassigned && rc.isActive()) {
-					if (NavSystem.navMode == NavMode.NEUTRAL) {
-						NavSystem.setupSmartNav(new MapLocation(10, 10));
+				rc.setIndicatorString(0, Integer.toString(numAlliedSoldiers));
+				rc.setIndicatorString(1, Integer.toString(numNearbyEnemyRobots));
+				
+				switch (soldierState) {
+				case FIGHTING:
+					microCode();
+					if (numNearbyEnemyRobots == 0) {
+						if (numAlliedRobots < Constants.FIGHTING_NOT_ENOUGH_ALLIED_SOLDIERS) {
+							soldierState = SoldierState.RALLYING;
+						}
+						// Otherwise, just keep fighting
 					}
-					NavSystem.followWaypoints();
-
-					if (rc.getLocation().x == 10 && rc.getLocation().y == 10) {
-						rc.suicide();
+					break;
+				case RALLYING:
+					// If there are enemies nearby, trigger FIGHTING SoldierState
+					if (numNearbyEnemyRobots > 0) {
+						soldierState = SoldierState.FIGHTING;
+					} else if (numAlliedSoldiers > Constants.RALLYING_SOLDIER_THRESHOLD) {
+						// We have enough soldiers, so move out
+						Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class, 10000, rc.getTeam().opponent());
+						int[] closestEnemyNums = getClosestEnemy(enemyRobots);
+						MapLocation enemyLocation = new MapLocation(closestEnemyNums[1], closestEnemyNums[2]);
+						NavSystem.goToLocation(enemyLocation);
+					} else {
+						// Rally
+						NavSystem.goToLocation(rallyPoint);
 					}
-				} else { // is assigned to an encampment job
-					captureCode();
+					break;
+				case MINING_IN_CIRCLE:
+					mineInCircle();
+					break;
+				default:
+					// Set up mining in a circle?
+					setupCircleMining(rallyPoint, 6);
 				}
+			} else {
+				// This soldier has an encampment job, so it should go do that job
+				captureCode();
 			}
-						
-			
 		} catch (Exception e) {
 			System.out.println("caught exception before it killed us:");
 			System.out.println(rc.getRobot().getID());
