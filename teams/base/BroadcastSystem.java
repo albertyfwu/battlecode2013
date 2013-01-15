@@ -86,7 +86,14 @@ public class BroadcastSystem {
 	 */
 	public static int[] getChannelNos(ChannelType channelType) {
 		int round = Clock.getRoundNum();
-		int round_cycle = round / Constants.CHANNEL_CYCLE;		
+		int round_cycle = round / Constants.CHANNEL_CYCLE;
+		
+//		if (getChannelNos(channelType, round_cycle)[0] != getChannelNosPrecomputed(channelType, round_cycle)[0]) {
+//			System.out.println("failed!!!!!!");
+//		} else {
+//			System.out.println("worked!!!!");
+//		}
+		
 		return getChannelNos(channelType, round_cycle);
 	}
 	
@@ -101,13 +108,9 @@ public class BroadcastSystem {
 		return getChannelNos(channelType, round_cycle);
 	}
 	
-//	public static int[] getChannelNosPrecomputed(ChannelType channelType, int round_cycle) {
-//		return PrecomputedChannelNos.precomputedChannelNos[round_cycle][channelType.ordinal()];
-//	}
-//	
-//	public static int[] getChannelNosLastCyclePrecomputed(ChannelType channelType, int round_cycle) {
-//		return PrecomputedChannelNos.precomputedChannelNos[round_cycle][channelType.ordinal()];
-//	}
+	public static int[] getChannelNosPrecomputed(ChannelType channelType, int round_cycle) {
+		return PrecomputedChannelNos.precomputedChannelNos[round_cycle][channelType.ordinal()];
+	}
 	
 	public static Message readLastCycle(ChannelType channelType) {
 		try {
@@ -146,7 +149,7 @@ public class BroadcastSystem {
 		int rangeStart = channelType.ordinal() * ChannelType.range;
 		for (int i = 0; i < Constants.REDUNDANT_CHANNELS; i++) {
 //			System.out.println("start: " + Clock.getBytecodeNum());
-			int offset = (Integer.toString(((constant << 4 + 17 * channelType.ordinal()) << 4 + i)).hashCode() + rc.getTeam().ordinal()) % ChannelType.range;
+			int offset = (Integer.toString(((constant << 4 + 17 * channelType.ordinal()) << 4 + i)).hashCode()) % ChannelType.range;
 //			System.out.println("end: " + Clock.getBytecodeNum());
 			// ensure that the offset is nonnegative
 			if (offset < 0) {

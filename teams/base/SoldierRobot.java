@@ -85,10 +85,13 @@ public class SoldierRobot extends BaseRobot {
 					}
 				}
 				if (enemyNukeHalfDone) {
-					soldierState = SoldierState.FIGHTING;
+					soldierState = SoldierState.ALL_IN;
 				}
 				
 				switch (soldierState) {
+				case ALL_IN:
+					microCode();
+					break;
 				case FIGHTING:
 					if (DataCache.numTotalEnemyRobots == 0) {
 						if (DataCache.numAlliedSoldiers < Constants.FIGHTING_NOT_ENOUGH_ALLIED_SOLDIERS) {
