@@ -66,6 +66,10 @@ public class SoldierRobot extends BaseRobot {
 				rc.setIndicatorString(1, Integer.toString(DataCache.numNearbyEnemyRobots));
 				rc.setIndicatorString(2, soldierState.toString());
 				
+				if (DataCache.enemyNukeHalfDone) {
+					soldierState = SoldierState.FIGHTING;
+				}
+				
 				switch (soldierState) {
 				case FIGHTING:
 					if (DataCache.numTotalEnemyRobots == 0) {
