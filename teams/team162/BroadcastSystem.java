@@ -141,15 +141,23 @@ public class BroadcastSystem {
 		write(channelType, Constants.MAX_MESSAGE);
 	}	
 	
+//	public static int hash(int a, int b, int c) {
+//		int h = (((a << 4) + b) << 4) + c;
+//		h ^= (h >>> 20) ^ (h >>> 12);
+//	    return h ^ (h >>> 7) ^ (h >>> 4);
+//	}
+	
 	public static int[] getChannelNos(ChannelType channelType, int constant) {
 //		if (constant < Constants.MAX_PRECOMPUTED_ROUNDS / Constants.CHANNEL_CYCLE) {
 //			return getChannelNosPrecomputed(channelType, constant);
 //		}
 		int[] channelNos = new int[Constants.REDUNDANT_CHANNELS];
 		int rangeStart = channelType.ordinal() * ChannelType.range;
+		constant += 1;
 		for (int i = 0; i < Constants.REDUNDANT_CHANNELS; i++) {
 //			System.out.println("start: " + Clock.getBytecodeNum());
 			int offset = (Integer.toString(((constant << 4 + 17 * channelType.ordinal()) << 4 + i)).hashCode()) % ChannelType.range;
+//			int offset = hash(constant, channelType.ordinal(), i) % ChannelType.range;
 //			System.out.println("end: " + Clock.getBytecodeNum());
 			// ensure that the offset is nonnegative
 			if (offset < 0) {
