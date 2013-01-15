@@ -86,21 +86,8 @@ public class BroadcastSystem {
 	 */
 	public static int[] getChannelNos(ChannelType channelType) {
 		int round = Clock.getRoundNum();
-		int round_cycle = round / Constants.CHANNEL_CYCLE;
-		if (round < Constants.MAX_PRECOMPUTED_ROUNDS) {
-			return getChannelNosPrecomputed(channelType, round_cycle);
-		}
-		int[] channelNos = new int[Constants.REDUNDANT_CHANNELS];
-		int rangeStart = channelType.ordinal() * ChannelType.range;
-		for (int i = 0; i < Constants.REDUNDANT_CHANNELS; i++) {
-			int offset = ((channelType.ordinal() * i) ^ round_cycle) % ChannelType.range;
-			// ensure that the offset is nonnegative
-			if (offset < 0) {
-				offset += ChannelType.range;
-			}
-			channelNos[i] = rangeStart + offset;
-		}
-		return channelNos;
+		int round_cycle = round / Constants.CHANNEL_CYCLE;		
+		return getChannelNos(channelType, round_cycle);
 	}
 	
 	/**
@@ -110,30 +97,17 @@ public class BroadcastSystem {
 	 */
 	public static int[] getChannelNosLastCycle(ChannelType channelType) {
 		int round = Clock.getRoundNum();
-		int round_cycle = round / Constants.CHANNEL_CYCLE - 1;
-		if (round < Constants.MAX_PRECOMPUTED_ROUNDS) {
-			return getChannelNosPrecomputed(channelType, round_cycle);
-		}
-		int[] channelNos = new int[Constants.REDUNDANT_CHANNELS];
-		int rangeStart = channelType.ordinal() * ChannelType.range;
-		for (int i = 0; i < Constants.REDUNDANT_CHANNELS; i++) {
-			int offset = ((channelType.ordinal() * i) ^ round_cycle) % ChannelType.range;
-			// ensure that the offset is nonnegative
-			if (offset < 0) {
-				offset += ChannelType.range;
-			}
-			channelNos[i] = rangeStart + offset;
-		}
-		return channelNos;
+		int round_cycle = round / Constants.CHANNEL_CYCLE - 1;		
+		return getChannelNos(channelType, round_cycle);
 	}
 	
-	public static int[] getChannelNosPrecomputed(ChannelType channelType, int round_cycle) {
-		return PrecomputedChannelNos.precomputedChannelNos[round_cycle][channelType.ordinal()];
-	}
-	
-	public static int[] getChannelNosLastCyclePrecomputed(ChannelType channelType, int round_cycle) {
-		return PrecomputedChannelNos.precomputedChannelNos[round_cycle][channelType.ordinal()];
-	}
+//	public static int[] getChannelNosPrecomputed(ChannelType channelType, int round_cycle) {
+//		return PrecomputedChannelNos.precomputedChannelNos[round_cycle][channelType.ordinal()];
+//	}
+//	
+//	public static int[] getChannelNosLastCyclePrecomputed(ChannelType channelType, int round_cycle) {
+//		return PrecomputedChannelNos.precomputedChannelNos[round_cycle][channelType.ordinal()];
+//	}
 	
 	public static Message readLastCycle(ChannelType channelType) {
 		try {
@@ -162,18 +136,18 @@ public class BroadcastSystem {
 	 */
 	public static void writeMaxMessage(ChannelType channelType) {
 		write(channelType, Constants.MAX_MESSAGE);
-	}
-	
-	
-	
-	
-	// All code below this point is for pre-computing channels
+	}	
 	
 	public static int[] getChannelNos(ChannelType channelType, int constant) {
+//		if (constant < Constants.MAX_PRECOMPUTED_ROUNDS / Constants.CHANNEL_CYCLE) {
+//			return getChannelNosPrecomputed(channelType, constant);
+//		}
 		int[] channelNos = new int[Constants.REDUNDANT_CHANNELS];
 		int rangeStart = channelType.ordinal() * ChannelType.range;
 		for (int i = 0; i < Constants.REDUNDANT_CHANNELS; i++) {
-			int offset = ((channelType.ordinal() * i) ^ constant) % ChannelType.range;
+//			System.out.println("start: " + Clock.getBytecodeNum());
+			int offset = (Integer.toString(((constant << 4 + 17 * channelType.ordinal()) << 4 + i)).hashCode() + rc.getTeam().ordinal()) % ChannelType.range;
+//			System.out.println("end: " + Clock.getBytecodeNum());
 			// ensure that the offset is nonnegative
 			if (offset < 0) {
 				offset += ChannelType.range;
@@ -182,6 +156,16 @@ public class BroadcastSystem {
 		}
 		return channelNos;
 	}	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	// All code below this point is for pre-computing channels
 	
 	/**
 	 * Right now, we're using this for pre-generating a list of channels so we don't have to calculate them during the game.

@@ -38,6 +38,17 @@ public class SoldierRobot extends BaseRobot {
 		
 		NavSystem.init(this);
 		
+		if (Clock.getRoundNum() > 120 && Clock.getRoundNum() < 150) {
+			for (ChannelType channel: EncampmentJobSystem.encampmentJobChannelList) {
+				Message message = BroadcastSystem.read(channel);
+				if (message.isValid && message.body != 0xFFFFFF) {
+					System.out.println("body: " + message.body);
+				}
+			}
+
+
+		}
+		
 		HQLocation = rc.senseHQLocation();
 		EnemyHQLocation = rc.senseEnemyHQLocation();
 
@@ -66,6 +77,17 @@ public class SoldierRobot extends BaseRobot {
 				rc.setIndicatorString(1, Integer.toString(DataCache.numNearbyEnemyRobots));
 				rc.setIndicatorString(2, soldierState.toString());
 				
+				// Check if enemy nuke is half done
+				if (!enemyNukeHalfDone) {
+					Message message = BroadcastSystem.read(ChannelType.ENEMY_NUKE_HALF_DONE);
+					if (message.isValid && message.body == 1) {
+						enemyNukeHalfDone = true;
+					}
+				}
+				if (enemyNukeHalfDone) {
+					soldierState = SoldierState.FIGHTING;
+				}
+				
 				switch (soldierState) {
 				case FIGHTING:
 					if (DataCache.numTotalEnemyRobots == 0) {
@@ -92,7 +114,6 @@ public class SoldierRobot extends BaseRobot {
 					// If there are enemies nearby, trigger FIGHTING SoldierState
 					if (DataCache.numTotalEnemyRobots > 0) {
 						soldierState = SoldierState.FIGHTING;
-//					} else if (DataCache.numAlliedSoldiers > Constants.RALLYING_SOLDIER_THRESHOLD) {
 					} else if (hqPowerLevel < 100) {
 						soldierState = SoldierState.FIGHTING;
 					} else {
@@ -103,14 +124,6 @@ public class SoldierRobot extends BaseRobot {
 						} else {
 							NavSystem.goToLocation(rallyPoint);
 						}
-						
-//						if (currentLocation.distanceSquaredTo(rallyPoint) < 63) {
-//							// Close to rally point
-////							mineInCircle();
-//						} else {
-//							// Rally						
-//							NavSystem.goToLocation(rallyPoint);
-//						}
 					}
 					break;
 				default:
@@ -266,8 +279,10 @@ public class SoldierRobot extends BaseRobot {
 			Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
 			int[] closestEnemyInfo = getClosestEnemy(enemiesList);
 			MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
+			NavSystem.setupSmartNav(closestEnemyLocation);
 			if (DataCache.numAlliedSoldiers > 3 * DataCache.numTotalEnemyRobots) {
-				NavSystem.goToLocation(closestEnemyLocation);
+//				NavSystem.goToLocation(closestEnemyLocation);
+				NavSystem.followWaypoints(true);
 			} else {
 				if (DataCache.numNearbyEnemyRobots > 0) {
 					double[] our23 = getEnemies2Or3StepsAway();
@@ -276,7 +291,7 @@ public class SoldierRobot extends BaseRobot {
 					//					int numAlliesNext = getNumAlliedNeighborsSquare(currentLocation.add(dir));
 					//					int numAllies = getNumAlliedNeighbors();
 					if (our23[0] + our23[1] < enemy23[0] + enemy23[1]) {
-						NavSystem.goToLocationAvoidMines(closestEnemyLocation);
+						NavSystem.followWaypoints(false);
 					} else if (our23[0] + our23[1] > enemy23[0] + enemy23[1]){
 						NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
 					}
@@ -284,12 +299,13 @@ public class SoldierRobot extends BaseRobot {
 				} else {
 					//				NavSystem.goToLocationAvoidMines(closestEnemyLocation);
 
-					if (DataCache.numTotalEnemyRobots > 0) {						if (DataCache.numAlliedSoldiers > 3 * DataCache.numTotalEnemyRobots) {
-							NavSystem.goToLocation(closestEnemyLocation);
+					if (DataCache.numTotalEnemyRobots > 0) {
+						if (DataCache.numAlliedSoldiers > 3 * DataCache.numTotalEnemyRobots) {
+							NavSystem.followWaypoints(true);
 						}
-						NavSystem.goToLocationAvoidMines(closestEnemyLocation);
+						NavSystem.followWaypoints(false);
 					} else {
-						NavSystem.goToLocation(closestEnemyLocation);
+						NavSystem.followWaypoints(true);
 
 					}
 				}

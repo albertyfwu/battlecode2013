@@ -37,7 +37,7 @@ public interface Constants {
 	public static final int PATH_CHECK_RADIUS = 3;
 	
 	// The squared radius distance at which we stop over-valuing mines, and just go straight for the endLocation
-	public static final int PATH_GO_ALL_IN_SQ_RADIUS = 200;
+	public static final int PATH_GO_ALL_IN_SQ_RADIUS = 144;
 	
 	/**
 	 * Backdoor Waypoints

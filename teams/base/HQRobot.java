@@ -63,7 +63,7 @@ public class HQRobot extends BaseRobot {
 
 
 				boolean upgrade = false;
-				if (!rc.hasUpgrade(Upgrade.DEFUSION) && rc.senseEnemyNukeHalfDone() && DataCache.numAlliedSoldiers > 20) {
+				if (!rc.hasUpgrade(Upgrade.DEFUSION) && enemyNukeHalfDone && DataCache.numAlliedSoldiers > 10) {
 					upgrade = true;
 					rc.researchUpgrade(Upgrade.DEFUSION);
 				} else if (DataCache.numAlliedSoldiers > 30 && Clock.getRoundNum() > 500) {

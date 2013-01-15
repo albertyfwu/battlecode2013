@@ -175,7 +175,7 @@ public class NavSystem {
 	 */
 	public static void followWaypoints(boolean defuseMines) throws GameActionException {
 		// If we're close to currentWaypoint, find the next one
-		if (rc.getLocation().distanceSquaredTo(destination) <= Constants.WAYPOINT_SQUARED_DISTANCE_CHECK) {
+		if (rc.getLocation().distanceSquaredTo(destination) <= Constants.PATH_GO_ALL_IN_SQ_RADIUS) {
 			// Stop nav-ing?
 			navMode = NavMode.NEUTRAL;
 			// We're done following waypoints

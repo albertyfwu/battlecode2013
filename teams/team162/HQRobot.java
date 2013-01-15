@@ -30,8 +30,19 @@ public class HQRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
+//			System.out.println("start: " + Clock.getBytecodeNum());
 			BroadcastSystem.write(powerChannel, (int) rc.getTeamPower());
+//			System.out.println("end: " + Clock.getBytecodeNum());
 			DataCache.updateRoundVariables();
+			
+			// Check if enemy's nuke is half done
+			if (!enemyNukeHalfDone) {
+				enemyNukeHalfDone = rc.senseEnemyNukeHalfDone();
+			}
+			if (enemyNukeHalfDone) {
+				// Broadcast this
+				BroadcastSystem.write(ChannelType.ENEMY_NUKE_HALF_DONE, 1);
+			}
 
 //			if (Clock.getRoundNum() < 20) {
 //				BroadcastSystem.write(ChannelType.CHANNEL1, 0);
@@ -45,14 +56,14 @@ public class HQRobot extends BaseRobot {
 			if (Clock.getRoundNum() % Constants.CHANNEL_CYCLE == 0 && Clock.getRoundNum() > 0) {
                 EncampmentJobSystem.updateJobsOnCycle();
 	        } else {
-	                EncampmentJobSystem.updateJobsAfterChecking();
+	            EncampmentJobSystem.updateJobsAfterChecking();
 	        }
 			
 			if (rc.isActive()) {
 
 
 				boolean upgrade = false;
-				if (!rc.hasUpgrade(Upgrade.DEFUSION) && rc.senseEnemyNukeHalfDone() && DataCache.numAlliedSoldiers > 20) {
+				if (!rc.hasUpgrade(Upgrade.DEFUSION) && enemyNukeHalfDone && DataCache.numAlliedSoldiers > 10) {
 					upgrade = true;
 					rc.researchUpgrade(Upgrade.DEFUSION);
 				} else if (DataCache.numAlliedSoldiers > 30 && Clock.getRoundNum() > 500) {

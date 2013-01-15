@@ -119,10 +119,10 @@ public class NavSystem {
 			boolean movedYet = false;
 			lookAround: for (int d : directionOffsets) {
 				lookingAtCurrently = Direction.values()[(dir.ordinal() + d + 8) % 8];
-				if (rc.canMove(lookingAtCurrently)) {
+				if (rc.canMove(lookingAtCurrently) && rc.isActive()) {
 					if (!hasBadMine(rc.getLocation().add(lookingAtCurrently))) {
 						movedYet = true;
-						rc.move(lookingAtCurrently);
+							rc.move(lookingAtCurrently);
 					}
 					break lookAround;
 				}
@@ -170,15 +170,20 @@ public class NavSystem {
 	
 	/**
 	 * Follow the waypoint stored in currentWaypoint
+	 * @param defuseMines whether or not to defuse mines while following waypoints
 	 * @throws GameActionException
 	 */
-	public static void followWaypoints() throws GameActionException {
+	public static void followWaypoints(boolean defuseMines) throws GameActionException {
 		// If we're close to currentWaypoint, find the next one
-		if (rc.getLocation().distanceSquaredTo(destination) <= Constants.WAYPOINT_SQUARED_DISTANCE_CHECK) {
+		if (rc.getLocation().distanceSquaredTo(destination) <= Constants.PATH_GO_ALL_IN_SQ_RADIUS) {
 			// Stop nav-ing?
 			navMode = NavMode.NEUTRAL;
 			// We're done following waypoints
-			goToLocation(destination);
+			if (defuseMines) {
+				goToLocation(destination);
+			} else {
+				goToLocationAvoidMines(destination);
+			}
 		} else if (rc.getLocation().distanceSquaredTo(currentWaypoint) <= Constants.WAYPOINT_SQUARED_DISTANCE_CHECK){
 			// We're close to currentWaypoint, so find the next one
 			switch (navMode) {
@@ -191,10 +196,18 @@ public class NavSystem {
 			default:
 				break;
 			}
-			goToLocation(currentWaypoint);
+			if (defuseMines) {
+				goToLocation(currentWaypoint);
+			} else {
+				goToLocationAvoidMines(currentWaypoint);
+			}
 		} else {
 			// Keep moving to the current waypoint
-			goToLocation(currentWaypoint);
+			if (defuseMines) {
+				goToLocation(currentWaypoint);
+			} else {
+				goToLocationAvoidMines(currentWaypoint);
+			}
 		}
 	}
 	
