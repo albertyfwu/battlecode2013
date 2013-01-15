@@ -260,7 +260,7 @@ public class RobotPlayer{
 	public static int[] totalAllAdjacentPlusMe(int[][] neighbors){/*2454*/
 		int[] allAdjacent = new int[9];
 		
-		for(int i=0;i<8;i++){
+		for(int i=0;i<9;i++){
 			if (rc.canMove(Direction.values()[i])) {
 				allAdjacent[i] =  totalAdjacent(neighbors,addPoints(self,surroundingIndices[i]));
 			} else {
