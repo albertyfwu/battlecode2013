@@ -34,6 +34,8 @@ public class SoldierRobot extends BaseRobot {
 	public SoldierRobot(RobotController rc) throws GameActionException {
 		super(rc);
 		
+		NavSystem.init(this);
+		
 		HQLocation = rc.senseHQLocation();
 		EnemyHQLocation = rc.senseEnemyHQLocation();
 
@@ -51,9 +53,17 @@ public class SoldierRobot extends BaseRobot {
 		try {
 			DataCache.updateRoundVariables();
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
+			if (rc.getRobot().getID() == 158) {
+				System.out.println("unassigned: " + unassigned);
+			}
 			if (unassigned) {
-				rc.setIndicatorString(0, Integer.toString(DataCache.numAlliedSoldiers));
-				rc.setIndicatorString(1, Integer.toString(DataCache.numNearbyEnemyRobots));
+				int numAlliedRobots = rc.senseNearbyGameObjects(Robot.class, 10000, rc.getTeam()).length;
+				int numAlliedEncampments = rc.senseEncampmentSquares(currentLocation, 10000, rc.getTeam()).length;
+				int numAlliedSoldiers = numAlliedRobots - numAlliedEncampments - 1 - EncampmentJobSystem.maxEncampmentJobs;
+				int numNearbyEnemyRobots = rc.senseNearbyGameObjects(Robot.class, Constants.RALLYING_RADIUS_SQUARED_CHECK, rc.getTeam().opponent()).length;
+				
+				rc.setIndicatorString(0, Integer.toString(numAlliedSoldiers));
+				rc.setIndicatorString(1, Integer.toString(numNearbyEnemyRobots));
 				
 				switch (soldierState) {
 				case FIGHTING:
@@ -254,9 +264,9 @@ public class SoldierRobot extends BaseRobot {
 //			int numAlliesNext = getNumAlliedNeighborsSquare(currentLocation.add(dir));
 //			int numAllies = getNumAlliedNeighbors();
 			if (our23[0] + our23[1] < enemy23[0] + enemy23[1]) {
-				NavSystem.goToLocation(closestEnemyLocation);
+				NavSystem.goToLocationAvoidMines(closestEnemyLocation);
 			} else if (our23[0] + our23[1] > enemy23[0] + enemy23[1]){
-				NavSystem.goAwayFromLocation(closestEnemyLocation);
+				NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
 			}
 		} else {
 			NavSystem.goToLocation(closestEnemyLocation);
@@ -288,13 +298,13 @@ public class SoldierRobot extends BaseRobot {
 					NavSystem.setupGetCloser(EncampmentJobSystem.goalLoc);
 					NavSystem.tryMoveCloser();
 				} else {
-					NavSystem.goToLocation(EncampmentJobSystem.goalLoc);
-//					if (NavSystem.navMode == NavMode.NEUTRAL){
-//						NavSystem.setupSmartNav(goalLoc);
-//						NavSystem.followWaypoints();
-//					} else {
-//						NavSystem.followWaypoints();
-//					}
+//					NavSystem.goToLocation(EncampmentJobSystem.goalLoc);
+					if (NavSystem.navMode == NavMode.NEUTRAL){
+						NavSystem.setupSmartNav(EncampmentJobSystem.goalLoc);
+						NavSystem.followWaypoints();
+					} else {
+						NavSystem.followWaypoints();
+					}
 				}
 					
 			}

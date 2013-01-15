@@ -8,14 +8,12 @@ public abstract class BaseRobot {
 	
 	public RobotController rc;
 	public int id;
-	public boolean unassigned;
 	
 	// Default constructor
 	public BaseRobot(RobotController myRC) {
 		rc = myRC;
 		id = rc.getRobot().getID();
 		DataCache.init(this);
-		NavSystem.init(this);
 		BroadcastSystem.init(this);
 		EncampmentJobSystem.init(this);
 	}

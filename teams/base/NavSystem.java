@@ -13,7 +13,7 @@ import battlecode.common.Upgrade;
 
 public class NavSystem {
 	
-	public static BaseRobot robot;
+	public static SoldierRobot robot;
 	public static RobotController rc;
 	public static int[] directionOffsets;
 	
@@ -41,7 +41,7 @@ public class NavSystem {
 	 * MUST CALL THIS METHOD BEFORE USING NavSystem
 	 * @param myRC
 	 */
-	public static void init(BaseRobot myRobot) {
+	public static void init(SoldierRobot myRobot) {
 		robot = myRobot;
 		rc = robot.rc;
 		int robotID = rc.getRobot().getID();
@@ -378,7 +378,9 @@ public class NavSystem {
 		BFSTurns = NavSystem.runBFS(encArray, goalCoord[1], goalCoord[0]);
 //		System.out.println("BFSTurns :" + BFSTurns.length);
 		if (BFSTurns.length == 0) { // if unreachable, tell to HQ and unassign himself
+			System.out.println("unreachable, unassigned: " + robot.unassigned + " soldierstate: " + ((SoldierRobot) robot).soldierState);
 			EncampmentJobSystem.postUnreachableMessage(destination);
+			navMode = NavMode.NEUTRAL;
 			robot.unassigned = true;
 		}
 	}
@@ -388,6 +390,8 @@ public class NavSystem {
 			// we retry destination
 			setupGetCloser(destination);
 		} else {
+			System.out.println("BFS length: " + BFSTurns.length);
+
 			System.out.println("Direction: " + BFSTurns[BFSRound]);
 			Direction dir = Direction.values()[BFSTurns[BFSRound]];
 			boolean hasMoved = NavSystem.moveOrDefuse(dir);
