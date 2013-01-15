@@ -138,7 +138,7 @@ public class EncampmentJobSystem {
 			System.out.println("channelBody: " + message.body);
 
 			if (message.isValid && message.body != maxMessage) {
-				rc.setIndicatorString(0, Integer.toString(message.body));
+//				rc.setIndicatorString(0, Integer.toString(message.body));
 				int onOrOff = parseOnOrOff(message.body);
 				int isTaken = parseTaken(message.body);
 				if (onOrOff == 1 && isTaken == 0) { //if job is on and untaken

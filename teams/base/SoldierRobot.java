@@ -73,9 +73,9 @@ public class SoldierRobot extends BaseRobot {
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
 			if (unassigned) {
 				
-				rc.setIndicatorString(0, Integer.toString(DataCache.numAlliedSoldiers));
-				rc.setIndicatorString(1, Integer.toString(DataCache.numNearbyEnemyRobots));
-				rc.setIndicatorString(2, soldierState.toString());
+//				rc.setIndicatorString(0, Integer.toString(DataCache.numAlliedSoldiers));
+//				rc.setIndicatorString(1, Integer.toString(DataCache.numNearbyEnemyRobots));
+//				rc.setIndicatorString(2, soldierState.toString());
 				
 				// Check if enemy nuke is half done
 				if (!enemyNukeHalfDone) {
@@ -108,7 +108,7 @@ public class SoldierRobot extends BaseRobot {
 						hqPowerLevel = message.body;
 					}
 					
-					rc.setIndicatorString(2, Integer.toString(hqPowerLevel));
+//					rc.setIndicatorString(2, Integer.toString(hqPowerLevel));
 
 
 					// If there are enemies nearby, trigger FIGHTING SoldierState
@@ -162,7 +162,7 @@ public class SoldierRobot extends BaseRobot {
 	 * @throws GameActionException
 	 */
 	private boolean mineInCircle() throws GameActionException {
-		rc.setIndicatorString(0, "miningRadiusSquared " + miningRadiusSquared);
+//		rc.setIndicatorString(0, "miningRadiusSquared " + miningRadiusSquared);
 		if (rc.isActive()) {
 			if (minesDenselyPacked(miningCenter, miningRadiusSquared)) {
 				// mines are fairly dense, so expand the circle in which to mine

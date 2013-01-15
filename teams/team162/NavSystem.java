@@ -157,7 +157,7 @@ public class NavSystem {
 	public static void rangedDefuseMine() throws GameActionException {
 		if (rc.hasUpgrade(Upgrade.DEFUSION)) {
 			MapLocation[] mines = rc.senseMineLocations(rc.getLocation(), 14, rc.getTeam().opponent());
-			if (mines.length > 0) {
+			if (mines.length > 0 && rc.isActive()) {
 				rc.defuseMine(mines[0]);
 			}
 		}
