@@ -48,8 +48,8 @@ public class SoldierRobot extends BaseRobot {
 		}
 
 		// Set up mining in a circle?
-		setupCircleMining(rallyPoint, 10);
-		soldierState = SoldierState.RALLYING;
+//		setupCircleMining(rallyPoint, 10);
+//		soldierState = SoldierState.RALLYING;
 	}
 	
 	@Override
@@ -89,13 +89,21 @@ public class SoldierRobot extends BaseRobot {
 					} else if (rc.getTeamPower() < 100) {
 						soldierState = SoldierState.FIGHTING;
 					} else {
-						if (currentLocation.distanceSquaredTo(rallyPoint) < 63) {
-							// Close to rally point
-							mineInCircle();
+						if (Util.Random() < 0.2) {
+							if (rc.senseMine(currentLocation) == null) {
+								rc.layMine();
+							}
 						} else {
-							// Rally						
 							NavSystem.goToLocation(rallyPoint);
 						}
+						
+//						if (currentLocation.distanceSquaredTo(rallyPoint) < 63) {
+//							// Close to rally point
+////							mineInCircle();
+//						} else {
+//							// Rally						
+//							NavSystem.goToLocation(rallyPoint);
+//						}
 					}
 					break;
 				default:
