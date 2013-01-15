@@ -34,6 +34,7 @@ public class SoldierRobot extends BaseRobot {
 	public SoldierRobot(RobotController rc) throws GameActionException {
 		super(rc);
 		
+		NavSystem.init(this);
 		HQLocation = rc.senseHQLocation();
 		EnemyHQLocation = rc.senseEnemyHQLocation();
 
@@ -50,7 +51,13 @@ public class SoldierRobot extends BaseRobot {
 	public void run() {
 		try {
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
+			if (rc.getRobot().getID() == 158) {
+				System.out.println("unassigned: " + unassigned);
+			}
 			if (unassigned) {
+				if (rc.getRobot().getID() == 158) {
+					System.out.println("158!!!!!!");
+				}
 				int numAlliedRobots = rc.senseNearbyGameObjects(Robot.class, 10000, rc.getTeam()).length;
 				int numAlliedEncampments = rc.senseEncampmentSquares(currentLocation, 10000, rc.getTeam()).length;
 				int numAlliedSoldiers = numAlliedRobots - numAlliedEncampments - 1 - EncampmentJobSystem.maxEncampmentJobs;
@@ -258,9 +265,9 @@ public class SoldierRobot extends BaseRobot {
 //			int numAlliesNext = getNumAlliedNeighborsSquare(currentLocation.add(dir));
 //			int numAllies = getNumAlliedNeighbors();
 			if (our23[0] + our23[1] < enemy23[0] + enemy23[1]) {
-				NavSystem.goToLocation(closestEnemyLocation);
+				NavSystem.goToLocationAvoidMines(closestEnemyLocation);
 			} else if (our23[0] + our23[1] > enemy23[0] + enemy23[1]){
-				NavSystem.goAwayFromLocation(closestEnemyLocation);
+				NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
 			}
 		} else {
 			NavSystem.goToLocation(closestEnemyLocation);
@@ -292,13 +299,13 @@ public class SoldierRobot extends BaseRobot {
 					NavSystem.setupGetCloser(EncampmentJobSystem.goalLoc);
 					NavSystem.tryMoveCloser();
 				} else {
-					NavSystem.goToLocation(EncampmentJobSystem.goalLoc);
-//					if (NavSystem.navMode == NavMode.NEUTRAL){
-//						NavSystem.setupSmartNav(goalLoc);
-//						NavSystem.followWaypoints();
-//					} else {
-//						NavSystem.followWaypoints();
-//					}
+//					NavSystem.goToLocation(EncampmentJobSystem.goalLoc);
+					if (NavSystem.navMode == NavMode.NEUTRAL){
+						NavSystem.setupSmartNav(EncampmentJobSystem.goalLoc);
+						NavSystem.followWaypoints();
+					} else {
+						NavSystem.followWaypoints();
+					}
 				}
 					
 			}
