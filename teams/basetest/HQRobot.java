@@ -1,4 +1,4 @@
-package base;
+package basetest;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;

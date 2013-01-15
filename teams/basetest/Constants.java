@@ -1,4 +1,4 @@
-package base;
+package basetest;
 
 public interface Constants {
 	
