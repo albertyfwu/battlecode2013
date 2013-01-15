@@ -6,6 +6,7 @@ import battlecode.common.GameObject;
 import battlecode.common.MapLocation;
 import battlecode.common.Robot;
 import battlecode.common.RobotController;
+import battlecode.common.RobotType;
 import battlecode.common.Team;
 
 /**
@@ -41,6 +42,8 @@ public class EncampmentJobSystem {
 	public static int maxEncampmentJobs = encampmentJobChannelList.length;
 	public static int maxMessage = Constants.MAX_MESSAGE; //24-bit message all 1s
 	
+	public static int[] buildOrder = {0,1,0,1,0,1,0,1,0,1};
+	
 	// these two arrays must have bijective correspondence
 	// the job associated with encampmentJobs[i] must always write to channelList[i] for each i
 	public static MapLocation[] encampmentJobs = new MapLocation[EncampmentJobSystem.maxEncampmentJobs]; // length is constant
@@ -52,6 +55,9 @@ public class EncampmentJobSystem {
 	public static int numUnreachableEncampments;
 	
 	public static MapLocation HQLocation;
+	
+	public static RobotType assignedRobotType;
+	public static ChannelType assignedChannel;
 	
 	/**
 	 * Initializes BroadcastSystem by setting rc
@@ -81,7 +87,7 @@ public class EncampmentJobSystem {
 
 			// broadcast job opening
 			encampmentChannels[i] = encampmentJobChannelList[i];
-			postJob(EncampmentJobSystem.encampmentChannels[i], encampmentJobs[i]);
+			postJob(EncampmentJobSystem.encampmentChannels[i], encampmentJobs[i], buildOrder[i]);
 		}
 	}
 	
@@ -90,8 +96,8 @@ public class EncampmentJobSystem {
 	 * @param channel
 	 * @param loc
 	 */
-	public static void postJob(ChannelType channel, MapLocation loc) {
-		BroadcastSystem.write(channel, createMessage(loc, false, true));
+	public static void postJob(ChannelType channel, MapLocation loc, int robType) {
+		BroadcastSystem.write(channel, createMessage(loc, false, true, robType));
 	}
 	
 	/**
@@ -99,8 +105,12 @@ public class EncampmentJobSystem {
 	 * They also use this every turn to ping back to others
 	 * @param channel
 	 */
-	public static void updateJobTaken(ChannelType channel) {
-		BroadcastSystem.write(channel, createMessage(goalLoc, true, true));
+	public static void updateJobTaken() {
+		int robotTypeInt = 0;
+		if (assignedRobotType == RobotType.GENERATOR){
+			robotTypeInt = 1;
+		}
+		BroadcastSystem.write(assignedChannel, createMessage(goalLoc, true, true, robotTypeInt));
 	}
 	
 	/**
@@ -111,7 +121,7 @@ public class EncampmentJobSystem {
 	public static ChannelType findJob() throws GameActionException {
 		int currentRoundNum = Clock.getRoundNum();
 		for (ChannelType channel: encampmentJobChannelList) {
-			System.out.println("findChannel: " + channel);
+//			System.out.println("findChannel: " + channel);
 			Message message = BroadcastSystem.read(channel);
 			if (message.isValid && message.body != maxMessage) {
 				rc.setIndicatorString(0, Integer.toString(message.body));
@@ -122,24 +132,32 @@ public class EncampmentJobSystem {
 					if (rc.canSenseSquare(goalLoc)) {
 						GameObject robotOnSquare = rc.senseObjectAtLocation(goalLoc);
 						if (robotOnSquare == null || !robotOnSquare.getTeam().equals(rc.getTeam())) {
+							assignedRobotType = parseRobotType(message.body);
+							assignedChannel = channel;
 							return channel;
 						}
 					} else {
+						assignedRobotType = parseRobotType(message.body);
+						assignedChannel = channel;
 						return channel;
 					}
 				} else if (onOrOff == 1) {
 					int postedRoundNum = parseRoundNum(message.body);
 					if ((16+currentRoundNum - postedRoundNum)%16 >= 4) { // it hasn't been written on for 5 turns
 						goalLoc = parseLocation(message.body);
-						System.out.println("posted: " + postedRoundNum);
-						System.out.println("current: " + currentRoundNum % 16);
-
+//						System.out.println("posted: " + postedRoundNum);
+//						System.out.println("current: " + currentRoundNum % 16);
+//
 						if (rc.canSenseSquare(goalLoc)) {
 							GameObject robotOnSquare = rc.senseObjectAtLocation(goalLoc);
 							if (robotOnSquare == null || !robotOnSquare.getTeam().equals(rc.getTeam())) {
+								assignedRobotType = parseRobotType(message.body);
+								assignedChannel = channel;
 								return channel;
 							}
 						} else {
+							assignedRobotType = parseRobotType(message.body);
+							assignedChannel = channel;
 							return channel;
 						}
 
@@ -203,7 +221,7 @@ public class EncampmentJobSystem {
 			int locX = (message.body >> 8) & 0xFF;
 			int unreachableBit = message.body >> 16;
 			postCleanUp(channel); // cleanup
-			System.out.println("locy: " + locY + " locx: " + locX);
+//			System.out.println("locy: " + locY + " locx: " + locX);
 			if (unreachableBit == 1) { // if unreachable
 //				System.out.println("unreachable!!!");
 				unreachableEncampments[numUnreachableEncampments] = new MapLocation(locY, locX);
@@ -229,7 +247,7 @@ public class EncampmentJobSystem {
 			int locY = message.body & 0xFF;
 			int locX = (message.body >> 8) & 0xFF;
 			int unreachableBit = message.body >> 16;
-			System.out.println("locy: " + locY + " locx: " + locX);
+//			System.out.println("locy: " + locY + " locx: " + locX);
 			if (unreachableBit == 1) { // if unreachable
 				unreachableEncampments[numUnreachableEncampments] = new MapLocation(locY, locX);
 				numUnreachableEncampments++;
@@ -274,12 +292,14 @@ public class EncampmentJobSystem {
 	 * to persist old job messages that were untaken
 	 */
 	public static void persistChannelsOnCycle() {
+		int alliedNumEncampments = rc.senseAlliedEncampmentSquares().length;
 		for (ChannelType channel: encampmentChannels) {
 			Message msgLastCycle = BroadcastSystem.readLastCycle(channel);
 			if (msgLastCycle.isValid && msgLastCycle.body != maxMessage) {
 				// check if the job was on and was untaken
 				if (parseOnOrOff(msgLastCycle.body) == 1 && parseTaken(msgLastCycle.body) == 0) {
-					postJob(channel, parseLocation(msgLastCycle.body));
+					int robotTypeToBuild = getRobotTypeToBuild(alliedNumEncampments);
+					postJob(channel, parseLocation(msgLastCycle.body), robotTypeToBuild);
 				}
 			}
 		}
@@ -310,7 +330,7 @@ public class EncampmentJobSystem {
 				channelList[i] = oldChannelsList[arrayIndices[i]];
 			}
 		}
-
+		int alliedNumEncampments = rc.senseAlliedEncampmentSquares().length;
 		// allocate unused channels for new jobs
 		for (int i=0; i<newJobsList.length; i++) {
 			if (arrayIndices[i] == -1 && newJobsList[i] != null) {
@@ -318,7 +338,8 @@ public class EncampmentJobSystem {
 					channelIndex = arrayIndex(channel, channelList);
 					if (channelIndex == -1) { // if not already used, use it and post job
 						channelList[i] = channel;
-						EncampmentJobSystem.postJob(channel, newJobsList[i]);
+						int robotTypeToBuild = getRobotTypeToBuild(alliedNumEncampments);
+						EncampmentJobSystem.postJob(channel, newJobsList[i], robotTypeToBuild);
 						break channelLoop;
 					}
 				}
@@ -353,14 +374,14 @@ public class EncampmentJobSystem {
 	 * @throws GameActionException
 	 */
 	public static void updateJobs() throws GameActionException {
-		System.out.println("Before update: " + Clock.getBytecodeNum());
+//		System.out.println("Before update: " + Clock.getBytecodeNum());
 		MapLocation[] neutralEncampments = rc.senseEncampmentSquares(HQLocation,100000, Team.NEUTRAL);
 		if (EncampmentJobSystem.numEncampmentsNeeded > neutralEncampments.length){
 			EncampmentJobSystem.numEncampmentsNeeded = neutralEncampments.length;
 		}
 
 		MapLocation[] newJobsList = getClosestMapLocations(HQLocation, neutralEncampments, EncampmentJobSystem.numEncampmentsNeeded);
-		System.out.println("new jobs list: " + Clock.getBytecodeNum());
+//		System.out.println("new jobs list: " + Clock.getBytecodeNum());
 
 		ChannelType[] channelList = EncampmentJobSystem.assignChannels(newJobsList, EncampmentJobSystem.encampmentJobs, EncampmentJobSystem.encampmentChannels);
 
@@ -369,7 +390,7 @@ public class EncampmentJobSystem {
 			EncampmentJobSystem.encampmentChannels[i] = channelList[i];
 		}
 
-		System.out.println("update lists: " + Clock.getBytecodeNum());
+//		System.out.println("update lists: " + Clock.getBytecodeNum());
 
 		// clear unused channels
 		for (ChannelType channel: EncampmentJobSystem.encampmentJobChannelList) {
@@ -379,7 +400,7 @@ public class EncampmentJobSystem {
 		}
 		
 		
-		System.out.println("After update: " + Clock.getRoundNum());
+//		System.out.println("After update: " + Clock.getRoundNum());
 	}
 	/**
 	 * HQ uses this to check if any jobs are completed, and then updates new jobs
@@ -451,15 +472,27 @@ public class EncampmentJobSystem {
 	}
 	
 	
-	
+	public static int getRobotTypeToBuild(int alliedEncampmentsBuilt) {
+		if (alliedEncampmentsBuilt >= buildOrder.length) {
+			if (Util.Random() < 0.5) {
+				return 0;
+			} else {
+				return 1;
+			}
+		} else {
+			return buildOrder[alliedEncampmentsBuilt];
+		}
+	}
 	
 	/**
-	 * Creates a 22-bit job message to send from the goal location
+	 * Creates a 24-bit job message to send from the goal location
 	 * @param goalLoc
 	 * @return
 	 */
-	public static int createMessage(MapLocation goalLoc, boolean isTaken, boolean onOrOff) {
-		int msg = (goalLoc.x << 14);
+	public static int createMessage(MapLocation goalLoc, boolean isTaken, boolean onOrOff, int robType) {
+		int msg = robType << 22;
+		
+		msg += (goalLoc.x << 14);
 		msg += (goalLoc.y << 6);
 		if (isTaken) {
 			msg += 0x20;
@@ -473,17 +506,18 @@ public class EncampmentJobSystem {
 	}
 	
 	/**
-	 * Parses a 22-bit job-message
+	 * Parses a 24-bit job-message
 	 * @param msgBody
-	 * @return an array containing round mod 16, onOrOff, job taken or not, y-coord, and x-coord
+	 * @return an array containing round mod 16, onOrOff, job taken or not, y-coord, x-coord, and encampment type
 	 */
 	public static int[] parseEntireJobMessage(int msgBody) {
-		int[] output = new int[5];
+		int[] output = new int[6];
 		output[0] = msgBody & 0xF; // round # mod 16
 		output[1] = (msgBody >> 4) & 0x1; // on or off
 		output[2] = (msgBody >> 5) & 0x1; // job taken or not
 		output[3] = (msgBody >> 6) & 0xFF; // y-coord of location
 		output[4] = (msgBody >> 14) & 0xFF; // x-coord of location
+		output[5] = (msgBody >> 22);
 		
 		return output;
 	}
@@ -506,6 +540,15 @@ public class EncampmentJobSystem {
 		return new MapLocation(x,y);
 	}
 	
+	public static RobotType parseRobotType(int msgBody) {
+		int robotTypeInt = msgBody >> 22;
+		if (robotTypeInt == 0) {
+			return RobotType.SUPPLIER;
+		} else {
+			return RobotType.GENERATOR;
+		}
+	}
+	
 //	public static void main(String[] arg0) {
 //		int[] output = parseEntireJobMessage(0b0000111100001110011111);
 //		System.out.println("parsed: " + output[0]);
@@ -513,7 +556,9 @@ public class EncampmentJobSystem {
 //		System.out.println("parsed: " + output[2]);
 //		System.out.println("parsed: " + output[3]);
 //		System.out.println("parsed: " + output[4]);
+//		System.out.println("parsed: " + output[5]);
+//
 //		
-//		System.out.println("message: " + createMessage(new MapLocation(15,14), false, true));
+//		System.out.println("message: " + createMessage(new MapLocation(15,14), false, true, 0));
 //	}
 }
