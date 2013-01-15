@@ -92,7 +92,7 @@ public class NavSystem {
 	public static void goAwayFromLocationAvoidMines(MapLocation location) throws GameActionException {
 		Direction dir = rc.getLocation().directionTo(location).opposite();
 		if (dir != Direction.OMNI) {
-			goDirectionAndDefuse(dir);
+			goDirectionAvoidMines(dir);
 		}
 	}
 	

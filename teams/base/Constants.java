@@ -51,7 +51,7 @@ public interface Constants {
 	 */
 
 	// How many allied soldiers should we wait for before moving out?
-	public static final int RALLYING_SOLDIER_THRESHOLD = 1000;
+	public static final int RALLYING_SOLDIER_THRESHOLD = 25;
 	
 	// Within what radius squared should we calculate how many people are in our rally?
 	public static final int RALLYING_RADIUS_SQUARED_CHECK = 63;
@@ -61,7 +61,7 @@ public interface Constants {
 	 */
 	
 	// If we have fewer than this number of soldiers, then turn off FIGHTING mode; otherwise, keep FIGHTing
-	public static final int FIGHTING_NOT_ENOUGH_ALLIED_SOLDIERS = 10;
+	public static final int FIGHTING_NOT_ENOUGH_ALLIED_SOLDIERS = 15;
 	
 	/**
 	 * Mining

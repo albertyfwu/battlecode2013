@@ -57,36 +57,39 @@ public class SoldierRobot extends BaseRobot {
 				System.out.println("unassigned: " + unassigned);
 			}
 			if (unassigned) {
-				int numAlliedRobots = rc.senseNearbyGameObjects(Robot.class, 10000, rc.getTeam()).length;
-				int numAlliedEncampments = rc.senseEncampmentSquares(currentLocation, 10000, rc.getTeam()).length;
-				int numAlliedSoldiers = numAlliedRobots - numAlliedEncampments - 1 - EncampmentJobSystem.maxEncampmentJobs;
-				int numNearbyEnemyRobots = rc.senseNearbyGameObjects(Robot.class, Constants.RALLYING_RADIUS_SQUARED_CHECK, rc.getTeam().opponent()).length;
 				
-				rc.setIndicatorString(0, Integer.toString(numAlliedSoldiers));
-				rc.setIndicatorString(1, Integer.toString(numNearbyEnemyRobots));
+				rc.setIndicatorString(0, Integer.toString(DataCache.numAlliedSoldiers));
+				rc.setIndicatorString(1, Integer.toString(DataCache.numNearbyEnemyRobots));
+				rc.setIndicatorString(2, soldierState.toString());
+
 				
 				switch (soldierState) {
 				case FIGHTING:
-					microCode();
-					if (DataCache.numNearbyEnemyRobots == 0) {
-						if (DataCache.numAlliedRobots < Constants.FIGHTING_NOT_ENOUGH_ALLIED_SOLDIERS) {
+					if (DataCache.numTotalEnemyRobots == 0) {
+						if (DataCache.numAlliedSoldiers < Constants.FIGHTING_NOT_ENOUGH_ALLIED_SOLDIERS) {
 							soldierState = SoldierState.RALLYING;
+						} else {
+							microCode();
 						}
 						// Otherwise, just keep fighting
+					} else {
+						microCode();
 					}
 					break;
 				case RALLYING:
 					// If there are enemies nearby, trigger FIGHTING SoldierState
-					if (DataCache.numNearbyEnemyRobots > 0) {
+					if (DataCache.numTotalEnemyRobots > 0) {
 						soldierState = SoldierState.FIGHTING;
 					} else if (DataCache.numAlliedSoldiers > Constants.RALLYING_SOLDIER_THRESHOLD) {
-						// We have enough soldiers, so move out
-						Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class, 10000, rc.getTeam().opponent());
-						int[] closestEnemyNums = getClosestEnemy(enemyRobots);
-						MapLocation enemyLocation = new MapLocation(closestEnemyNums[1], closestEnemyNums[2]);
-						NavSystem.goToLocation(enemyLocation);
+						soldierState = SoldierState.FIGHTING;
+//						// We have enough soldiers, so move out
+//						Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class, 10000, rc.getTeam().opponent());
+//						int[] closestEnemyNums = getClosestEnemy(enemyRobots);
+//						MapLocation enemyLocation = new MapLocation(closestEnemyNums[1], closestEnemyNums[2]);
+//						NavSystem.goToLocation(enemyLocation);
 					} else {
 						// Rally
+						
 						NavSystem.goToLocation(rallyPoint);
 					}
 					break;
@@ -242,24 +245,12 @@ public class SoldierRobot extends BaseRobot {
 
 	
 	private void microCode() throws GameActionException {
-		if (rc.getRobot().getID() == 147) {
-			System.out.println("before: " + Clock.getBytecodeNum());
-		}
 		Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
 		int[] closestEnemyInfo = getClosestEnemy(enemiesList);
 		MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
-		if (rc.getRobot().getID() == 147) {
-			System.out.println("closest Enemy: " + Clock.getBytecodeNum());
-		}
-		if (rc.senseNearbyGameObjects(Robot.class, 14, rc.getTeam().opponent()).length > 0) {
+		if (rc.senseNearbyGameObjects(Robot.class, 18, rc.getTeam().opponent()).length > 0) {
 			double[] our23 = getEnemies2Or3StepsAway();
-			if (rc.getRobot().getID() == 147) {
-				System.out.println("calculate our23: " + Clock.getBytecodeNum());
-			}
 			double[] enemy23 = getEnemies2Or3StepsAwaySquare(closestEnemyLocation, rc.getTeam().opponent());
-			if (rc.getRobot().getID() == 147) {
-				System.out.println("calculate enemy23: " + Clock.getBytecodeNum());
-			}
 			Direction dir = currentLocation.directionTo(closestEnemyLocation);
 //			int numAlliesNext = getNumAlliedNeighborsSquare(currentLocation.add(dir));
 //			int numAllies = getNumAlliedNeighbors();
@@ -269,7 +260,12 @@ public class SoldierRobot extends BaseRobot {
 				NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
 			}
 		} else {
-			NavSystem.goToLocation(closestEnemyLocation);
+			if (DataCache.numTotalEnemyRobots > 0) {
+				NavSystem.goToLocationAvoidMines(closestEnemyLocation);
+			} else {
+				NavSystem.goToLocation(closestEnemyLocation);
+
+			}
 		}
 		if (rc.getRobot().getID() == 147) {
 			System.out.println("after: " + Clock.getBytecodeNum());
