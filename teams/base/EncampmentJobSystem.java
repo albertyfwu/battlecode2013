@@ -55,6 +55,7 @@ public class EncampmentJobSystem {
 	public static int numUnreachableEncampments;
 	
 	public static MapLocation HQLocation;
+	public static MapLocation EnemyHQLocation;
 	
 	public static RobotType assignedRobotType;
 	public static ChannelType assignedChannel;
@@ -68,13 +69,15 @@ public class EncampmentJobSystem {
 		rc = robot.rc;
 	}
 	
-	public static void initializeConstants(MapLocation hqloc) {
+	public static void initializeConstants(MapLocation hqloc, MapLocation enemyloc) {
 		HQLocation = hqloc;
+		EnemyHQLocation = enemyloc;
 		numEncampmentsNeeded = Constants.INITIAL_NUM_ENCAMPMENTS_NEEDED; 
 		numUnreachableEncampments = 0;
 		unreachableEncampments = new MapLocation[100];
+		int rushDist = hqloc.distanceSquaredTo(location);
 		
-		MapLocation[] allEncampments = rc.senseAllEncampmentSquares();
+		MapLocation[] allEncampments = rc.senseEncampmentSquares(hqloc, );
 		if (allEncampments.length < numEncampmentsNeeded) {
 			numEncampmentsNeeded = allEncampments.length;
 		}

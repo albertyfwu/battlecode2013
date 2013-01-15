@@ -21,7 +21,7 @@ public class HQRobot extends BaseRobot {
 		super(rc);
 		HQLocation = rc.getLocation();
 		EnemyHQLocation = rc.senseEnemyHQLocation();
-		EncampmentJobSystem.initializeConstants(HQLocation);
+		EncampmentJobSystem.initializeConstants(HQLocation, EnemyHQLocation);
 
 	}
 	

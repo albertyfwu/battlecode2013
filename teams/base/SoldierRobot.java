@@ -245,32 +245,35 @@ public class SoldierRobot extends BaseRobot {
 
 	
 	private void microCode() throws GameActionException {
-		Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
-		int[] closestEnemyInfo = getClosestEnemy(enemiesList);
-		MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
-		if (rc.senseNearbyGameObjects(Robot.class, 18, rc.getTeam().opponent()).length > 0) {
-			double[] our23 = getEnemies2Or3StepsAway();
-			double[] enemy23 = getEnemies2Or3StepsAwaySquare(closestEnemyLocation, rc.getTeam().opponent());
-			Direction dir = currentLocation.directionTo(closestEnemyLocation);
-//			int numAlliesNext = getNumAlliedNeighborsSquare(currentLocation.add(dir));
-//			int numAllies = getNumAlliedNeighbors();
-			if (our23[0] + our23[1] < enemy23[0] + enemy23[1]) {
-				NavSystem.goToLocationAvoidMines(closestEnemyLocation);
-			} else if (our23[0] + our23[1] > enemy23[0] + enemy23[1]){
-				NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
-			}
-		} else {
-			if (DataCache.numTotalEnemyRobots > 0) {
-				NavSystem.goToLocationAvoidMines(closestEnemyLocation);
+		if (rc.isActive()) {
+			Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
+			int[] closestEnemyInfo = getClosestEnemy(enemiesList);
+			MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
+			if (rc.senseNearbyGameObjects(Robot.class, 18, rc.getTeam().opponent()).length > 0) {
+				double[] our23 = getEnemies2Or3StepsAway();
+				double[] enemy23 = getEnemies2Or3StepsAwaySquare(closestEnemyLocation, rc.getTeam().opponent());
+				Direction dir = currentLocation.directionTo(closestEnemyLocation);
+//				int numAlliesNext = getNumAlliedNeighborsSquare(currentLocation.add(dir));
+//				int numAllies = getNumAlliedNeighbors();
+				if (our23[0] + our23[1] < enemy23[0] + enemy23[1]) {
+					NavSystem.goToLocationAvoidMines(closestEnemyLocation);
+				} else if (our23[0] + our23[1] > enemy23[0] + enemy23[1]){
+					NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
+				}
 			} else {
-				NavSystem.goToLocation(closestEnemyLocation);
+//				NavSystem.goToLocationAvoidMines(closestEnemyLocation);
 
+				if (DataCache.numTotalEnemyRobots > 0) {
+					if (DataCache.numAlliedSoldiers > 3 * DataCache.numTotalEnemyRobots) {
+						NavSystem.goToLocation(closestEnemyLocation);
+					}
+					NavSystem.goToLocationAvoidMines(closestEnemyLocation);
+				} else {
+					NavSystem.goToLocation(closestEnemyLocation);
+
+				}
 			}
 		}
-		if (rc.getRobot().getID() == 147) {
-			System.out.println("after: " + Clock.getBytecodeNum());
-		}
-
 	}
 	
 	
@@ -294,13 +297,13 @@ public class SoldierRobot extends BaseRobot {
 					NavSystem.setupGetCloser(EncampmentJobSystem.goalLoc);
 					NavSystem.tryMoveCloser();
 				} else {
-//					NavSystem.goToLocation(EncampmentJobSystem.goalLoc);
-					if (NavSystem.navMode == NavMode.NEUTRAL){
-						NavSystem.setupSmartNav(EncampmentJobSystem.goalLoc);
-						NavSystem.followWaypoints();
-					} else {
-						NavSystem.followWaypoints();
-					}
+					NavSystem.goToLocation(EncampmentJobSystem.goalLoc);
+//					if (NavSystem.navMode == NavMode.NEUTRAL){
+//						NavSystem.setupSmartNav(EncampmentJobSystem.goalLoc);
+//						NavSystem.followWaypoints();
+//					} else {
+//						NavSystem.followWaypoints();
+//					}
 				}
 					
 			}
