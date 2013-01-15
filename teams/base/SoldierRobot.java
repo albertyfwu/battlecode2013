@@ -251,33 +251,38 @@ public class SoldierRobot extends BaseRobot {
 			Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
 			int[] closestEnemyInfo = getClosestEnemy(enemiesList);
 			MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
-			if (DataCache.numNearbyEnemyRobots > 0) {
-				double[] our23 = getEnemies2Or3StepsAway();
-				double[] enemy23 = getEnemies2Or3StepsAwaySquare(closestEnemyLocation, rc.getTeam().opponent());
-				Direction dir = currentLocation.directionTo(closestEnemyLocation);
-//				int numAlliesNext = getNumAlliedNeighborsSquare(currentLocation.add(dir));
-//				int numAllies = getNumAlliedNeighbors();
-				if (our23[0] + our23[1] < enemy23[0] + enemy23[1]) {
-					NavSystem.goToLocationAvoidMines(closestEnemyLocation);
-				} else if (our23[0] + our23[1] > enemy23[0] + enemy23[1]){
-					NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
-				}
+			if (DataCache.numAlliedSoldiers > 3 * DataCache.numTotalEnemyRobots) {
+				NavSystem.goToLocation(closestEnemyLocation);
 			} else {
-//				NavSystem.goToLocationAvoidMines(closestEnemyLocation);
-
-				if (DataCache.numTotalEnemyRobots > 0) {
-					if (DataCache.numAlliedSoldiers > 3 * DataCache.numTotalEnemyRobots) {
-						NavSystem.goToLocation(closestEnemyLocation);
+				if (DataCache.numNearbyEnemyRobots > 0) {
+					double[] our23 = getEnemies2Or3StepsAway();
+					double[] enemy23 = getEnemies2Or3StepsAwaySquare(closestEnemyLocation, rc.getTeam().opponent());
+					Direction dir = currentLocation.directionTo(closestEnemyLocation);
+					//					int numAlliesNext = getNumAlliedNeighborsSquare(currentLocation.add(dir));
+					//					int numAllies = getNumAlliedNeighbors();
+					if (our23[0] + our23[1] < enemy23[0] + enemy23[1]) {
+						NavSystem.goToLocationAvoidMines(closestEnemyLocation);
+					} else if (our23[0] + our23[1] > enemy23[0] + enemy23[1]){
+						NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
 					}
-					NavSystem.goToLocationAvoidMines(closestEnemyLocation);
-				} else {
-					NavSystem.goToLocation(closestEnemyLocation);
 
+				} else {
+					//				NavSystem.goToLocationAvoidMines(closestEnemyLocation);
+
+					if (DataCache.numTotalEnemyRobots > 0) {
+						if (DataCache.numAlliedSoldiers > 3 * DataCache.numTotalEnemyRobots) {
+							NavSystem.goToLocation(closestEnemyLocation);
+						}
+						NavSystem.goToLocationAvoidMines(closestEnemyLocation);
+					} else {
+						NavSystem.goToLocation(closestEnemyLocation);
+
+					}
 				}
 			}
 		}
 	}
-	
+
 	
 	/** code to be used by capturers
 	 * 
