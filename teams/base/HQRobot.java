@@ -5,6 +5,7 @@ import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
+import battlecode.common.Upgrade;
 
 public class HQRobot extends BaseRobot {
 
@@ -16,6 +17,7 @@ public class HQRobot extends BaseRobot {
 //	public int numEncampmentsNeeded; // must be less than encampmentJobChannelList.length
 	public MapLocation HQLocation;
 	public MapLocation EnemyHQLocation;
+	public ChannelType powerChannel = ChannelType.HQPOWERLEVEL;
 
 	public HQRobot(RobotController rc) throws GameActionException {
 		super(rc);
@@ -27,7 +29,10 @@ public class HQRobot extends BaseRobot {
 	
 	@Override
 	public void run() {
-		try {			
+		try {
+			BroadcastSystem.write(powerChannel, (int) rc.getTeamPower());
+			DataCache.updateRoundVariables();
+
 //			if (Clock.getRoundNum() < 20) {
 //				BroadcastSystem.write(ChannelType.CHANNEL1, 0);
 //				BroadcastSystem.read(ChannelType.CHANNEL1);
@@ -45,18 +50,32 @@ public class HQRobot extends BaseRobot {
 			
 			if (rc.isActive()) {
 
-//				if (Clock.getRoundNum() > 500) {
-//					rc.resign();
-//				}
-				
 
+				boolean upgrade = false;
+				if (!rc.hasUpgrade(Upgrade.DEFUSION) && rc.senseEnemyNukeHalfDone() && DataCache.numAlliedSoldiers > 20) {
+					upgrade = true;
+					rc.researchUpgrade(Upgrade.DEFUSION);
+				} else if (DataCache.numAlliedSoldiers > 30 && Clock.getRoundNum() > 500) {
+					if (!rc.hasUpgrade(Upgrade.DEFUSION)) {
+						upgrade = true;
+						rc.researchUpgrade(Upgrade.DEFUSION);
+					} else if (!rc.hasUpgrade(Upgrade.PICKAXE)) {
+						upgrade = true;
+						rc.researchUpgrade(Upgrade.PICKAXE);
+					} else if (!rc.hasUpgrade(Upgrade.FUSION)) {
+						upgrade = true;
+						rc.researchUpgrade(Upgrade.FUSION);
+					}
+				}
+				if (!upgrade) {
 
-				// Spawn a soldier
-				Direction desiredDir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
-				Direction dir = getSpawnDirection(rc, desiredDir);
-				if (dir != null) {
-					EncampmentJobSystem.updateJobs();
-					rc.spawn(dir);
+					// Spawn a soldier
+					Direction desiredDir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
+					Direction dir = getSpawnDirection(rc, desiredDir);
+					if (dir != null) {
+						EncampmentJobSystem.updateJobs();
+						rc.spawn(dir);
+					}
 				}
 //				if (Clock.getRoundNum() < 5) {
 //					Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());

@@ -42,7 +42,7 @@ public class EncampmentJobSystem {
 	public static int maxEncampmentJobs = encampmentJobChannelList.length;
 	public static int maxMessage = Constants.MAX_MESSAGE; //24-bit message all 1s
 	
-	public static int[] buildOrder = {0,1,0,1,0,1,0,1,0,1};
+	public static int[] buildOrder = {0,1,0,1,0,1,0,0,0,0};
 	
 	// these two arrays must have bijective correspondence
 	// the job associated with encampmentJobs[i] must always write to channelList[i] for each i
@@ -78,7 +78,7 @@ public class EncampmentJobSystem {
 		numUnreachableEncampments = 0;
 		unreachableEncampments = new MapLocation[100];
 		int rushDist = hqloc.distanceSquaredTo(enemyloc);
-		encampmentRadius = (int) (0.55 * rushDist);
+		encampmentRadius = (int) (2 * rushDist);
 		
 		MapLocation[] allEncampments = rc.senseEncampmentSquares(hqloc, encampmentRadius, Team.NEUTRAL);
 		if (allEncampments.length < numEncampmentsNeeded) {
@@ -380,6 +380,10 @@ public class EncampmentJobSystem {
 	 * @throws GameActionException
 	 */
 	public static void updateJobs() throws GameActionException {
+		int numAlliedSoldiers = DataCache.numAlliedSoldiers;
+		
+		numEncampmentsNeeded = Math.min(numAlliedSoldiers/10, maxEncampmentJobs);
+		
 //		System.out.println("Before update: " + Clock.getBytecodeNum());
 		MapLocation[] neutralEncampments = rc.senseEncampmentSquares(HQLocation,encampmentRadius, Team.NEUTRAL);
 		if (EncampmentJobSystem.numEncampmentsNeeded > neutralEncampments.length){

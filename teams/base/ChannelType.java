@@ -3,12 +3,7 @@ package base;
 import battlecode.common.GameConstants;
 
 public enum ChannelType {
-	// test
-	CHANNEL1,
-	CHANNEL2,
-	CHANNEL3,
-	CHANNEL4,
-	
+
 	// for encampments
 	ENC1,
 	ENC2,
@@ -27,7 +22,9 @@ public enum ChannelType {
 	COMP5,
 	COMP6,
 	COMP7,
-	COMP8;	
+	COMP8,
+	
+	HQPOWERLEVEL;
 	
 	public static final int size = ChannelType.values().length;
 	public static final int range = GameConstants.BROADCAST_MAX_CHANNELS / size;

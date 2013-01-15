@@ -31,6 +31,8 @@ public class SoldierRobot extends BaseRobot {
 	
 	public MapLocation rallyPoint;
 	
+	public ChannelType powerChannel = ChannelType.HQPOWERLEVEL;
+	
 	public SoldierRobot(RobotController rc) throws GameActionException {
 		super(rc);
 		
@@ -55,13 +57,9 @@ public class SoldierRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
-			rc.setIndicatorString(0, "new");
 			
 			DataCache.updateRoundVariables();
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
-			if (rc.getRobot().getID() == 158) {
-				System.out.println("unassigned: " + unassigned);
-			}
 			if (unassigned) {
 				
 				rc.setIndicatorString(0, Integer.toString(DataCache.numAlliedSoldiers));
@@ -82,15 +80,24 @@ public class SoldierRobot extends BaseRobot {
 					}
 					break;
 				case RALLYING:
+					int hqPowerLevel = 10000;
+					Message message = BroadcastSystem.read(powerChannel);
+					if (message.isValid) {
+						hqPowerLevel = message.body;
+					}
+					
+					rc.setIndicatorString(2, Integer.toString(hqPowerLevel));
+
+
 					// If there are enemies nearby, trigger FIGHTING SoldierState
 					if (DataCache.numTotalEnemyRobots > 0) {
 						soldierState = SoldierState.FIGHTING;
 //					} else if (DataCache.numAlliedSoldiers > Constants.RALLYING_SOLDIER_THRESHOLD) {
-					} else if (rc.getTeamPower() < 100) {
+					} else if (hqPowerLevel < 100) {
 						soldierState = SoldierState.FIGHTING;
 					} else {
-						if (Util.Random() < 0.2) {
-							if (rc.senseMine(currentLocation) == null) {
+						if (rc.senseMine(currentLocation) == null) {
+							if (rc.isActive() && Util.Random() < 0.1) {
 								rc.layMine();
 							}
 						} else {
@@ -302,7 +309,9 @@ public class SoldierRobot extends BaseRobot {
 		}
 		if (rc.isActive()) {
 			if (rc.senseEncampmentSquare(currentLocation) && currentLocation.equals(EncampmentJobSystem.goalLoc)) {
-				rc.captureEncampment(EncampmentJobSystem.assignedRobotType);
+				if (rc.getTeamPower() > rc.senseCaptureCost()) {
+					rc.captureEncampment(EncampmentJobSystem.assignedRobotType);
+				}
 			} else {
 				if (NavSystem.navMode == NavMode.BFSMODE) {
 					NavSystem.tryBFSNextTurn();
