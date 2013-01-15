@@ -44,10 +44,10 @@ public class HQRobot extends BaseRobot {
 //			}
 //			
 			
-			if (Clock.getRoundNum() % Constants.CHANNEL_CYCLE == 0 && Clock.getRoundNum() % Constants.CHANNEL_CYCLE > 0) {
+			if (Clock.getRoundNum() % Constants.CHANNEL_CYCLE == 0 && Clock.getRoundNum() > 0) {
                 EncampmentJobSystem.updateJobsOnCycle();
 	        } else {
-	                EncampmentJobSystem.updateJobsAfterChecking();
+	            EncampmentJobSystem.updateJobsAfterChecking();
 	        }
 			
 			if (rc.isActive()) {

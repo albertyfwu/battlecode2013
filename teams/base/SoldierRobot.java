@@ -38,6 +38,17 @@ public class SoldierRobot extends BaseRobot {
 		
 		NavSystem.init(this);
 		
+		if (Clock.getRoundNum() > 120 && Clock.getRoundNum() < 150) {
+			for (ChannelType channel: EncampmentJobSystem.encampmentJobChannelList) {
+				Message message = BroadcastSystem.read(channel);
+				if (message.isValid && message.body != 0xFFFFFF) {
+					System.out.println("body: " + message.body);
+				}
+			}
+
+
+		}
+		
 		HQLocation = rc.senseHQLocation();
 		EnemyHQLocation = rc.senseEnemyHQLocation();
 

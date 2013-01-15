@@ -168,7 +168,6 @@ public class RobotPlayer{
 				}
 			}
 		}
-		
 	}
 	
 	private static void goDirectionAvoidMines(Direction dir) throws GameActionException {
