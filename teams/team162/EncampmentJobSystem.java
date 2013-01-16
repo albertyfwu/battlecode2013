@@ -62,6 +62,9 @@ public class EncampmentJobSystem {
 	
 	public static int encampmentRadius;
 	
+	public static int supCount;
+	public static int genCount;
+	
 	/**
 	 * Initializes BroadcastSystem by setting rc
 	 * @param myRobot
@@ -79,6 +82,8 @@ public class EncampmentJobSystem {
 		unreachableEncampments = new MapLocation[100];
 		int rushDist = hqloc.distanceSquaredTo(enemyloc);
 		encampmentRadius = (int) (0.6 * rushDist);
+		supCount = 0;
+		genCount = 0;
 		
 		MapLocation[] allEncampments = rc.senseEncampmentSquares(hqloc, encampmentRadius, Team.NEUTRAL);
 		if (allEncampments.length < 10) {
@@ -102,11 +107,25 @@ public class EncampmentJobSystem {
 	}
 	
 	/**
-	 * HQ uses this to post a new job
+	 * HQ uses this to post a new job, and increments genCount and supCount
 	 * @param channel
 	 * @param loc
 	 */
 	public static void postJob(ChannelType channel, MapLocation loc, int robType) {
+		BroadcastSystem.write(channel, createMessage(loc, false, true, robType));
+		if (robType == 1){
+			genCount++;
+		} else if (robType == 0){
+			supCount++;
+		}
+	}
+	
+	/**
+	 * same as above, except without incrementing
+	 * @param channel
+	 * @param loc
+	 */
+	public static void postJobWithoutIncrementing(ChannelType channel, MapLocation loc, int robType) {
 		BroadcastSystem.write(channel, createMessage(loc, false, true, robType));
 	}
 	
@@ -306,7 +325,6 @@ public class EncampmentJobSystem {
 	 * to persist old job messages that were untaken
 	 */
 	public static void persistChannelsOnCycle() {
-		int alliedNumEncampments = rc.senseAlliedEncampmentSquares().length;
 		for (ChannelType channel: encampmentChannels) {
 			Message msgLastCycle = BroadcastSystem.readLastCycle(channel);
 			System.out.println("isValid: " + msgLastCycle.isValid);
@@ -317,15 +335,15 @@ public class EncampmentJobSystem {
 				if (parseOnOrOff(msgLastCycle.body) == 1 && parseTaken(msgLastCycle.body) == 0) {
 					System.out.println("hello!!!!!");
 					System.out.println("channel: " + channel.toString());
-					int robotTypeToBuild = getRobotTypeToBuild(alliedNumEncampments);
-					postJob(channel, parseLocation(msgLastCycle.body), robotTypeToBuild);
+					int robotTypeToBuild = getRobotTypeToBuild();
+					postJobWithoutIncrementing(channel, parseLocation(msgLastCycle.body), robotTypeToBuild);
 				} else if (parseOnOrOff(msgLastCycle.body) == 1 && parseTaken(msgLastCycle.body) == 1) {
 					int postedRoundNum = parseRoundNum(msgLastCycle.body);
 					if ((16+Clock.getRoundNum() - postedRoundNum)%16 >= 4) { // it hasn't been written on for 5 turns
 						System.out.println("hello!!!!!");
 						System.out.println("channel: " + channel.toString());
-						int robotTypeToBuild = getRobotTypeToBuild(alliedNumEncampments);
-						postJob(channel, parseLocation(msgLastCycle.body), robotTypeToBuild);
+						int robotTypeToBuild = getRobotTypeToBuild();
+						postJobWithoutIncrementing(channel, parseLocation(msgLastCycle.body), robotTypeToBuild);
 					}
 				}
 
@@ -366,7 +384,7 @@ public class EncampmentJobSystem {
 					channelIndex = arrayIndex(channel, channelList);
 					if (channelIndex == -1) { // if not already used, use it and post job
 						channelList[i] = channel;
-						int robotTypeToBuild = getRobotTypeToBuild(alliedNumEncampments);
+						int robotTypeToBuild = getRobotTypeToBuild();
 						EncampmentJobSystem.postJob(channel, newJobsList[i], robotTypeToBuild);
 						break channelLoop;
 					}
@@ -411,31 +429,32 @@ public class EncampmentJobSystem {
 		if (numEncampmentsNeeded > neutralEncampments.length){
 			numEncampmentsNeeded = neutralEncampments.length;
 		}
+		
+		if (numEncampmentsNeeded != 0) {
+			MapLocation[] newJobsList = getClosestMapLocations(HQLocation, neutralEncampments, numEncampmentsNeeded);
+//			System.out.println("new jobs list: " + Clock.getBytecodeNum());
 
-		MapLocation[] newJobsList = getClosestMapLocations(HQLocation, neutralEncampments, EncampmentJobSystem.numEncampmentsNeeded);
-//		System.out.println("new jobs list: " + Clock.getBytecodeNum());
+			ChannelType[] channelList = EncampmentJobSystem.assignChannels(newJobsList, EncampmentJobSystem.encampmentJobs, EncampmentJobSystem.encampmentChannels);
 
-		ChannelType[] channelList = EncampmentJobSystem.assignChannels(newJobsList, EncampmentJobSystem.encampmentJobs, EncampmentJobSystem.encampmentChannels);
+			for (int i=0; i<EncampmentJobSystem.numEncampmentsNeeded; i++) { // update lists
+				EncampmentJobSystem.encampmentJobs[i] = newJobsList[i];
+				System.out.println("encampmentJobs.x: " + encampmentJobs[i].x);
+				System.out.println("encampmentJobs.y: " + encampmentJobs[i].y);
 
-		for (int i=0; i<EncampmentJobSystem.numEncampmentsNeeded; i++) { // update lists
-			EncampmentJobSystem.encampmentJobs[i] = newJobsList[i];
-			System.out.println("encampmentJobs.x: " + encampmentJobs[i].x);
-			System.out.println("encampmentJobs.y: " + encampmentJobs[i].y);
+				EncampmentJobSystem.encampmentChannels[i] = channelList[i];
+			}
 
-			EncampmentJobSystem.encampmentChannels[i] = channelList[i];
-		}
+//			System.out.println("update lists: " + Clock.getBytecodeNum());
 
-//		System.out.println("update lists: " + Clock.getBytecodeNum());
-
-		// clear unused channels
-		for (ChannelType channel: EncampmentJobSystem.encampmentJobChannelList) {
-			if (arrayIndex(channel, EncampmentJobSystem.encampmentChannels) == -1) { // if unused
-				System.out.println("channel overwrite: " + channel.toString());
-				BroadcastSystem.writeMaxMessage(channel); // reset the channel
+			// clear unused channels
+			for (ChannelType channel: EncampmentJobSystem.encampmentJobChannelList) {
+				if (arrayIndex(channel, EncampmentJobSystem.encampmentChannels) == -1) { // if unused
+					System.out.println("channel overwrite: " + channel.toString());
+					BroadcastSystem.writeMaxMessage(channel); // reset the channel
+				}
 			}
 		}
-		
-		
+
 //		System.out.println("After update: " + Clock.getRoundNum());
 	}
 	/**
@@ -509,15 +528,15 @@ public class EncampmentJobSystem {
 	}
 	
 	
-	public static int getRobotTypeToBuild(int alliedEncampmentsBuilt) {
-		if (alliedEncampmentsBuilt >= buildOrder.length) {
-			if (Util.Random() < 0.5) {
-				return 0;
-			} else {
-				return 1;
-			}
+	public static int getRobotTypeToBuild() {
+		if (supCount == 0 && genCount == 0) {
+			return 0;
+		}
+		double supRatio = (supCount*1.0)/(supCount*1.0 + genCount*1.0);
+		if (supRatio > 0.8) {
+			return 1;
 		} else {
-			return buildOrder[alliedEncampmentsBuilt];
+			return 0;
 		}
 	}
 	

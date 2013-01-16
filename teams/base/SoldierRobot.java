@@ -285,7 +285,14 @@ public class SoldierRobot extends BaseRobot {
 			NavSystem.setupSmartNav(closestEnemyLocation);
 			if (DataCache.numAlliedSoldiers > 3 * DataCache.numTotalEnemyRobots) {
 //				NavSystem.goToLocation(closestEnemyLocation);
-				NavSystem.followWaypoints(true);
+				double random = Util.Random();
+				System.out.println("random: " + random);
+				if (random < 0.05) {
+					NavSystem.followWaypoints(true);
+				} else {
+					NavSystem.followWaypoints(false);
+				}
+				
 			} else {
 				if (DataCache.numNearbyEnemyRobots > 0) {
 					double[] our23 = getEnemies2Or3StepsAway();
@@ -304,7 +311,13 @@ public class SoldierRobot extends BaseRobot {
 
 					if (DataCache.numTotalEnemyRobots > 0) {
 						if (DataCache.numAlliedSoldiers > 3 * DataCache.numTotalEnemyRobots) {
-							NavSystem.followWaypoints(true);
+							double random = Util.Random();
+							System.out.println("random: " + random);
+							if (random < 0.05) {
+								NavSystem.followWaypoints(true);
+							} else {
+								NavSystem.followWaypoints(false);
+							}
 						}
 						NavSystem.followWaypoints(false);
 					} else {
@@ -331,6 +344,10 @@ public class SoldierRobot extends BaseRobot {
 					rc.captureEncampment(EncampmentJobSystem.assignedRobotType);
 				}
 			} else {
+				if (rc.senseNearbyGameObjects(Robot.class, 14, rc.getTeam().opponent()).length > 0) {
+					unassigned = true;
+					soldierState = SoldierState.FIGHTING;
+				}
 				if (NavSystem.navMode == NavMode.BFSMODE) {
 					NavSystem.tryBFSNextTurn();
 				} else if (NavSystem.navMode == NavMode.GETCLOSER){

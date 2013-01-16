@@ -429,31 +429,32 @@ public class EncampmentJobSystem {
 		if (numEncampmentsNeeded > neutralEncampments.length){
 			numEncampmentsNeeded = neutralEncampments.length;
 		}
+		
+		if (numEncampmentsNeeded != 0) {
+			MapLocation[] newJobsList = getClosestMapLocations(HQLocation, neutralEncampments, numEncampmentsNeeded);
+//			System.out.println("new jobs list: " + Clock.getBytecodeNum());
 
-		MapLocation[] newJobsList = getClosestMapLocations(HQLocation, neutralEncampments, EncampmentJobSystem.numEncampmentsNeeded);
-//		System.out.println("new jobs list: " + Clock.getBytecodeNum());
+			ChannelType[] channelList = EncampmentJobSystem.assignChannels(newJobsList, EncampmentJobSystem.encampmentJobs, EncampmentJobSystem.encampmentChannels);
 
-		ChannelType[] channelList = EncampmentJobSystem.assignChannels(newJobsList, EncampmentJobSystem.encampmentJobs, EncampmentJobSystem.encampmentChannels);
+			for (int i=0; i<EncampmentJobSystem.numEncampmentsNeeded; i++) { // update lists
+				EncampmentJobSystem.encampmentJobs[i] = newJobsList[i];
+				System.out.println("encampmentJobs.x: " + encampmentJobs[i].x);
+				System.out.println("encampmentJobs.y: " + encampmentJobs[i].y);
 
-		for (int i=0; i<EncampmentJobSystem.numEncampmentsNeeded; i++) { // update lists
-			EncampmentJobSystem.encampmentJobs[i] = newJobsList[i];
-			System.out.println("encampmentJobs.x: " + encampmentJobs[i].x);
-			System.out.println("encampmentJobs.y: " + encampmentJobs[i].y);
+				EncampmentJobSystem.encampmentChannels[i] = channelList[i];
+			}
 
-			EncampmentJobSystem.encampmentChannels[i] = channelList[i];
-		}
+//			System.out.println("update lists: " + Clock.getBytecodeNum());
 
-//		System.out.println("update lists: " + Clock.getBytecodeNum());
-
-		// clear unused channels
-		for (ChannelType channel: EncampmentJobSystem.encampmentJobChannelList) {
-			if (arrayIndex(channel, EncampmentJobSystem.encampmentChannels) == -1) { // if unused
-				System.out.println("channel overwrite: " + channel.toString());
-				BroadcastSystem.writeMaxMessage(channel); // reset the channel
+			// clear unused channels
+			for (ChannelType channel: EncampmentJobSystem.encampmentJobChannelList) {
+				if (arrayIndex(channel, EncampmentJobSystem.encampmentChannels) == -1) { // if unused
+					System.out.println("channel overwrite: " + channel.toString());
+					BroadcastSystem.writeMaxMessage(channel); // reset the channel
+				}
 			}
 		}
-		
-		
+
 //		System.out.println("After update: " + Clock.getRoundNum());
 	}
 	/**
@@ -532,7 +533,7 @@ public class EncampmentJobSystem {
 			return 0;
 		}
 		double supRatio = (supCount*1.0)/(supCount*1.0 + genCount*1.0);
-		if (supRatio > 0.85) {
+		if (supRatio > 0.8) {
 			return 1;
 		} else {
 			return 0;
