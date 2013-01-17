@@ -1,4 +1,4 @@
-package base;
+package base_defense;
 
 import battlecode.common.GameConstants;
 

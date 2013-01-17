@@ -1,4 +1,4 @@
-package base;
+package base_defense;
 
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
