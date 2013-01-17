@@ -1,9 +1,12 @@
 package base;
 
 public enum SoldierState {
+	NEW,
 	MINING_IN_CIRCLE,
 	DEFUSING,
 	FIGHTING,
 	RALLYING,
-	ALL_IN;
+	ALL_IN,
+	ESCAPE_HQ_MINES,
+	CLEAR_OUT_HQ_MINES;
 }

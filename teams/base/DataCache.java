@@ -1,6 +1,7 @@
 package base;
 
 import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
 import battlecode.common.Robot;
 import battlecode.common.RobotController;
 
@@ -8,6 +9,9 @@ public class DataCache {
 	
 	public static BaseRobot robot;
 	public static RobotController rc;
+	
+	public static MapLocation ourHQLocation;
+	public static MapLocation enemyHQLocation;
 	
 	// Round variables
 	public static int numAlliedRobots;
@@ -19,6 +23,9 @@ public class DataCache {
 	public static void init(BaseRobot myRobot) {
 		robot = myRobot;
 		rc = robot.rc;
+		
+		ourHQLocation = rc.senseHQLocation();
+		enemyHQLocation = rc.senseEnemyHQLocation();
 	}
 	
 	/**

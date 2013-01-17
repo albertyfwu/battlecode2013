@@ -82,6 +82,13 @@ public class NavSystem {
 		}
 	}
 	
+	public static void goAwayFromLocationDontDefuseOrAvoidMines(MapLocation location) throws GameActionException {
+		Direction dir = rc.getLocation().directionTo(location).opposite();
+		if (dir != Direction.OMNI) {
+			goDirectionAndDontDefuseOrAvoidMines(dir);
+		}
+	}
+	
 	public static void goToLocationAvoidMines(MapLocation location) throws GameActionException {
 		Direction dir = rc.getLocation().directionTo(location);
 		if (dir != Direction.OMNI){
@@ -107,6 +114,19 @@ public class NavSystem {
 					} else {
 						rc.move(lookingAtCurrently);
 					}
+					break lookAround;
+				}
+			}
+		}
+	}
+	
+	public static void goDirectionAndDontDefuseOrAvoidMines(Direction dir) throws GameActionException {
+		if (rc.isActive()) {
+			Direction lookingAtCurrently = dir;
+			lookAround: for (int d : directionOffsets) {
+				lookingAtCurrently = Direction.values()[(dir.ordinal() + d + 8) % 8];
+				if (rc.isActive() && rc.canMove(lookingAtCurrently)) {
+					rc.move(lookingAtCurrently);
 					break lookAround;
 				}
 			}

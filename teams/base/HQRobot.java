@@ -5,6 +5,7 @@ import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
+import battlecode.common.Team;
 import battlecode.common.Upgrade;
 
 public class HQRobot extends BaseRobot {
@@ -137,13 +138,13 @@ public class HQRobot extends BaseRobot {
 		}
 	}
 
-	public void create_soldier() throws GameActionException {
-		// Spawn a soldier
-		Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
-		if (rc.canMove(dir)) {
-			rc.spawn(dir);
-		}
-	}
+//	public void create_soldier() throws GameActionException {
+//		// Spawn a soldier
+//		Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
+//		if (rc.canMove(dir)) {
+//			rc.spawn(dir);
+//		}
+//	}
 
 
 	/**
@@ -153,25 +154,24 @@ public class HQRobot extends BaseRobot {
 	 * @return
 	 */
 	private static Direction getSpawnDirection(RobotController rc, Direction dir) {
-		if (rc.canMove(dir)) {
-			return dir;
-		} else if (rc.canMove(dir.rotateLeft())) {
-			return dir.rotateLeft();
-		} else if (rc.canMove(dir.rotateRight())) {
-			return dir.rotateRight();
-		} else if (rc.canMove(dir.rotateLeft().rotateLeft())) {
-			return dir.rotateLeft().rotateLeft();
-		} else if (rc.canMove(dir.rotateRight().rotateRight())) {
-			return dir.rotateRight().rotateRight();
-		} else if (rc.canMove(dir.rotateLeft().opposite())) {
-			return dir.rotateLeft().opposite();
-		} else if (rc.canMove(dir.rotateRight().opposite())) {
-			return dir.rotateRight().opposite();
-		} else if (rc.canMove(dir.opposite())) {
-			return dir.opposite();
-		} else {
-			return null;
+		Direction canMoveDirection = null;
+		int desiredDirOffset = dir.ordinal();
+		int[] dirOffsets = new int[]{0, 1, -1, 2, -2, 3, -3, 4};
+		for (int dirOffset : dirOffsets) {
+			Direction currentDirection = Direction.values()[(desiredDirOffset + dirOffset + 8) % 8];
+			if (rc.canMove(currentDirection)) {
+				if (canMoveDirection == null) {
+					canMoveDirection = currentDirection;
+				}
+				Team mineTeam = rc.senseMine(rc.getLocation().add(currentDirection));
+				if (mineTeam == null || mineTeam == rc.getTeam()) {
+					// If there's no mine here or the mine is an allied mine, we can spawn here
+					return currentDirection;
+				}
+			}			
 		}
+		// Otherwise, let's just spawn in the desired direction, and make sure to clear out a path later
+		return canMoveDirection;
 	}
 
 //	public static void main(String[] arg0) {

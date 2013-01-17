@@ -14,7 +14,7 @@ public class SoldierRobot extends BaseRobot {
 	
 	public Platoon platoon;
 	
-	public SoldierState soldierState = SoldierState.RALLYING;
+	public SoldierState soldierState = SoldierState.NEW;
 	
 	// For mining
 	private MapLocation miningCenter;
@@ -73,10 +73,6 @@ public class SoldierRobot extends BaseRobot {
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
 			if (unassigned) {
 				
-//				rc.setIndicatorString(0, Integer.toString(DataCache.numAlliedSoldiers));
-//				rc.setIndicatorString(1, Integer.toString(DataCache.numNearbyEnemyRobots));
-//				rc.setIndicatorString(2, soldierState.toString());
-				
 				// Check if enemy nuke is half done
 				if (!enemyNukeHalfDone) {
 					Message message = BroadcastSystem.read(ChannelType.ENEMY_NUKE_HALF_DONE);
@@ -88,7 +84,39 @@ public class SoldierRobot extends BaseRobot {
 					soldierState = SoldierState.ALL_IN;
 				}
 				
-				switch (soldierState) {
+				if (soldierState == SoldierState.NEW) {
+					// If we're standing on a mine close to our base, we should clear out the mine
+					Team mineTeam = rc.senseMine(rc.getLocation());
+					if (mineTeam != null && mineTeam != rc.getTeam()) {
+						soldierState = SoldierState.ESCAPE_HQ_MINES;
+					} else {
+						soldierState = SoldierState.RALLYING;
+					}
+				}
+				
+				rc.setIndicatorString(0, soldierState.toString());
+				
+				switch (soldierState) {					
+				case ESCAPE_HQ_MINES:
+					// We need to run away from the mines surrounding our base
+					Team mineTeam = rc.senseMine(rc.getLocation());
+					if (mineTeam != null && mineTeam != rc.getTeam()) {
+						// We need to run away from the mines surrounding our base
+						NavSystem.goAwayFromLocationDontDefuseOrAvoidMines(DataCache.ourHQLocation);
+					} else {
+						// No more mines, so clear out HQ mines
+						soldierState = SoldierState.CLEAR_OUT_HQ_MINES;
+					}
+					break;
+				case CLEAR_OUT_HQ_MINES:
+					// Clear out a path to the HQ
+					Team mineTeam1 = rc.senseMine(rc.getLocation());
+					if (mineTeam1 == null || mineTeam1 == rc.getTeam()) {
+						NavSystem.goToLocation(DataCache.ourHQLocation);
+					} else {
+						// We're done
+						soldierState = SoldierState.RALLYING;
+					}
 				case ALL_IN:
 					microCode();
 					break;
