@@ -24,6 +24,9 @@ public enum ChannelType {
 	COMP7,
 	COMP8,
 	
+	// broadcasting waypoints for clearing wide swath for army
+	WAYPOINTS,
+	
 	// power level
 	HQPOWERLEVEL,
 	

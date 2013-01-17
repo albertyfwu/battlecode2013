@@ -9,6 +9,7 @@ import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Team;
+import battlecode.common.Upgrade;
 
 public class SoldierRobot extends BaseRobot {
 	
@@ -26,9 +27,6 @@ public class SoldierRobot extends BaseRobot {
 	
 	public MapLocation currentLocation;
 	
-	public MapLocation HQLocation;
-	public MapLocation EnemyHQLocation;
-	
 	public MapLocation rallyPoint;
 	
 	public ChannelType powerChannel = ChannelType.HQPOWERLEVEL;
@@ -45,12 +43,7 @@ public class SoldierRobot extends BaseRobot {
 					System.out.println("body: " + message.body);
 				}
 			}
-
-
 		}
-		
-		HQLocation = rc.senseHQLocation();
-		EnemyHQLocation = rc.senseEnemyHQLocation();
 
 		rallyPoint = findRallyPoint();
 		
@@ -90,6 +83,7 @@ public class SoldierRobot extends BaseRobot {
 					if (mineTeam != null && mineTeam != rc.getTeam()) {
 						soldierState = SoldierState.ESCAPE_HQ_MINES;
 					} else {
+//						setupCircleMining(DataCache.ourHQLocation, 20);
 						soldierState = SoldierState.PLANT_MINES;
 					}
 				}
@@ -125,11 +119,7 @@ public class SoldierRobot extends BaseRobot {
 					// 
 					break;
 				case PLANT_MINES:
-					if (DataCache.have_pickaxe) {
-						// We can mine 2i + j
-					} else {
-						// We mine every square
-					}
+					mineTowardsEnemyHQ();
 					break;
 				case ALL_IN:
 					microCode();
@@ -180,6 +170,50 @@ public class SoldierRobot extends BaseRobot {
 			System.out.println("caught exception before it killed us:");
 			System.out.println(rc.getRobot().getID());
 			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Mine towards the enemy HQ, defusing neutral mines along the way
+	 * @throws GameActionException
+	 */
+	private void mineTowardsEnemyHQ() throws GameActionException {
+		if (rc.isActive()) {
+			if (rc.senseMine(rc.getLocation()) == null) {
+				// If we're not standing on a mine
+				if (rc.hasUpgrade(Upgrade.PICKAXE)) {
+					int x = rc.getLocation().x;
+					int y = rc.getLocation().y;
+					if ((2 * x + y) % 5 == 0) {
+						// also need to check that all the squares next to you are defused
+						int[][] directionOffsets = new int[][] {{0,1},{1,0},{0,-1},{-1,0}};
+						for (int[] directionOffset : directionOffsets) {
+							MapLocation newLocation = rc.getLocation().add(directionOffset[0], directionOffset[1]);
+							Team mineTeam1 = rc.senseMine(newLocation);
+							if (mineTeam1 == Team.NEUTRAL || mineTeam1 == rc.getTeam().opponent()) {
+								// Defuse that mine
+								rc.defuseMine(newLocation);
+								return;
+							}
+						}
+						if (rc.isActive()) {
+							rc.layMine();
+						}
+					}
+				} else {
+					rc.layMine();
+				}
+			}
+			Direction dirToEnemyHQ = rc.getLocation().directionTo(DataCache.enemyHQLocation);
+			MapLocation iterLocation = rc.getLocation().add(dirToEnemyHQ);
+			Team mineTeam = rc.senseMine(iterLocation);
+			if (mineTeam == null || mineTeam == rc.getTeam()) {
+				// If there is no mine, go towards that location
+				NavSystem.goToLocation(iterLocation);
+			} else if (mineTeam == rc.getTeam().opponent() || mineTeam == Team.NEUTRAL) {
+				// If mine is neutral or from the other team, just defuse it
+				rc.defuseMine(iterLocation);
+			}
 		}
 	}
 	
@@ -297,8 +331,8 @@ public class SoldierRobot extends BaseRobot {
 	}
 	
 	public int[] getClosestEnemy(Robot[] enemyRobots) throws GameActionException {
-		int closestDist = currentLocation.distanceSquaredTo(EnemyHQLocation);
-		MapLocation closestEnemy=EnemyHQLocation; // default to HQ
+		int closestDist = currentLocation.distanceSquaredTo(DataCache.enemyHQLocation);
+		MapLocation closestEnemy=DataCache.enemyHQLocation; // default to HQ
 
 		int dist = 0;
 		for (int i=0;i<enemyRobots.length;i++){
@@ -427,8 +461,8 @@ public class SoldierRobot extends BaseRobot {
 	}
 	
 	private MapLocation findRallyPoint() {
-		MapLocation enemyLoc = EnemyHQLocation;
-		MapLocation ourLoc = HQLocation;
+		MapLocation enemyLoc = DataCache.enemyHQLocation;
+		MapLocation ourLoc = DataCache.ourHQLocation;
 		int x, y;
 		x = (enemyLoc.x+3*ourLoc.x)/4;
 		y = (enemyLoc.y+3*ourLoc.y)/4;

@@ -24,7 +24,14 @@ public enum ChannelType {
 	COMP7,
 	COMP8,
 	
-	HQPOWERLEVEL;
+	// broadcasting waypoints for clearing wide swath for army
+	WAYPOINTS,
+	
+	// power level
+	HQPOWERLEVEL,
+	
+	// checking if enemy nuke is half done
+	ENEMY_NUKE_HALF_DONE;
 	
 	public static final int size = ChannelType.values().length;
 	public static final int range = GameConstants.BROADCAST_MAX_CHANNELS / size;

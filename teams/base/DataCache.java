@@ -18,6 +18,9 @@ public class DataCache {
 	public static int numAlliedRobots;
 	public static int numAlliedEncampments;
 	public static int numAlliedSoldiers;
+	public static int numNearbyAlliedRobots;
+	public static int numNearbyAlliedEncampments;
+	public static int numNearbyAlliedSoldiers;
 	public static int numNearbyEnemyRobots;
 	public static int numTotalEnemyRobots;
 	
@@ -39,6 +42,9 @@ public class DataCache {
 	 */
 	public static void updateRoundVariables() throws GameActionException {
 		numAlliedRobots = rc.senseNearbyGameObjects(Robot.class, 10000, rc.getTeam()).length;
+		numNearbyAlliedRobots = rc.senseNearbyGameObjects(Robot.class, 14, rc.getTeam()).length;
+		numNearbyAlliedEncampments = rc.senseEncampmentSquares(rc.getLocation(), 14, rc.getTeam()).length;
+		numNearbyAlliedSoldiers = numNearbyAlliedRobots - numNearbyAlliedEncampments;
 		numAlliedEncampments = rc.senseEncampmentSquares(rc.getLocation(), 10000, rc.getTeam()).length;
 		numAlliedSoldiers = numAlliedRobots - numAlliedEncampments - 1 - EncampmentJobSystem.maxEncampmentJobs;
 		numNearbyEnemyRobots = rc.senseNearbyGameObjects(Robot.class, Constants.RALLYING_SOLDIER_THRESHOLD, rc.getTeam().opponent()).length;

@@ -15,7 +15,7 @@ public interface Constants {
 	public static final int CHANNEL_CYCLE = 17;	
 	
 	// the maximum number of precomputed rounds of channels (if too high, Java will spit out wrong numbers)
-	public static final int MAX_PRECOMPUTED_ROUNDS = 500;
+	public static final int MAX_PRECOMPUTED_ROUNDS = 2500;
 	
 	public static final int MAX_MESSAGE = 0xFFFFFF;
 	
@@ -37,7 +37,7 @@ public interface Constants {
 	public static final int PATH_CHECK_RADIUS = 3;
 	
 	// The squared radius distance at which we stop over-valuing mines, and just go straight for the endLocation
-	public static final int PATH_GO_ALL_IN_SQ_RADIUS = 200;
+	public static final int PATH_GO_ALL_IN_SQ_RADIUS = 144;
 	
 	/**
 	 * Backdoor Waypoints

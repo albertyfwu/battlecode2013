@@ -61,7 +61,11 @@ public class HQRobot extends BaseRobot {
 	        }
 			
 			if (rc.isActive()) {
-
+				
+				if (!rc.hasUpgrade(Upgrade.PICKAXE)) {
+					rc.researchUpgrade(Upgrade.PICKAXE);
+				}
+				
 
 				boolean upgrade = false;
 				if (!rc.hasUpgrade(Upgrade.DEFUSION) && enemyNukeHalfDone && DataCache.numAlliedSoldiers > 5) {
@@ -80,13 +84,14 @@ public class HQRobot extends BaseRobot {
 					}
 				}
 				if (!upgrade) {
-
-					// Spawn a soldier
-					Direction desiredDir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
-					Direction dir = getSpawnDirection(rc, desiredDir);
-					if (dir != null) {
-						EncampmentJobSystem.updateJobs();
-						rc.spawn(dir);
+					if (Clock.getRoundNum() < 2500) {
+						// Spawn a soldier
+						Direction desiredDir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
+						Direction dir = getSpawnDirection(rc, desiredDir);
+						if (dir != null) {
+							EncampmentJobSystem.updateJobs();
+							rc.spawn(dir);
+						}
 					}
 				}
 //				if (Clock.getRoundNum() < 5) {

@@ -18,7 +18,7 @@ public class BroadcastSystem {
 	
 	public static BaseRobot robot;
 	public static RobotController rc;
-	public static byte signature = 0x3D; // TODO: Better signature verification (based on round number, channel type, etc.)
+	public static byte signature = 0x3F; // TODO: Better signature verification (based on round number, channel type, etc.)
 	public static final int signatureMask = 0x00FFFFFF;
 	
 	/**
@@ -153,7 +153,7 @@ public class BroadcastSystem {
 //		}
 		int[] channelNos = new int[Constants.REDUNDANT_CHANNELS];
 		int rangeStart = channelType.ordinal() * ChannelType.range;
-		constant += 1;
+		constant += 2;
 		for (int i = 0; i < Constants.REDUNDANT_CHANNELS; i++) {
 //			System.out.println("start: " + Clock.getBytecodeNum());
 			int offset = (Integer.toString(((constant << 4 + 17 * channelType.ordinal()) << 4 + i)).hashCode()) % ChannelType.range;

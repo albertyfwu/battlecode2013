@@ -9,6 +9,8 @@ public abstract class BaseRobot {
 	public RobotController rc;
 	public int id;
 	
+	public boolean enemyNukeHalfDone = false;
+	
 	// Default constructor
 	public BaseRobot(RobotController myRC) {
 		rc = myRC;

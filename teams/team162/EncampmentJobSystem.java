@@ -42,7 +42,6 @@ public class EncampmentJobSystem {
 	public static int maxEncampmentJobs = encampmentJobChannelList.length;
 	public static int maxMessage = Constants.MAX_MESSAGE; //24-bit message all 1s
 	
-	public static int[] buildOrder = {0,1,0,1,0,1,0,0,0,0};
 	
 	// these two arrays must have bijective correspondence
 	// the job associated with encampmentJobs[i] must always write to channelList[i] for each i
@@ -86,7 +85,9 @@ public class EncampmentJobSystem {
 		genCount = 0;
 		
 		MapLocation[] allEncampments = rc.senseEncampmentSquares(hqloc, encampmentRadius, Team.NEUTRAL);
-		if (allEncampments.length < 10) {
+		if (allEncampments.length == 0) {
+			numEncampmentsNeeded = 0;
+		} else if (allEncampments.length < 10) {
 			numEncampmentsNeeded = 1;
 		} else if (allEncampments.length < 30) {
 			numEncampmentsNeeded = 2;
@@ -102,7 +103,8 @@ public class EncampmentJobSystem {
 
 			// broadcast job opening
 			encampmentChannels[i] = encampmentJobChannelList[i];
-			postJob(EncampmentJobSystem.encampmentChannels[i], encampmentJobs[i], buildOrder[i]);
+			
+			postJob(EncampmentJobSystem.encampmentChannels[i], encampmentJobs[i], getRobotTypeToBuild());
 		}
 	}
 	

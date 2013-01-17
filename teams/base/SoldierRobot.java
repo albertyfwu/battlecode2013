@@ -147,14 +147,17 @@ public class SoldierRobot extends BaseRobot {
 					// If there are enemies nearby, trigger FIGHTING SoldierState
 					if (DataCache.numTotalEnemyRobots > 0) {
 						soldierState = SoldierState.FIGHTING;
-					} else if (hqPowerLevel < 100) {
+					} else if (Clock.getRoundNum() > 250) {
 						soldierState = SoldierState.FIGHTING;
 					} else {
+						boolean layedMine = false;
 						if (rc.senseMine(currentLocation) == null) {
-							if (rc.isActive() && Util.Random() < 0.1) {
-								rc.layMine();
-							}
-						} else {
+//							if (rc.isActive() && Util.Random() < 0.1) {
+//								rc.layMine();
+//								layedMine = true;
+//							}
+						} 
+						if (!layedMine) {
 							NavSystem.goToLocation(rallyPoint);
 						}
 					}
@@ -307,57 +310,61 @@ public class SoldierRobot extends BaseRobot {
 	}
 
 	
-	private void microCode() throws GameActionException {
-		if (rc.isActive()) {
-			Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
-			int[] closestEnemyInfo = getClosestEnemy(enemiesList);
-			MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
-			NavSystem.setupSmartNav(closestEnemyLocation);
-			if (DataCache.numAlliedSoldiers > 3 * DataCache.numTotalEnemyRobots) {
-//				NavSystem.goToLocation(closestEnemyLocation);
-				double random = Util.Random();
-				System.out.println("random: " + random);
-				if (random < 0.05) {
-					NavSystem.followWaypoints(true);
-				} else {
-					NavSystem.followWaypoints(false);
-				}
-				
-			} else {
-				if (DataCache.numNearbyEnemyRobots > 0) {
-					double[] our23 = getEnemies2Or3StepsAway();
-					double[] enemy23 = getEnemies2Or3StepsAwaySquare(closestEnemyLocation, rc.getTeam().opponent());
-					Direction dir = currentLocation.directionTo(closestEnemyLocation);
-					//					int numAlliesNext = getNumAlliedNeighborsSquare(currentLocation.add(dir));
-					//					int numAllies = getNumAlliedNeighbors();
-					if (our23[0] + our23[1] < enemy23[0] + enemy23[1]) {
-						NavSystem.followWaypoints(false);
-					} else if (our23[0] + our23[1] > enemy23[0] + enemy23[1]){
-						NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
-					}
-
-				} else {
-					//				NavSystem.goToLocationAvoidMines(closestEnemyLocation);
-
-					if (DataCache.numTotalEnemyRobots > 0) {
-						if (DataCache.numAlliedSoldiers > 3 * DataCache.numTotalEnemyRobots) {
-							double random = Util.Random();
-							System.out.println("random: " + random);
-							if (random < 0.05) {
-								NavSystem.followWaypoints(true);
-							} else {
-								NavSystem.followWaypoints(false);
-							}
-						}
-						NavSystem.followWaypoints(false);
-					} else {
-						NavSystem.followWaypoints(true);
-
-					}
-				}
-			}
-		}
-	}
+    private void microCode() throws GameActionException {
+        Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
+        int[] closestEnemyInfo = getClosestEnemy(enemiesList);
+        MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
+        if (rc.senseNearbyGameObjects(Robot.class, 14, rc.getTeam().opponent()).length > 0) {
+                double[] our23 = getEnemies2Or3StepsAway();
+                double[] enemy23 = getEnemies2Or3StepsAwaySquare(closestEnemyLocation, rc.getTeam().opponent());
+                Direction dir = currentLocation.directionTo(closestEnemyLocation);
+//              int numAlliesNext = getNumAlliedNeighborsSquare(currentLocation.add(dir));
+//              int numAllies = getNumAlliedNeighbors();
+                if (our23[0] + our23[1] < enemy23[0] + enemy23[1]) {
+                        NavSystem.goToLocation(closestEnemyLocation);
+                } else if (our23[0] + our23[1] > enemy23[0] + enemy23[1]){
+                        NavSystem.goAwayFromLocation(closestEnemyLocation);
+                }
+        } else {
+                NavSystem.goToLocation(closestEnemyLocation);
+        }
+}
+//	private void microCode() throws GameActionException {
+//		if (rc.isActive()) {
+//			Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
+//			int[] closestEnemyInfo = getClosestEnemy(enemiesList);
+//			MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
+//			NavSystem.setupSmartNav(closestEnemyLocation);
+////			if (DataCache.numNearbyAlliedSoldiers > 3 * DataCache.numTotalEnemyRobots) {
+//////				NavSystem.goToLocation(closestEnemyLocation);
+////				double random = Util.Random();
+////				System.out.println("random: " + random);
+////				if (random < 0.05) {
+////					NavSystem.followWaypoints(true);
+////				} else {
+////					NavSystem.followWaypoints(false);
+////				}
+//				
+////			} else {
+//				if (DataCache.numNearbyEnemyRobots > 0) {
+//					double[] our23 = getEnemies2Or3StepsAway();
+//					double[] enemy23 = getEnemies2Or3StepsAwaySquare(closestEnemyLocation, rc.getTeam().opponent());
+//					Direction dir = currentLocation.directionTo(closestEnemyLocation);
+//					//					int numAlliesNext = getNumAlliedNeighborsSquare(currentLocation.add(dir));
+//					//					int numAllies = getNumAlliedNeighbors();
+//					if (our23[0] + our23[1] < enemy23[0] + enemy23[1]) {
+//						NavSystem.goToLocationAvoidMines(closestEnemyLocation);
+//					} else if (our23[0] + our23[1] > enemy23[0] + enemy23[1]){
+//						NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
+//					}
+//					
+//					
+//
+//				} else {
+//					NavSystem.followWaypoints(true);
+//				}
+//		}
+//	}
 
 	
 	/** code to be used by capturers

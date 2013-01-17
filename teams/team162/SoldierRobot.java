@@ -14,7 +14,7 @@ public class SoldierRobot extends BaseRobot {
 	
 	public Platoon platoon;
 	
-	public SoldierState soldierState = SoldierState.RALLYING;
+	public SoldierState soldierState = SoldierState.NEW;
 	
 	// For mining
 	private MapLocation miningCenter;
@@ -73,10 +73,6 @@ public class SoldierRobot extends BaseRobot {
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
 			if (unassigned) {
 				
-//				rc.setIndicatorString(0, Integer.toString(DataCache.numAlliedSoldiers));
-//				rc.setIndicatorString(1, Integer.toString(DataCache.numNearbyEnemyRobots));
-//				rc.setIndicatorString(2, soldierState.toString());
-				
 				// Check if enemy nuke is half done
 				if (!enemyNukeHalfDone) {
 					Message message = BroadcastSystem.read(ChannelType.ENEMY_NUKE_HALF_DONE);
@@ -88,7 +84,43 @@ public class SoldierRobot extends BaseRobot {
 					soldierState = SoldierState.ALL_IN;
 				}
 				
+				if (soldierState == SoldierState.NEW) {
+					// If we're standing on a mine close to our base, we should clear out the mine
+					Team mineTeam = rc.senseMine(rc.getLocation());
+					if (mineTeam != null && mineTeam != rc.getTeam()) {
+						soldierState = SoldierState.ESCAPE_HQ_MINES;
+					} else {
+						soldierState = SoldierState.RALLYING;
+					}
+				}
+				
+				rc.setIndicatorString(0, soldierState.toString());
+				
 				switch (soldierState) {
+				case ESCAPE_HQ_MINES:
+					// We need to run away from the mines surrounding our base
+					Team mineTeam = rc.senseMine(rc.getLocation());
+					if (mineTeam != null && mineTeam != rc.getTeam()) {
+						// We need to run away from the mines surrounding our base
+						if (NavSystem.safeLocationAwayFromHQMines != null) {
+							NavSystem.goToLocationDontDefuseOrAvoidMines(NavSystem.safeLocationAwayFromHQMines);
+						} else {
+							NavSystem.goAwayFromHQEscapeMines(DataCache.ourHQLocation);
+						}
+					} else {
+						// No more mines, so clear out HQ mines
+						soldierState = SoldierState.CLEAR_OUT_HQ_MINES;
+					}
+					break;
+				case CLEAR_OUT_HQ_MINES:
+					// Clear out a path to the HQ
+					Team mineTeam1 = rc.senseMine(rc.getLocation());
+					if (mineTeam1 == null || mineTeam1 == rc.getTeam()) {
+						NavSystem.goToLocation(DataCache.ourHQLocation);
+					} else {
+						// We're done
+						soldierState = SoldierState.RALLYING;
+					}
 				case ALL_IN:
 					microCode();
 					break;
@@ -110,8 +142,6 @@ public class SoldierRobot extends BaseRobot {
 					if (message.isValid) {
 						hqPowerLevel = message.body;
 					}
-					
-//					rc.setIndicatorString(2, Integer.toString(hqPowerLevel));
 
 
 					// If there are enemies nearby, trigger FIGHTING SoldierState
@@ -283,7 +313,7 @@ public class SoldierRobot extends BaseRobot {
 			int[] closestEnemyInfo = getClosestEnemy(enemiesList);
 			MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
 			NavSystem.setupSmartNav(closestEnemyLocation);
-			if (DataCache.numAlliedSoldiers > 3 * DataCache.numTotalEnemyRobots) {
+			if (DataCache.numNearbyAlliedSoldiers > 3 * DataCache.numTotalEnemyRobots) {
 //				NavSystem.goToLocation(closestEnemyLocation);
 				double random = Util.Random();
 				System.out.println("random: " + random);
@@ -310,7 +340,7 @@ public class SoldierRobot extends BaseRobot {
 					//				NavSystem.goToLocationAvoidMines(closestEnemyLocation);
 
 					if (DataCache.numTotalEnemyRobots > 0) {
-						if (DataCache.numAlliedSoldiers > 3 * DataCache.numTotalEnemyRobots) {
+						if (DataCache.numNearbyAlliedSoldiers > 3 * DataCache.numTotalEnemyRobots) {
 							double random = Util.Random();
 							System.out.println("random: " + random);
 							if (random < 0.05) {

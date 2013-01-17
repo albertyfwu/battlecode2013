@@ -40,6 +40,7 @@ public class EncampmentJobSystem {
 		ChannelType.COMP5}; // list of encampment completion channels
 	
 	public static int maxEncampmentJobs = encampmentJobChannelList.length;
+//	public static int maxEncampmentJobs = 0;
 	public static int maxMessage = Constants.MAX_MESSAGE; //24-bit message all 1s
 	
 	

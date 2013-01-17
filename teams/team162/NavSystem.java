@@ -17,6 +17,8 @@ public class NavSystem {
 	public static RobotController rc;
 	public static int[] directionOffsets;
 	
+	public static MapLocation safeLocationAwayFromHQMines;
+	
 	// Used by both smart and backdoor nav
 	public static MapLocation currentWaypoint;
 	public static NavMode navMode = NavMode.NEUTRAL;
@@ -35,7 +37,7 @@ public class NavSystem {
 	
 	public static int BFSRound = 0;
 	public static int[] BFSTurns;
-	public static int BFSIdle = 0; 
+	public static int BFSIdle = 0;
 	
 	/**
 	 * MUST CALL THIS METHOD BEFORE USING NavSystem
@@ -82,6 +84,37 @@ public class NavSystem {
 		}
 	}
 	
+	public static void goAwayFromHQEscapeMines(MapLocation location) throws GameActionException {
+		MapLocation currentLocation = rc.getLocation();
+		// Find the closest space that doesn't have mines
+		for (int i = -3; i <= 3; i++) {
+			for (int j = -3; j <= 3; j++) {
+				// ignore squares at corners (vision only 14 squared distance)
+				if (!((i == -3 || i == 3) && (j == -3 || j == 3))) {
+					MapLocation iterLocation = new MapLocation(i + currentLocation.x, j + currentLocation.y);
+					Team mineTeam = rc.senseMine(iterLocation);
+					if (mineTeam == null) {
+						// go to that square
+						safeLocationAwayFromHQMines = iterLocation;
+						goToLocationDontDefuseOrAvoidMines(iterLocation);
+					}
+				}
+			}
+		}
+		
+		Direction dir = rc.getLocation().directionTo(location).opposite();
+		if (dir != Direction.OMNI) {
+			goDirectionAndDontDefuseOrAvoidMines(dir);
+		}
+	}
+	
+	public static void goToLocationDontDefuseOrAvoidMines(MapLocation location) throws GameActionException {
+		Direction dir = rc.getLocation().directionTo(location);
+		if (dir != Direction.OMNI){
+			goDirectionAvoidMines(dir);
+		}
+	}
+	
 	public static void goToLocationAvoidMines(MapLocation location) throws GameActionException {
 		Direction dir = rc.getLocation().directionTo(location);
 		if (dir != Direction.OMNI){
@@ -107,6 +140,19 @@ public class NavSystem {
 					} else {
 						rc.move(lookingAtCurrently);
 					}
+					break lookAround;
+				}
+			}
+		}
+	}
+	
+	public static void goDirectionAndDontDefuseOrAvoidMines(Direction dir) throws GameActionException {
+		if (rc.isActive()) {
+			Direction lookingAtCurrently = dir;
+			lookAround: for (int d : directionOffsets) {
+				lookingAtCurrently = Direction.values()[(dir.ordinal() + d + 8) % 8];
+				if (rc.isActive() && rc.canMove(lookingAtCurrently)) {
+					rc.move(lookingAtCurrently);
 					break lookAround;
 				}
 			}
