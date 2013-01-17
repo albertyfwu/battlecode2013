@@ -96,13 +96,17 @@ public class SoldierRobot extends BaseRobot {
 				
 				rc.setIndicatorString(0, soldierState.toString());
 				
-				switch (soldierState) {					
+				switch (soldierState) {
 				case ESCAPE_HQ_MINES:
 					// We need to run away from the mines surrounding our base
 					Team mineTeam = rc.senseMine(rc.getLocation());
 					if (mineTeam != null && mineTeam != rc.getTeam()) {
 						// We need to run away from the mines surrounding our base
-						NavSystem.goAwayFromLocationDontDefuseOrAvoidMines(DataCache.ourHQLocation);
+						if (NavSystem.safeLocationAwayFromHQMines != null) {
+							NavSystem.goToLocationDontDefuseOrAvoidMines(NavSystem.safeLocationAwayFromHQMines);
+						} else {
+							NavSystem.goAwayFromHQEscapeMines(DataCache.ourHQLocation);
+						}
 					} else {
 						// No more mines, so clear out HQ mines
 						soldierState = SoldierState.CLEAR_OUT_HQ_MINES;
