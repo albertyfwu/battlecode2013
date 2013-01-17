@@ -90,7 +90,7 @@ public class SoldierRobot extends BaseRobot {
 					if (mineTeam != null && mineTeam != rc.getTeam()) {
 						soldierState = SoldierState.ESCAPE_HQ_MINES;
 					} else {
-						soldierState = SoldierState.PLANT_MINES;
+						soldierState = SoldierState.RALLYING;
 					}
 				}
 				
@@ -119,18 +119,8 @@ public class SoldierRobot extends BaseRobot {
 						NavSystem.goToLocation(DataCache.ourHQLocation);
 					} else {
 						// We're done
-						soldierState = SoldierState.PLANT_MINES;
+						soldierState = SoldierState.RALLYING;
 					}
-				case DEFEND_BASE:
-					// 
-					break;
-				case PLANT_MINES:
-					if (DataCache.have_pickaxe) {
-						// We can mine 2i + j
-					} else {
-						// We mine every square
-					}
-					break;
 				case ALL_IN:
 					microCode();
 					break;
