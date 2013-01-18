@@ -153,7 +153,7 @@ public class SoldierRobot extends BaseRobot {
 						}
 					}
 					
-					double c = 3;
+					double c = 2;
 					
 					double denom = Math.sqrt(totalDx*totalDx + totalDy*totalDy);
 					double addX, addY;
@@ -209,7 +209,9 @@ public class SoldierRobot extends BaseRobot {
 					}
 					
 					Direction dirToMoveIn = Direction.values()[dirOffset];
-					NavSystem.goDirectionAndDefuse(dirToMoveIn);					
+					NavSystem.goDirectionAndDefuse(dirToMoveIn);
+					
+//					NavSystem.goToLocation(EnemyHQLocation);
 					
 					break;
 				case RALLYING:
