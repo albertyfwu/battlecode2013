@@ -131,20 +131,31 @@ public class RobotPlayer{
 
             rc.setIndicatorString(1, enemy23[0] + " " + enemy23[1] + " " + enemy23[2]);
             if (our23[1] > 0) { // closest enemy in 2 dist
-            	if (enemy23[1] + enemy23[0] > our23[1] + our23[2]) {
-            		// move forward
-            		goToLocation(closestEnemyLocation);
+            	
+        		
+        		if (enemy23[0] > 0) { // if enemy has dist 1
+        			goToLocation(closestEnemyLocation);
             		rc.setIndicatorString(0, "forward2");
-            	} else if (enemy23[0] + enemy23[1] + enemy23[2] > our23[1] + our23[2]) {
-            		rc.setIndicatorString(0, "back2.5");
-            		goAwayFromLocation(closestEnemyLocation);
-            		//back
-            	} else {
-            		goAwayFromLocation(closestEnemyLocation);
-            		rc.setIndicatorString(0, "back2");
-            	}
+        		} else {
+        			if (enemy23[1] + enemy23[0] > our23[1] + our23[2]) {
+                		// move forward
+                		goToLocation(closestEnemyLocation);
+                		rc.setIndicatorString(0, "forward2");
+                	} else if (enemy23[0] + enemy23[1] + enemy23[2] > our23[1] + our23[2]) {
+                		rc.setIndicatorString(0, "back2.5");
+                		goAwayFromLocation(closestEnemyLocation);
+                		//back
+                	} else {
+                		goAwayFromLocation(closestEnemyLocation);
+                		rc.setIndicatorString(0, "back2");
+                	}
+        		}
+            	
             } else { // closest enemy is 3 dist
-            	if (enemy23[1] > 0) { // if enemy 2dist is > 0
+            	if (enemy23[0] > 0) {
+            		goToLocation(closestEnemyLocation);
+            		rc.setIndicatorString(0, "forward4");
+            	} else if (enemy23[1] > 0) { // if enemy 2dist is > 0
             		int closestDist = 100;
             		int dist;
             		MapLocation closestAllyLocation = null;
@@ -166,9 +177,6 @@ public class RobotPlayer{
                 	} else {
                 		rc.setIndicatorString(0, "stay3");
                 	}
-            	}  else if (enemy23[0] > 0) {
-            		goToLocation(closestEnemyLocation);
-            		rc.setIndicatorString(0, "forward4");
             	} else {
             		rc.setIndicatorString(0, "stay4");
             	}
