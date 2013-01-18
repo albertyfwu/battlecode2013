@@ -1,4 +1,4 @@
-package base;
+package basePlusSwarm;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -33,14 +33,14 @@ public class BroadcastSystem {
 	/**
 	 * Reads a message on channelType. Checks if signature is correct.
 	 * Takes 69 bytecodes to read from two redundant channels.
-	 * @param enemyNukeHalfDone
+	 * @param channelType
 	 * @return
 	 */
-	public static Message read(ChannelType enemyNukeHalfDone) {
+	public static Message read(ChannelType channelType) {
 		// TODO: Add caching of messages
 		try {
 			if (rc != null) {
-				for (int channelNo : getChannelNos(enemyNukeHalfDone)) {
+				for (int channelNo : getChannelNos(channelType)) {
 					int rawMessage = rc.readBroadcast(channelNo);
 					if (rawMessage == 0) {
 						return new Message(false, true);

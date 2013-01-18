@@ -1,4 +1,4 @@
-package base;
+package basePlusSwarm;
 
 public enum SoldierState {
 	NEW,

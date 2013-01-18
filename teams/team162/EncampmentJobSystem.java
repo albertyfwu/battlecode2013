@@ -58,9 +58,7 @@ public class EncampmentJobSystem {
 	
 	public static RobotType assignedRobotType;
 	public static ChannelType assignedChannel;
-	
-	public static int encampmentRadius;
-	
+		
 	public static int supCount;
 	public static int genCount;
 	
@@ -80,11 +78,11 @@ public class EncampmentJobSystem {
 		numUnreachableEncampments = 0;
 		unreachableEncampments = new MapLocation[100];
 		int rushDist = hqloc.distanceSquaredTo(enemyloc);
-		encampmentRadius = (int) (0.6 * rushDist);
 		supCount = 0;
 		genCount = 0;
 		
-		MapLocation[] allEncampments = rc.senseEncampmentSquares(hqloc, encampmentRadius, Team.NEUTRAL);
+		MapLocation[] allEncampments = rc.senseEncampmentSquares(hqloc, 10000, Team.NEUTRAL);
+
 		if (allEncampments.length == 0) {
 			numEncampmentsNeeded = 0;
 		} else if (allEncampments.length < 10) {
@@ -427,7 +425,7 @@ public class EncampmentJobSystem {
 		System.out.println("numUnreachableEncampments: " + numUnreachableEncampments);
 		
 //		System.out.println("Before update: " + Clock.getBytecodeNum());
-		MapLocation[] neutralEncampments = rc.senseEncampmentSquares(HQLocation,encampmentRadius, Team.NEUTRAL);
+		MapLocation[] neutralEncampments = rc.senseEncampmentSquares(HQLocation, 10000, Team.NEUTRAL);
 		if (numEncampmentsNeeded > neutralEncampments.length){
 			numEncampmentsNeeded = neutralEncampments.length;
 		}
