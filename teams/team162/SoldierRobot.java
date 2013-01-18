@@ -283,7 +283,7 @@ public class SoldierRobot extends BaseRobot {
 			} else { // closest enemy is 3 dist
 				if (enemy23[0] > 0) {
 					NavSystem.goToLocationAvoidMines(closestEnemyLocation);
-//					rc.setIndicatorString(0, "forward4");
+					rc.setIndicatorString(0, "forward4");
 				} else if (enemy23[1] > 0) { // if enemy 2dist is > 0
 					int closestDist = 100;
 					int dist;
@@ -302,12 +302,16 @@ public class SoldierRobot extends BaseRobot {
 
 					if (enemy23[0] + enemy23[1] + enemy23[2] > ally23[1] + ally23[2]) {
 						NavSystem.goToLocationAvoidMines(closestEnemyLocation);
-//						rc.setIndicatorString(0, "forward3");
+						rc.setIndicatorString(0, "forward3");
 					} else {
-//						rc.setIndicatorString(0, "stay3");
+						rc.setIndicatorString(0, "stay3");
 					}
 				} else {
-//					rc.setIndicatorString(0, "stay4");
+					if (enemy23[2] >= 7) {
+						NavSystem.goToLocationAvoidMines(closestEnemyLocation);
+					} else {
+						// stay
+					}
 				}
 			}
 		}
