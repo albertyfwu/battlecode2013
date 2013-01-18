@@ -4,6 +4,8 @@ import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.Robot;
 import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
+import battlecode.common.RobotType;
 import battlecode.common.Upgrade;
 
 public class DataCache {
@@ -23,6 +25,7 @@ public class DataCache {
 	public static int numNearbyAlliedSoldiers;
 	public static int numNearbyEnemyRobots;
 	public static int numTotalEnemyRobots;
+	public static int numNearbyEnemySoldiers;
 	
 	// Round variables - upgrades
 	public static boolean have_defusion;
@@ -47,7 +50,19 @@ public class DataCache {
 		numNearbyAlliedSoldiers = numNearbyAlliedRobots - numNearbyAlliedEncampments;
 		numAlliedEncampments = rc.senseEncampmentSquares(rc.getLocation(), 10000, rc.getTeam()).length;
 		numAlliedSoldiers = numAlliedRobots - numAlliedEncampments - 1 - EncampmentJobSystem.maxEncampmentJobs;
-		numNearbyEnemyRobots = rc.senseNearbyGameObjects(Robot.class, Constants.RALLYING_SOLDIER_THRESHOLD, rc.getTeam().opponent()).length;
+		
+		Robot[] nearbyEnemyRobots = rc.senseNearbyGameObjects(Robot.class, Constants.RALLYING_SOLDIER_THRESHOLD, rc.getTeam().opponent());
+		
+		int temp = 0;
+		for (Robot enemy: nearbyEnemyRobots) {
+			RobotInfo robotInfo = rc.senseRobotInfo(enemy);
+			if (robotInfo.type == RobotType.SOLDIER) {
+				temp++;
+			}
+		}
+		
+		numNearbyEnemySoldiers = temp;
+		numNearbyEnemyRobots = nearbyEnemyRobots.length;
 		numTotalEnemyRobots = rc.senseNearbyGameObjects(Robot.class, 10000, rc.getTeam().opponent()).length;
 		
 		if (!have_defusion) {

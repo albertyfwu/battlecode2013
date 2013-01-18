@@ -299,8 +299,8 @@ public class NavSystem {
 			}
 		}
 		
-		double c = 2.0;
-		double d = 1.1;
+		double c = 1.5;
+		double d = 0;
 		
 		double denom = Math.sqrt(totalDx*totalDx + totalDy*totalDy);
 		double nearbyerDenom = Math.sqrt(totalNearbyerDx*totalNearbyerDx + totalNearbyerDy*totalNearbyerDy);

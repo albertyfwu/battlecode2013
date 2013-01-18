@@ -231,63 +231,166 @@ public class SoldierRobot extends BaseRobot {
 		return rc.senseNearbyGameObjects(Robot.class, square, 2, rc.getTeam()).length;
 
 	}
-	
+
+	public void microCode() throws GameActionException {
+		Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
+		int[] closestEnemyInfo = getClosestEnemy(enemiesList);
+		MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
+		int enemyDistSquared = closestEnemyLocation.distanceSquaredTo(rc.getLocation());
+
+		if (enemyDistSquared <= 2) { // if there is enemy in one dist
+//			Robot[] enemiesInOneDist = rc.senseNearbyGameObjects(Robot.class, 2, rc.getTeam().opponent());
+			// stay
+			rc.setIndicatorString(0, "stay1");
+		} else if (enemyDistSquared == 16 || enemyDistSquared > 18){ // if no enemies in one, two, or three dist
+			rc.setIndicatorString(0, "no enemies in 1,2,3 dist");
+			rc.setIndicatorString(1, Integer.toString(DataCache.numNearbyEnemySoldiers));
+			if (DataCache.numNearbyEnemySoldiers == 0 || DataCache.numNearbyAlliedSoldiers >= 3 * DataCache.numNearbyEnemySoldiers) { 
+				// if no enemies in 5-dist or we outnumber them 5 to 1
+				NavSystem.goToLocation(closestEnemyLocation);
+			} else {
+				NavSystem.goToLocationAvoidMines(closestEnemyLocation);
+			}
+		} else { // enemies in two or three dist
+			double[] our23 = getEnemies2Or3StepsAway();
+			double[] enemy23 = getEnemies2Or3StepsAwaySquare(closestEnemyLocation, rc.getTeam().opponent());
+			rc.setIndicatorString(2, our23[0] + " " + our23[1] + " " + our23[2]);
+
+			rc.setIndicatorString(1, enemy23[0] + " " + enemy23[1] + " " + enemy23[2]);
+			if (our23[1] > 0) { // closest enemy in 2 dist
+
+
+				if (enemy23[0] > 0) { // if enemy has dist 1
+					NavSystem.goToLocationAvoidMines(closestEnemyLocation);
+					rc.setIndicatorString(0, "forward2");
+				} else {
+					if (enemy23[1] + enemy23[0] > our23[1] + our23[2]+1) {
+						// move forward
+						NavSystem.goToLocationAvoidMines(closestEnemyLocation);
+						rc.setIndicatorString(0, "forward2");
+					} 
+					//        			else if (enemy23[0] + enemy23[1] + enemy23[2] > our23[1] + our23[2]+2) {
+					//                		rc.setIndicatorString(0, "back2.5");
+					//                		goAwayFromLocation(closestEnemyLocation);
+					//                		//back
+					//                	} 
+					else {
+						NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
+						rc.setIndicatorString(0, "back2");
+					}
+				}
+
+			} else { // closest enemy is 3 dist
+				if (enemy23[0] > 0) {
+					NavSystem.goToLocationAvoidMines(closestEnemyLocation);
+					rc.setIndicatorString(0, "forward4");
+				} else if (enemy23[1] > 0) { // if enemy 2dist is > 0
+					int closestDist = 100;
+					int dist;
+					MapLocation closestAllyLocation = null;
+					Robot[] twoDistAllies = rc.senseNearbyGameObjects(Robot.class, closestEnemyLocation, 8, rc.getTeam());
+					for (Robot ally: twoDistAllies) {
+						RobotInfo arobotInfo = rc.senseRobotInfo(ally);
+						dist = arobotInfo.location.distanceSquaredTo(rc.getLocation());
+						if (dist<closestDist){
+							closestDist = dist;
+							closestAllyLocation = arobotInfo.location;
+						}
+					}
+
+					double[] ally23 = getEnemies2Or3StepsAwaySquare(closestAllyLocation, rc.getTeam());
+
+					if (enemy23[0] + enemy23[1] + enemy23[2] > ally23[1] + ally23[2]) {
+						NavSystem.goToLocationAvoidMines(closestEnemyLocation);
+						rc.setIndicatorString(0, "forward3");
+					} else {
+						rc.setIndicatorString(0, "stay3");
+					}
+				} else {
+					rc.setIndicatorString(0, "stay4");
+				}
+			}
+		}
+	}
+
+
+
 	private double[] getEnemies2Or3StepsAway() throws GameActionException {
+		double count1 = 0;
 		double count2 = 0;
 		double count3 = 0;
 		Robot[] enemiesInVision = rc.senseNearbyGameObjects(Robot.class, 18, rc.getTeam().opponent());
 		for (Robot enemy: enemiesInVision) {
 			RobotInfo rinfo = rc.senseRobotInfo(enemy);
-			int dist = rinfo.location.distanceSquaredTo(currentLocation);
+			int dist = rinfo.location.distanceSquaredTo(rc.getLocation());
 			if (rinfo.type == RobotType.SOLDIER) {
-				if (dist <=8) {
+				if (dist <= 2) {
+					count1++;
+				} else if (dist <=8) {
 					count2++;
 				} else if (dist > 8 && (dist <= 14 || dist == 18)) {
 					count3++;
 				}
 			} else {
-				if (dist <=8) {
-					count2 += 0.5;
+				if (dist <= 2) {
+					count1++;
+				} else if (dist <=8) {
+					count2 += 1;
 				} else if (dist > 8 && (dist <= 14 || dist == 18)) {
-					count3 += 0.5;
+					count3 += 1;
 				}
 			}
-			
+
 		}
-		
-		double[] output = {count2, count3};
+
+		double[] output = {count1, count2, count3};
 		return output;
 	}
-	
+
 	private double[] getEnemies2Or3StepsAwaySquare(MapLocation square, Team squareTeam) throws GameActionException {
+		double count1 = 0;
 		double count2 = 0;
 		double count3 = 0;
-		Robot[] enemiesInVision = rc.senseNearbyGameObjects(Robot.class, 18, squareTeam.opponent());
+		Robot[] enemiesInVision = rc.senseNearbyGameObjects(Robot.class, square, 18, squareTeam.opponent());
 		for (Robot enemy: enemiesInVision) {
 			RobotInfo rinfo = rc.senseRobotInfo(enemy);
-			int dist = rinfo.location.distanceSquaredTo(currentLocation);
+			int dist = rinfo.location.distanceSquaredTo(square);
 			if (rinfo.type == RobotType.SOLDIER) {
-				if (dist <=8) {
+				if (dist <= 2) {
+					count1++;
+				} else if (dist <=8) {
 					count2++;
-				} else if (dist > 8 && (dist <= 14 || dist == 18)) {
+				} else if (dist <= 14 || dist == 18) {
 					count3++;
 				}
 			} else {
-				if (dist <=8) {
-					count2 += 0.5;
-				} else if (dist > 8 && (dist <= 14 || dist == 18)) {
-					count3 += 0.5;
+				if (dist <= 2) {
+					count1++;
+				} else if (dist <=8) {
+					count2 += 1;
+				} else if (dist <= 14 || dist == 18) {
+					count3 += 1;
 				}
 			}
 		}
+
+		int selfDist = square.distanceSquaredTo(rc.getLocation());
 		
-		double[] output = {count2, count3};
+		if (selfDist <= 2) {
+			count1++;
+		} else if (selfDist<=8) {
+			count2++;
+		} else if (selfDist <= 14 || selfDist == 18) {
+			count3++;
+		}
+
+		double[] output = {count1, count2, count3};
 		return output;
 	}
-	
+
 	public int[] getClosestEnemy(Robot[] enemyRobots) throws GameActionException {
-		int closestDist = currentLocation.distanceSquaredTo(EnemyHQLocation);
-		MapLocation closestEnemy=EnemyHQLocation; // default to HQ
+		int closestDist = rc.getLocation().distanceSquaredTo(rc.senseEnemyHQLocation());
+		MapLocation closestEnemy=rc.senseEnemyHQLocation(); // default to HQ
 
 		int dist = 0;
 		for (int i=0;i<enemyRobots.length;i++){
@@ -304,64 +407,6 @@ public class SoldierRobot extends BaseRobot {
 		output[2] = closestEnemy.y;		
 		return output;
 	}
-
-	
-    private void microCode() throws GameActionException {
-        Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
-        int[] closestEnemyInfo = getClosestEnemy(enemiesList);
-        MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
-        if (rc.senseNearbyGameObjects(Robot.class, 14, rc.getTeam().opponent()).length > 0) {
-                double[] our23 = getEnemies2Or3StepsAway();
-                double[] enemy23 = getEnemies2Or3StepsAwaySquare(closestEnemyLocation, rc.getTeam().opponent());
-                Direction dir = currentLocation.directionTo(closestEnemyLocation);
-//              int numAlliesNext = getNumAlliedNeighborsSquare(currentLocation.add(dir));
-//              int numAllies = getNumAlliedNeighbors();
-                if (our23[0] + our23[1] < enemy23[0] + enemy23[1]) {
-                        NavSystem.goToLocation(closestEnemyLocation);
-                } else if (our23[0] + our23[1] > enemy23[0] + enemy23[1]){
-                        NavSystem.goAwayFromLocation(closestEnemyLocation);
-                }
-        } else {
-                NavSystem.goToLocation(closestEnemyLocation);
-        }
-}
-//	private void microCode() throws GameActionException {
-//		if (rc.isActive()) {
-//			Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
-//			int[] closestEnemyInfo = getClosestEnemy(enemiesList);
-//			MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
-//			NavSystem.setupSmartNav(closestEnemyLocation);
-////			if (DataCache.numNearbyAlliedSoldiers > 3 * DataCache.numTotalEnemyRobots) {
-//////				NavSystem.goToLocation(closestEnemyLocation);
-////				double random = Util.Random();
-////				System.out.println("random: " + random);
-////				if (random < 0.05) {
-////					NavSystem.followWaypoints(true);
-////				} else {
-////					NavSystem.followWaypoints(false);
-////				}
-//				
-////			} else {
-//				if (DataCache.numNearbyEnemyRobots > 0) {
-//					double[] our23 = getEnemies2Or3StepsAway();
-//					double[] enemy23 = getEnemies2Or3StepsAwaySquare(closestEnemyLocation, rc.getTeam().opponent());
-//					Direction dir = currentLocation.directionTo(closestEnemyLocation);
-//					//					int numAlliesNext = getNumAlliedNeighborsSquare(currentLocation.add(dir));
-//					//					int numAllies = getNumAlliedNeighbors();
-//					if (our23[0] + our23[1] < enemy23[0] + enemy23[1]) {
-//						NavSystem.goToLocationAvoidMines(closestEnemyLocation);
-//					} else if (our23[0] + our23[1] > enemy23[0] + enemy23[1]){
-//						NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
-//					}
-//					
-//					
-//
-//				} else {
-//					NavSystem.followWaypoints(true);
-//				}
-//		}
-//	}
-
 	
 	private void pushCode() throws GameActionException {		
 		if (NavSystem.navMode != NavMode.SMART || NavSystem.destination != EnemyHQLocation) {

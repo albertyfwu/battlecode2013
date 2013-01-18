@@ -284,19 +284,29 @@ public class NavSystem {
 		Robot[] nearbyAlliedRobots = rc.senseNearbyGameObjects(Robot.class, 14, rc.getTeam());
 		int totalDx = 0;
 		int totalDy = 0;
+		int totalNearbyerDx = 0;
+		int totalNearbyerDy = 0;
 		for (Robot alliedRobot : nearbyAlliedRobots) {
 			RobotInfo robotInfo = rc.senseRobotInfo(alliedRobot);
 			if (robotInfo.type == RobotType.SOLDIER) {
 				MapLocation iterLocation = robotInfo.location;
 				totalDx += (iterLocation.x - rc.getLocation().x);
 				totalDy += (iterLocation.y - rc.getLocation().y);
+				if (rc.getLocation().distanceSquaredTo(iterLocation) <= 5) {
+					totalNearbyerDx += (iterLocation.x - rc.getLocation().x);
+					totalNearbyerDy += (iterLocation.y - rc.getLocation().y);
+				}
 			}
 		}
 		
-		double c = 2.0;
+		double c = 1.5;
+		double d = 0;
 		
 		double denom = Math.sqrt(totalDx*totalDx + totalDy*totalDy);
+		double nearbyerDenom = Math.sqrt(totalNearbyerDx*totalNearbyerDx + totalNearbyerDy*totalNearbyerDy);
 		double addX, addY;
+		double addXNearbyer, addYNearbyer;
+		
 		if (Math.abs(totalDx) < 0.01) {
 			addX = 0;
 		} else {
@@ -307,8 +317,19 @@ public class NavSystem {
 		} else {
 			addY = c * totalDy / denom;
 		}
-		double finalDx = dxToLocation / distanceToLocation + addX;
-		double finalDy = dyToLocation / distanceToLocation + addY;
+		
+		if (Math.abs(totalNearbyerDx) < 0.01) {
+			addXNearbyer = 0;
+		} else {
+			addXNearbyer = d * totalNearbyerDx / nearbyerDenom;
+		}
+		if (Math.abs(totalNearbyerDy) < 0.01) {
+			addYNearbyer = 0;
+		} else {
+			addYNearbyer = d * totalNearbyerDy / nearbyerDenom;
+		}
+		double finalDx = dxToLocation / distanceToLocation + addX - addXNearbyer;
+		double finalDy = dyToLocation / distanceToLocation + addY - addYNearbyer;
 		
 		rc.setIndicatorString(0, "totalDx: " + Integer.toString(totalDx) + ", finalDx: " + Double.toString(finalDx));
 		rc.setIndicatorString(1, "totalDy: " + Integer.toString(totalDy) + ", finalDy: " + Double.toString(finalDy));
