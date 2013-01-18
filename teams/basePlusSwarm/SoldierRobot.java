@@ -151,10 +151,10 @@ public class SoldierRobot extends BaseRobot {
 					} else {
 						boolean layedMine = false;
 						if (rc.senseMine(currentLocation) == null) {
-//							if (rc.isActive() && Util.Random() < 0.1) {
-//								rc.layMine();
-//								layedMine = true;
-//							}
+							if (rc.isActive() && Util.Random() < 0.1) {
+								rc.layMine();
+								layedMine = true;
+							}
 						} 
 						if (!layedMine) {
 							NavSystem.goToLocation(rallyPoint);
