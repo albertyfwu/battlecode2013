@@ -24,7 +24,7 @@ public interface Constants {
 	 */
 	
 	// The squared distance away from a waypoint at which we can safely go onto the next waypoint
-	public static final int WAYPOINT_SQUARED_DISTANCE_CHECK = 2;
+	public static final int WAYPOINT_SQUARED_DISTANCE_CHECK = 5;
 	
 	/**
 	 * Smart Waypoints
