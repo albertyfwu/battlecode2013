@@ -13,7 +13,7 @@ public class RobotPlayer{
 		while(true){
 			try{
 				if (rc.getType()==RobotType.SOLDIER){
-					if (Clock.getRoundNum()<250){
+					if (Clock.getRoundNum()<100){
 						goToLocation(rallyPoint);
 					}else{
 						 microCode();
@@ -127,15 +127,18 @@ public class RobotPlayer{
         } else { // enemies in two or three dist
         	double[] our23 = getEnemies2Or3StepsAway();
             double[] enemy23 = getEnemies2Or3StepsAwaySquare(closestEnemyLocation, rc.getTeam().opponent());
-            
+            rc.setIndicatorString(2, our23[0] + " " + our23[1] + " " + our23[2]);
+
+            rc.setIndicatorString(1, enemy23[0] + " " + enemy23[1] + " " + enemy23[2]);
             if (our23[1] > 0) { // closest enemy in 2 dist
             	if (enemy23[1] + enemy23[0] > our23[1] + our23[2]) {
             		// move forward
             		goToLocation(closestEnemyLocation);
             		rc.setIndicatorString(0, "forward2");
             	} else if (enemy23[0] + enemy23[1] + enemy23[2] > our23[1] + our23[2]) {
-            		rc.setIndicatorString(0, "stay2");
-            		//stay
+            		rc.setIndicatorString(0, "back2.5");
+            		goAwayFromLocation(closestEnemyLocation);
+            		//back
             	} else {
             		goAwayFromLocation(closestEnemyLocation);
             		rc.setIndicatorString(0, "back2");
@@ -163,6 +166,9 @@ public class RobotPlayer{
                 	} else {
                 		rc.setIndicatorString(0, "stay3");
                 	}
+            	}  else if (enemy23[0] > 0) {
+            		goToLocation(closestEnemyLocation);
+            		rc.setIndicatorString(0, "forward4");
             	} else {
             		rc.setIndicatorString(0, "stay4");
             	}
