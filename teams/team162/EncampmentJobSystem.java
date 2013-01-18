@@ -82,7 +82,6 @@ public class EncampmentJobSystem {
 		genCount = 0;
 		
 		MapLocation[] allEncampments = rc.senseEncampmentSquares(hqloc, 10000, Team.NEUTRAL);
-
 		if (allEncampments.length == 0) {
 			numEncampmentsNeeded = 0;
 		} else if (allEncampments.length < 10) {

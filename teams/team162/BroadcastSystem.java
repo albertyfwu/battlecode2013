@@ -156,7 +156,7 @@ public class BroadcastSystem {
 		constant += 1;
 		for (int i = 0; i < Constants.REDUNDANT_CHANNELS; i++) {
 //			System.out.println("start: " + Clock.getBytecodeNum());
-			int offset = (Integer.toString(((constant << 4 + 17 * channelType.ordinal()) << 4 + i)).hashCode()) % ChannelType.range;
+			int offset = ((Integer.toString(((constant << 4 + 17 * channelType.ordinal()) << 4 + i)).hashCode())+rc.getTeam().ordinal()) % ChannelType.range;
 //			int offset = hash(constant, channelType.ordinal(), i) % ChannelType.range;
 //			System.out.println("end: " + Clock.getBytecodeNum());
 			// ensure that the offset is nonnegative

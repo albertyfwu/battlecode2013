@@ -121,6 +121,7 @@ public class SoldierRobot extends BaseRobot {
                                                 // We're done
                                                 soldierState = SoldierState.RALLYING;
                                         }
+                                        break;
                                 case ALL_IN:
                                         microCode();
                                         break;
