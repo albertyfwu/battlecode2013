@@ -284,24 +284,18 @@ public class NavSystem {
 		Robot[] nearbyAlliedRobots = rc.senseNearbyGameObjects(Robot.class, 14, rc.getTeam());
 		int totalDx = 0;
 		int totalDy = 0;
+		int totalNearbyerDx = 0;
+		int totalNearbyerDy = 0;
 		for (Robot alliedRobot : nearbyAlliedRobots) {
 			RobotInfo robotInfo = rc.senseRobotInfo(alliedRobot);
 			if (robotInfo.type == RobotType.SOLDIER) {
 				MapLocation iterLocation = robotInfo.location;
 				totalDx += (iterLocation.x - rc.getLocation().x);
 				totalDy += (iterLocation.y - rc.getLocation().y);
-			}
-		}
-		
-		Robot[] nearbyerAlliedRobots = rc.senseNearbyGameObjects(Robot.class, 5, rc.getTeam());
-		int totalNearbyerDx = 0;
-		int totalNearbyerDy = 0;
-		for (Robot alliedRobot : nearbyerAlliedRobots) {
-			RobotInfo robotInfo = rc.senseRobotInfo(alliedRobot);
-			if (robotInfo.type == RobotType.SOLDIER) {
-				MapLocation iterLocation = robotInfo.location;
-				totalNearbyerDx += (iterLocation.x - rc.getLocation().x);
-				totalNearbyerDy += (iterLocation.y - rc.getLocation().y);
+				if (rc.getLocation().distanceSquaredTo(iterLocation) <= 5) {
+					totalNearbyerDx += (iterLocation.x - rc.getLocation().x);
+					totalNearbyerDy += (iterLocation.y - rc.getLocation().y);
+				}
 			}
 		}
 		
