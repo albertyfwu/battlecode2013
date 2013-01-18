@@ -219,7 +219,7 @@ public class NavSystem {
 	 * @param defuseMines whether or not to defuse mines while following waypoints
 	 * @throws GameActionException
 	 */
-	public static void followWaypoints(boolean defuseMines) throws GameActionException {
+	public static void followWaypoints(boolean defuseMines, boolean swarm) throws GameActionException {
 		// If we're close to currentWaypoint, find the next one
 		if (rc.getLocation().distanceSquaredTo(destination) <= Constants.PATH_GO_ALL_IN_SQ_RADIUS) {
 			// Stop nav-ing?
@@ -243,20 +243,119 @@ public class NavSystem {
 				break;
 			}
 			if (defuseMines) {
-				goToLocation(currentWaypoint);
+				if (swarm) {
+					rc.setIndicatorString(2, currentWaypoint.toString());
+					goToLocationSwarm(currentWaypoint, true);
+				} else {
+					goToLocation(currentWaypoint);
+				}
 			} else {
-				goToLocationAvoidMines(currentWaypoint);
+				if (swarm) {
+					goToLocationSwarm(currentWaypoint, false);
+				} else {
+					goToLocationAvoidMines(currentWaypoint);
+				}
 			}
 		} else {
 			// Keep moving to the current waypoint
 			if (defuseMines) {
-				goToLocation(currentWaypoint);
+				if (swarm) {
+					rc.setIndicatorString(2, currentWaypoint.toString());
+					goToLocationSwarm(currentWaypoint, true);
+				} else {
+					goToLocation(currentWaypoint);
+				}
 			} else {
-				goToLocationAvoidMines(currentWaypoint);
+				if (swarm) {
+					goToLocationSwarm(currentWaypoint, false);
+				} else {
+					goToLocationAvoidMines(currentWaypoint);
+				}
 			}
 		}
 	}
 	
+	private static void goToLocationSwarm(MapLocation location, boolean defuseMines) throws GameActionException {
+		// Swarming
+		double dxToLocation = location.x - rc.getLocation().x;
+		double dyToLocation = location.y - rc.getLocation().y;
+		double distanceToLocation = Math.sqrt(rc.getLocation().distanceSquaredTo(location));
+		
+		Robot[] nearbyAlliedRobots = rc.senseNearbyGameObjects(Robot.class, 14, rc.getTeam());
+		int totalDx = 0;
+		int totalDy = 0;
+		for (Robot alliedRobot : nearbyAlliedRobots) {
+			RobotInfo robotInfo = rc.senseRobotInfo(alliedRobot);
+			if (robotInfo.type == RobotType.SOLDIER) {
+				MapLocation iterLocation = robotInfo.location;
+				totalDx += (iterLocation.x - rc.getLocation().x);
+				totalDy += (iterLocation.y - rc.getLocation().y);
+			}
+		}
+		
+		double c = 2.0;
+		
+		double denom = Math.sqrt(totalDx*totalDx + totalDy*totalDy);
+		double addX, addY;
+		if (Math.abs(totalDx) < 0.01) {
+			addX = 0;
+		} else {
+			addX = c * totalDx / denom;
+		}
+		if (Math.abs(totalDy) < 0.01) {
+			addY = 0;
+		} else {
+			addY = c * totalDy / denom;
+		}
+		double finalDx = dxToLocation / distanceToLocation + addX;
+		double finalDy = dyToLocation / distanceToLocation + addY;
+		
+		rc.setIndicatorString(0, "totalDx: " + Integer.toString(totalDx) + ", finalDx: " + Double.toString(finalDx));
+		rc.setIndicatorString(1, "totalDy: " + Integer.toString(totalDy) + ", finalDy: " + Double.toString(finalDy));
+		
+		int dirOffset;
+		double ratioCutoff = 2.5;
+		
+		double ratio = Math.abs(finalDx / finalDy);
+		
+		if (ratio > ratioCutoff) {
+			// go along x-axis
+			if (finalDx > 0) {
+				dirOffset = 2;
+			} else {
+				dirOffset = 6;
+			}
+		} else if (ratio < 1 / ratioCutoff) {
+			// go along y-axis
+			if (finalDy > 0) {
+				dirOffset = 4;
+			} else {
+				dirOffset = 0;
+			}
+		} else {
+			if (finalDx > 0) {
+				if (finalDy >= 0) {
+					dirOffset = 3;
+				} else {
+					dirOffset = 1;
+				}
+			} else {
+				if (finalDy > 0) {
+					dirOffset = 5;
+				} else {
+					dirOffset = 7;
+				}
+			}
+		}
+		
+		Direction dirToMoveIn = Direction.values()[dirOffset];
+		if (defuseMines) {
+			NavSystem.goDirectionAndDefuse(dirToMoveIn);
+		} else {
+			NavSystem.goDirectionAvoidMines(dirToMoveIn);
+		}
+	}
+
 	/**
 	 * Sets up the backdoor navigation system for a given endLocation.
 	 * @param endLocation
@@ -389,7 +488,7 @@ public class NavSystem {
 	public static int smartScore(MapLocation location, int radius, MapLocation endLocation) throws GameActionException {
 		int numMines = rc.senseNonAlliedMineLocations(location, radius * radius).length;
 		int numEncampments = rc.senseEncampmentSquares(location, radius * radius, rc.getTeam()).length;
-		int penalty = numMines + numEncampments;
+		int penalty = numMines + 3 * numEncampments;
 		// maximum number of mines within this radius should be 3 * radius^2
 		int distanceSquared = location.distanceSquaredTo(endLocation);
 		int mineDelay;

@@ -8,5 +8,6 @@ public enum SoldierState {
 	RALLYING,
 	ALL_IN,
 	ESCAPE_HQ_MINES,
-	CLEAR_OUT_HQ_MINES;
+	CLEAR_OUT_HQ_MINES,
+	PUSHING;
 }
