@@ -137,15 +137,17 @@ public class RobotPlayer{
         			goToLocation(closestEnemyLocation);
             		rc.setIndicatorString(0, "forward2");
         		} else {
-        			if (enemy23[1] + enemy23[0] > our23[1] + our23[2]) {
+        			if (enemy23[1] + enemy23[0] > our23[1] + our23[2]+1) {
                 		// move forward
                 		goToLocation(closestEnemyLocation);
                 		rc.setIndicatorString(0, "forward2");
-                	} else if (enemy23[0] + enemy23[1] + enemy23[2] > our23[1] + our23[2]) {
-                		rc.setIndicatorString(0, "back2.5");
-                		goAwayFromLocation(closestEnemyLocation);
-                		//back
-                	} else {
+                	} 
+//        			else if (enemy23[0] + enemy23[1] + enemy23[2] > our23[1] + our23[2]+2) {
+//                		rc.setIndicatorString(0, "back2.5");
+//                		goAwayFromLocation(closestEnemyLocation);
+//                		//back
+//                	} 
+                	else {
                 		goAwayFromLocation(closestEnemyLocation);
                 		rc.setIndicatorString(0, "back2");
                 	}
