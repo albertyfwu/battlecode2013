@@ -36,7 +36,7 @@ public class ArtilleryRobot extends BaseRobot {
 			MapLocation location = rc.senseLocationOf(potentialTarget);
 			Robot[] splashRobots = rc.senseNearbyGameObjects(Robot.class, location, GameConstants.ARTILLERY_SPLASH_RADIUS_SQUARED, null);
 			for (Robot splashRobot : splashRobots) {
-				if (splashRobot.getTeam() == splashRobot.getTeam()) {
+				if (splashRobot.getTeam() == rc.getTeam()) {
 					currentScore -= 20;
 				} else {
 					currentScore += 20;
