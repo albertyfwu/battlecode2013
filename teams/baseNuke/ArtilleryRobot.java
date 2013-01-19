@@ -31,7 +31,7 @@ public class ArtilleryRobot extends BaseRobot {
 		int highestScore = 0;
 		MapLocation bestLocation = null;
 		
-		for (Robot potentialTarget : potentialTargets){
+		for (Robot potentialTarget : potentialTargets) {
 			int currentScore = 40;
 			MapLocation location = rc.senseLocationOf(potentialTarget);
 			Robot[] splashRobots = rc.senseNearbyGameObjects(Robot.class, location, GameConstants.ARTILLERY_SPLASH_RADIUS_SQUARED, null);
@@ -48,10 +48,6 @@ public class ArtilleryRobot extends BaseRobot {
 			}
 		}
 		
-		if (highestScore > 0) {
-			return bestLocation;
-		} else {
-			return null;
-		}
+		return bestLocation; // will return null if there were no positive score enemy targets
 	}
 }
