@@ -1,4 +1,4 @@
-package basePlusSwarm;
+package baseRush;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -79,7 +79,7 @@ public class SoldierRobot extends BaseRobot {
 					if (mineTeam != null && mineTeam != rc.getTeam()) {
 						soldierState = SoldierState.ESCAPE_HQ_MINES;
 					} else {
-						soldierState = SoldierState.RALLYING;
+						soldierState = SoldierState.PUSHING;
 					}
 				}
 				
@@ -108,10 +108,10 @@ public class SoldierRobot extends BaseRobot {
 						NavSystem.goToLocation(DataCache.ourHQLocation);
 					} else {
 						// We're done
-						soldierState = SoldierState.RALLYING;
+						soldierState = SoldierState.PUSHING;
 					}
 				case ALL_IN:
-					microCode();
+					aggressiveMicroCode();
 					break;
 					
 				case PUSHING: 
@@ -123,7 +123,7 @@ public class SoldierRobot extends BaseRobot {
 				case FIGHTING:
 					if (DataCache.numTotalEnemyRobots == 0) {
 						if (DataCache.numAlliedSoldiers < Constants.FIGHTING_NOT_ENOUGH_ALLIED_SOLDIERS) {
-							soldierState = SoldierState.RALLYING;
+							soldierState = SoldierState.PUSHING;
 						} else {
 							soldierState = SoldierState.PUSHING;
 						}
@@ -132,34 +132,7 @@ public class SoldierRobot extends BaseRobot {
 						microCode();
 					}
 					break;
-				case RALLYING:
-					int hqPowerLevel = 10000;
-					Message message = BroadcastSystem.read(powerChannel);
-					if (message.isValid) {
-						hqPowerLevel = message.body;
-					} else {
-						hqPowerLevel = (int) rc.getTeamPower();
-					}
-
-
-					// If there are enemies nearby, trigger FIGHTING SoldierState
-					if (DataCache.numTotalEnemyRobots > 0) {
-						soldierState = SoldierState.FIGHTING;
-					} else if (hqPowerLevel < 10*(1+DataCache.numAlliedEncampments) ) {
-						soldierState = SoldierState.PUSHING;
-					} else {
-						boolean layedMine = false;
-						if (rc.senseMine(currentLocation) == null) {
-							if (rc.isActive() && Util.Random() < 0.1) {
-								rc.layMine();
-								layedMine = true;
-							}
-						} 
-						if (!layedMine) {
-							NavSystem.goToLocation(rallyPoint);
-						}
-					}
-					break;
+				
 				default:
 					break;
 				}
@@ -311,6 +284,86 @@ public class SoldierRobot extends BaseRobot {
 				} else {
 					if (enemy23[2] >= 7) {
 						NavSystem.goToLocationAvoidMines(closestEnemyLocation);
+					} else {
+						// stay
+					}
+				}
+			}
+		}
+	}
+	
+	public void aggressiveMicroCode() throws GameActionException {
+		Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
+		int[] closestEnemyInfo = getClosestEnemy(enemiesList);
+		MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
+		int enemyDistSquared = closestEnemyLocation.distanceSquaredTo(rc.getLocation());
+
+		if (enemyDistSquared <= 2) { // if there is enemy in one dist
+//			Robot[] enemiesInOneDist = rc.senseNearbyGameObjects(Robot.class, 2, rc.getTeam().opponent());
+			// stay
+//			rc.setIndicatorString(0, "stay1");
+		} else if (enemyDistSquared == 16 || enemyDistSquared > 18){ // if no enemies in one, two, or three dist
+//			rc.setIndicatorString(0, "no enemies in 1,2,3 dist");
+//			rc.setIndicatorString(1, Integer.toString(DataCache.numNearbyEnemySoldiers));
+			NavSystem.goToLocation(closestEnemyLocation);
+		} else { // enemies in two or three dist
+			double[] our23 = getEnemies2Or3StepsAway();
+			double[] enemy23 = getEnemies2Or3StepsAwaySquare(closestEnemyLocation, rc.getTeam().opponent());
+//			rc.setIndicatorString(2, our23[0] + " " + our23[1] + " " + our23[2]);
+//
+//			rc.setIndicatorString(1, enemy23[0] + " " + enemy23[1] + " " + enemy23[2]);
+			if (our23[1] > 0) { // closest enemy in 2 dist
+
+
+				if (enemy23[0] > 0) { // if enemy has dist 1
+					NavSystem.goToLocationAvoidMines(closestEnemyLocation);
+//					rc.setIndicatorString(0, "forward2");
+				} else {
+					if (enemy23[1] + enemy23[0] > our23[1] + our23[2]+1) {
+						// move forward
+						NavSystem.goToLocation(closestEnemyLocation);
+//						rc.setIndicatorString(0, "forward2");
+					} 
+					//        			else if (enemy23[0] + enemy23[1] + enemy23[2] > our23[1] + our23[2]+2) {
+					//                		rc.setIndicatorString(0, "back2.5");
+					//                		goAwayFromLocation(closestEnemyLocation);
+					//                		//back
+					//                	} 
+					else {
+						NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
+//						rc.setIndicatorString(0, "back2");
+					}
+				}
+
+			} else { // closest enemy is 3 dist
+				if (enemy23[0] > 0) {
+					NavSystem.goToLocationAvoidMines(closestEnemyLocation);
+//					rc.setIndicatorString(0, "forward4");
+				} else if (enemy23[1] > 0) { // if enemy 2dist is > 0
+					int closestDist = 100;
+					int dist;
+					MapLocation closestAllyLocation = null;
+					Robot[] twoDistAllies = rc.senseNearbyGameObjects(Robot.class, closestEnemyLocation, 8, rc.getTeam());
+					for (Robot ally: twoDistAllies) {
+						RobotInfo arobotInfo = rc.senseRobotInfo(ally);
+						dist = arobotInfo.location.distanceSquaredTo(rc.getLocation());
+						if (dist<closestDist){
+							closestDist = dist;
+							closestAllyLocation = arobotInfo.location;
+						}
+					}
+
+					double[] ally23 = getEnemies2Or3StepsAwaySquare(closestAllyLocation, rc.getTeam());
+
+					if (enemy23[0] + enemy23[1] + enemy23[2] > ally23[1] + ally23[2]) {
+						NavSystem.goToLocation(closestEnemyLocation);
+//						rc.setIndicatorString(0, "forward3");
+					} else {
+//						rc.setIndicatorString(0, "stay3");
+					}
+				} else {
+					if (enemy23[2] >= 7) {
+						NavSystem.goToLocation(closestEnemyLocation);
 					} else {
 						// stay
 					}
@@ -478,11 +531,9 @@ public class SoldierRobot extends BaseRobot {
 	}
 	
 	private MapLocation findRallyPoint() {
-		MapLocation enemyLoc = EnemyHQLocation;
-		MapLocation ourLoc = HQLocation;
 		int x, y;
-		x = (enemyLoc.x+3*ourLoc.x)/4;
-		y = (enemyLoc.y+3*ourLoc.y)/4;
+		x = (EnemyHQLocation.x+3*HQLocation.x)/4;
+		y = (EnemyHQLocation.y+3*HQLocation.y)/4;
 		return new MapLocation(x,y);
 	}
 

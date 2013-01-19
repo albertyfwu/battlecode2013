@@ -1,14 +1,12 @@
-package baseNuke;
+package baseRush;
 
-import battlecode.common.Clock;
 import battlecode.common.GameActionException;
-import battlecode.common.GameConstants;
 import battlecode.common.MapLocation;
 import battlecode.common.Robot;
 import battlecode.common.RobotController;
 
 public class ArtilleryRobot extends BaseRobot {
-	
+		
 	public ArtilleryRobot(RobotController rc) {
 		super(rc);
 	}
@@ -27,36 +25,19 @@ public class ArtilleryRobot extends BaseRobot {
 			//
 		}
 	}
-
+	
+	// TODO: Make sure GameActionException doesn't get thrown
 	public MapLocation getBestTarget(Robot[] potentialTargets) throws GameActionException {
-		int highestScore = 0;
+		int maxHits = 0;
 		MapLocation bestLocation = null;
-		
-		rc.setIndicatorString(0, Integer.toString(Clock.getBytecodeNum()));
 		for (Robot potentialTarget : potentialTargets){
-			int currentScore = 40;
 			MapLocation location = rc.senseLocationOf(potentialTarget);
-			Robot[] splashRobots = rc.senseNearbyGameObjects(Robot.class, location, GameConstants.ARTILLERY_SPLASH_RADIUS_SQUARED, null);
-			for (Robot splashRobot : splashRobots) {
-				if (splashRobot.getTeam() == rc.getTeam()) {
-					currentScore -= 20;
-				} else {
-					currentScore += 20;
-				}
-			}
-			if (currentScore > highestScore) {
+			int numNeighbors = rc.senseNearbyGameObjects(Robot.class, location, 2, rc.getTeam().opponent()).length;
+			if (numNeighbors > maxHits){
+				maxHits = numNeighbors;
 				bestLocation = location;
-				highestScore = currentScore;
 			}
 		}
-		
-		rc.setIndicatorString(1, Integer.toString(Clock.getBytecodeNum()));
-
-		
-		if (highestScore > 0) {
-			return bestLocation;
-		} else {
-			return null;
-		}
+		return bestLocation;
 	}
 }

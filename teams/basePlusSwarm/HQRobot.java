@@ -71,12 +71,12 @@ public class HQRobot extends BaseRobot {
 					if (!rc.hasUpgrade(Upgrade.DEFUSION)) {
 						upgrade = true;
 						rc.researchUpgrade(Upgrade.DEFUSION);
-					} else if (!rc.hasUpgrade(Upgrade.PICKAXE)) {
-						upgrade = true;
-						rc.researchUpgrade(Upgrade.PICKAXE);
 					} else if (!rc.hasUpgrade(Upgrade.FUSION)) {
 						upgrade = true;
 						rc.researchUpgrade(Upgrade.FUSION);
+					} else {
+						upgrade = true;
+						rc.researchUpgrade(Upgrade.NUKE);
 					}
 				}
 				if (!upgrade) {
