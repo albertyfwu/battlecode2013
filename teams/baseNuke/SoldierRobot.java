@@ -62,7 +62,7 @@ public class SoldierRobot extends BaseRobot {
 		// Set up mining
 		dirToEnemyHQ = rc.getLocation().directionTo(DataCache.enemyHQLocation);
 		miningDirConstant = dirToEnemyHQ.rotateLeft().rotateLeft();
-		int offset = 6;
+		int offset = 5;
 		int newOffset = 2 * offset + 1;
 		randInt = (Util.randInt() % newOffset);
 		if (randInt < 0) {
