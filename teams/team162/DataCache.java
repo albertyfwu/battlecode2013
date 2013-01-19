@@ -16,6 +16,9 @@ public class DataCache {
 	public static MapLocation ourHQLocation;
 	public static MapLocation enemyHQLocation;
 	
+	public static int mapHeight;
+	public static int mapWidth;
+	
 	// Round variables - army sizes
 	public static int numAlliedRobots;
 	public static int numAlliedEncampments;
@@ -38,6 +41,9 @@ public class DataCache {
 		
 		ourHQLocation = rc.senseHQLocation();
 		enemyHQLocation = rc.senseEnemyHQLocation();
+		
+		mapHeight = rc.getMapHeight();
+		mapWidth = rc.getMapWidth();
 	}
 	
 	/**
@@ -45,11 +51,11 @@ public class DataCache {
 	 */
 	public static void updateRoundVariables() throws GameActionException {
 		numAlliedRobots = rc.senseNearbyGameObjects(Robot.class, 10000, rc.getTeam()).length;
+		numAlliedEncampments = rc.senseEncampmentSquares(rc.getLocation(), 10000, rc.getTeam()).length;
+		numAlliedSoldiers = numAlliedRobots - numAlliedEncampments - 1 - EncampmentJobSystem.maxEncampmentJobs;
 		numNearbyAlliedRobots = rc.senseNearbyGameObjects(Robot.class, 14, rc.getTeam()).length;
 		numNearbyAlliedEncampments = rc.senseEncampmentSquares(rc.getLocation(), 14, rc.getTeam()).length;
 		numNearbyAlliedSoldiers = numNearbyAlliedRobots - numNearbyAlliedEncampments;
-		numAlliedEncampments = rc.senseEncampmentSquares(rc.getLocation(), 10000, rc.getTeam()).length;
-		numAlliedSoldiers = numAlliedRobots - numAlliedEncampments - 1 - EncampmentJobSystem.maxEncampmentJobs;
 		
 		Robot[] nearbyEnemyRobots = rc.senseNearbyGameObjects(Robot.class, Constants.RALLYING_SOLDIER_THRESHOLD, rc.getTeam().opponent());
 		

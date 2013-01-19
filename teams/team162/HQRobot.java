@@ -31,9 +31,10 @@ public class HQRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
-//			System.out.println("start: " + Clock.getBytecodeNum());
+//			if (!rc.hasUpgrade(Upgrade.PICKAXE)) {
+//				rc.researchUpgrade(Upgrade.PICKAXE);
+//			}
 			BroadcastSystem.write(powerChannel, (int) rc.getTeamPower());
-//			System.out.println("end: " + Clock.getBytecodeNum());
 			DataCache.updateRoundVariables();
 			
 			// Check if enemy's nuke is half done
@@ -43,6 +44,16 @@ public class HQRobot extends BaseRobot {
 			if (enemyNukeHalfDone) {
 				// Broadcast this
 				BroadcastSystem.write(ChannelType.ENEMY_NUKE_HALF_DONE, 1);
+			}
+			// Check if our nuke is half done
+			if (!ourNukeHalfDone) {
+				if (rc.checkResearchProgress(Upgrade.NUKE) >= 200) {
+					ourNukeHalfDone = true;
+				}
+			}
+			if (ourNukeHalfDone) {
+				// Broadcast this
+				BroadcastSystem.write(ChannelType.OUR_NUKE_HALF_DONE, 1);
 			}
 
 //			if (Clock.getRoundNum() < 20) {
@@ -62,29 +73,20 @@ public class HQRobot extends BaseRobot {
 			
 			if (rc.isActive()) {
 
-
 				boolean upgrade = false;
-				if (!rc.hasUpgrade(Upgrade.DEFUSION) && enemyNukeHalfDone && DataCache.numAlliedSoldiers > 5) {
+//				if (!rc.hasUpgrade(Upgrade.DEFUSION) && enemyNukeHalfDone && DataCache.numAlliedSoldiers > 5) {
+//					upgrade = true;
+//					rc.researchUpgrade(Upgrade.DEFUSION);
+				if (rc.getTeamPower() < 150) {
 					upgrade = true;
-					rc.researchUpgrade(Upgrade.DEFUSION);
-				} else if (rc.getTeamPower() < 100) {
-					if (!rc.hasUpgrade(Upgrade.DEFUSION)) {
-						upgrade = true;
-						rc.researchUpgrade(Upgrade.DEFUSION);
-					} else if (!rc.hasUpgrade(Upgrade.FUSION)) {
-						upgrade = true;
-						rc.researchUpgrade(Upgrade.FUSION);
-					} else {
-						upgrade = true;
-						rc.researchUpgrade(Upgrade.NUKE);
-					}
+					rc.researchUpgrade(Upgrade.NUKE);
 				}
 				if (!upgrade) {
 
 					// Spawn a soldier
 					Direction desiredDir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
 					Direction dir = getSpawnDirection(rc, desiredDir);
-					if (dir != null) {
+					if (dir != null && rc.isActive()) {
 						EncampmentJobSystem.updateJobs();
 						rc.spawn(dir);
 					}

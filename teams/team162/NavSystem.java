@@ -299,7 +299,7 @@ public class NavSystem {
 			}
 		}
 		
-		double c = 0;
+		double c = 1.5;
 		double d = 0;
 		
 		double denom = Math.sqrt(totalDx*totalDx + totalDy*totalDy);
