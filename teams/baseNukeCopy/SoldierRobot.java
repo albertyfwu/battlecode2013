@@ -27,9 +27,6 @@ public class SoldierRobot extends BaseRobot {
 	
 	public MapLocation currentLocation;
 	
-	public MapLocation HQLocation;
-	public MapLocation EnemyHQLocation;
-	
 	public MapLocation rallyPoint;
 	
 	public ChannelType powerChannel = ChannelType.HQPOWERLEVEL;
@@ -47,9 +44,6 @@ public class SoldierRobot extends BaseRobot {
 		super(rc);
 		
 		NavSystem.init(this);
-		
-		HQLocation = rc.senseHQLocation();
-		EnemyHQLocation = rc.senseEnemyHQLocation();
 
 		rallyPoint = findRallyPoint();
 		
@@ -87,12 +81,14 @@ public class SoldierRobot extends BaseRobot {
 		}
 		miningStartLocation = new MapLocation(newX, newY);
 		miningDestination = DataCache.enemyHQLocation;
+		// make sure the start mining location doesn't fall off the map
 		
 //		rc.setIndicatorString(2, miningStartLocation.toString());
 		
-		encampmentSquares = rc.senseEncampmentSquares(rc.getLocation(), 64, Team.NEUTRAL);
+		int encampmentSquaresMaxRadiusSquared = 196;
+		encampmentSquares = rc.senseEncampmentSquares(rc.getLocation(), encampmentSquaresMaxRadiusSquared, Team.NEUTRAL);
 		// find closest encampment square
-		int minDistance = 64;
+		int minDistance = encampmentSquaresMaxRadiusSquared;
 		for (MapLocation location : encampmentSquares) {
 			int currentDistance = DataCache.ourHQLocation.distanceSquaredTo(location);
 			if (currentDistance <= minDistance) {
@@ -108,6 +104,7 @@ public class SoldierRobot extends BaseRobot {
 			rc.setIndicatorString(0, soldierState.toString());
 			DataCache.updateRoundVariables();
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
+			
 			if (encampmentLocation == null) {
 				rc.setIndicatorString(0, "hello");
 				
@@ -277,31 +274,28 @@ public class SoldierRobot extends BaseRobot {
 						RobotInfo robotInfo = rc.senseRobotInfo(robot);
 						int rounds = robotInfo.roundsUntilMovementIdle;
 						rc.setIndicatorString(2, Integer.toString(rounds));
+						
 						if (rounds > 10 || robotInfo.type == RobotType.ARTILLERY) {
 							// that robot's already capturing the encampment
+							// find a new one
+							int minDistance = Integer.MAX_VALUE;
+							MapLocation newEncampmentLocation = null;
 							for (int i = 0; i < encampmentSquares.length; i++) {
 								if (encampmentSquares[i] != null) {
 									if (encampmentSquares[i].equals(encampmentLocation)) {
 										encampmentSquares[i] = null;
 										break;
+									} else {
+										// see if it's closest encampment
+										int currentDistance = DataCache.ourHQLocation.distanceSquaredTo(encampmentSquares[i]);
+										if (currentDistance < minDistance) {
+											minDistance = currentDistance;
+											newEncampmentLocation = encampmentSquares[i];
+										}
 									}
 								}
 							}
-							
-							// choose a new encampment
-							boolean foundNewOne = false;
-							int minDistance = Integer.MAX_VALUE;
-							for (MapLocation iterEncampment : encampmentSquares) {
-								if (iterEncampment != null && DataCache.ourHQLocation.distanceSquaredTo(iterEncampment) < minDistance) {
-									foundNewOne = true;
-									minDistance = DataCache.ourHQLocation.distanceSquaredTo(iterEncampment);
-									encampmentLocation = iterEncampment;
-									break;
-								}
-							}
-							if (!foundNewOne) {
-								encampmentLocation = null;
-							}
+							encampmentLocation = newEncampmentLocation;
 						}
 					} else {
 						NavSystem.goToLocation(encampmentLocation);
@@ -558,8 +552,8 @@ public class SoldierRobot extends BaseRobot {
 	}
 	
 	private void pushCode() throws GameActionException {		
-		if (NavSystem.navMode != NavMode.SMART || NavSystem.destination != EnemyHQLocation) {
-			NavSystem.setupSmartNav(EnemyHQLocation);
+		if (NavSystem.navMode != NavMode.SMART || NavSystem.destination != DataCache.enemyHQLocation) {
+			NavSystem.setupSmartNav(DataCache.enemyHQLocation);
 		} else {
 			NavSystem.followWaypoints(true, true);
 		}
@@ -621,8 +615,8 @@ public class SoldierRobot extends BaseRobot {
 	}
 	
 	private MapLocation findRallyPoint() {
-		MapLocation enemyLoc = EnemyHQLocation;
-		MapLocation ourLoc = HQLocation;
+		MapLocation enemyLoc = DataCache.enemyHQLocation;
+		MapLocation ourLoc = DataCache.ourHQLocation;
 		int x, y;
 		x = (enemyLoc.x+3*ourLoc.x)/4;
 		y = (enemyLoc.y+3*ourLoc.y)/4;

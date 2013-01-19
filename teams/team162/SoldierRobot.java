@@ -1,8 +1,8 @@
 package team162;
 
-import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
+import battlecode.common.GameObject;
 import battlecode.common.MapLocation;
 import battlecode.common.Robot;
 import battlecode.common.RobotController;
@@ -39,6 +39,9 @@ public class SoldierRobot extends BaseRobot {
 	private MapLocation miningStartLocation;
 	private Direction miningDirConstant;
 	private MapLocation miningDestination;
+	
+	private MapLocation encampmentLocation = null;
+	private MapLocation[] encampmentSquares;
 	
 	public SoldierRobot(RobotController rc) throws GameActionException {
 		super(rc);
@@ -85,27 +88,28 @@ public class SoldierRobot extends BaseRobot {
 		miningStartLocation = new MapLocation(newX, newY);
 		miningDestination = DataCache.enemyHQLocation;
 		
-		rc.setIndicatorString(2, miningStartLocation.toString());
+//		rc.setIndicatorString(2, miningStartLocation.toString());
+		
+		encampmentSquares = rc.senseEncampmentSquares(rc.getLocation(), 64, Team.NEUTRAL);
+		// find closest encampment square
+		int minDistance = 64;
+		for (MapLocation location : encampmentSquares) {
+			int currentDistance = DataCache.ourHQLocation.distanceSquaredTo(location);
+			if (currentDistance <= minDistance) {
+				minDistance = currentDistance;
+				encampmentLocation = location;
+			}
+		}
 	}
 	
 	@Override
 	public void run() {
 		try {
-			MapLocation[] encampmentSquares = rc.senseEncampmentSquares(rc.getLocation(), 10000, Team.NEUTRAL);
-			// find closest encampment square
-			int minDistance = 64;
-			MapLocation encampmentLocation = null;
-			for (MapLocation location : encampmentSquares) {
-				int currentDistance = DataCache.ourHQLocation.distanceSquaredTo(location);
-				if (currentDistance <= minDistance) {
-					minDistance = currentDistance;
-					encampmentLocation = location;
-				}
-			}
-			
+			rc.setIndicatorString(0, soldierState.toString());
 			DataCache.updateRoundVariables();
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
 			if (encampmentLocation == null) {
+				rc.setIndicatorString(0, "hello");
 				
 				// Check if enemy nuke is half done
 				if (!enemyNukeHalfDone) {
@@ -259,11 +263,48 @@ public class SoldierRobot extends BaseRobot {
 					break;
 				}
 			} else {
+				rc.setIndicatorString(0, "bye");
 				// This soldier has an encampment job, so it should go do that job
 //				captureCode();
 				if (rc.getLocation().distanceSquaredTo(encampmentLocation) == 0) {
 					if (rc.isActive()) {
 						rc.captureEncampment(RobotType.ARTILLERY);
+					}
+				} else if (rc.getLocation().distanceSquaredTo(encampmentLocation) <= 14) {
+					GameObject gameObject = rc.senseObjectAtLocation(encampmentLocation);
+					if (gameObject != null) {
+						Robot robot = (Robot) gameObject;
+						RobotInfo robotInfo = rc.senseRobotInfo(robot);
+						int rounds = robotInfo.roundsUntilMovementIdle;
+						rc.setIndicatorString(2, Integer.toString(rounds));
+						if (rounds > 10 || robotInfo.type == RobotType.ARTILLERY) {
+							// that robot's already capturing the encampment
+							for (int i = 0; i < encampmentSquares.length; i++) {
+								if (encampmentSquares[i] != null) {
+									if (encampmentSquares[i].equals(encampmentLocation)) {
+										encampmentSquares[i] = null;
+										break;
+									}
+								}
+							}
+							
+							// choose a new encampment
+							boolean foundNewOne = false;
+							int minDistance = Integer.MAX_VALUE;
+							for (MapLocation iterEncampment : encampmentSquares) {
+								if (iterEncampment != null && DataCache.ourHQLocation.distanceSquaredTo(iterEncampment) < minDistance) {
+									foundNewOne = true;
+									minDistance = DataCache.ourHQLocation.distanceSquaredTo(iterEncampment);
+									encampmentLocation = iterEncampment;
+									break;
+								}
+							}
+							if (!foundNewOne) {
+								encampmentLocation = null;
+							}
+						}
+					} else {
+						NavSystem.goToLocation(encampmentLocation);
 					}
 				} else {
 					NavSystem.goToLocation(encampmentLocation);
