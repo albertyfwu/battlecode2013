@@ -45,6 +45,16 @@ public class HQRobot extends BaseRobot {
 				// Broadcast this
 				BroadcastSystem.write(ChannelType.ENEMY_NUKE_HALF_DONE, 1);
 			}
+			// Check if our nuke is half done
+			if (!ourNukeHalfDone) {
+				if (rc.checkResearchProgress(Upgrade.NUKE) >= 200) {
+					ourNukeHalfDone = true;
+				}
+			}
+			if (ourNukeHalfDone) {
+				// Broadcast this
+				BroadcastSystem.write(ChannelType.OUR_NUKE_HALF_DONE, 1);
+			}
 
 //			if (Clock.getRoundNum() < 20) {
 //				BroadcastSystem.write(ChannelType.CHANNEL1, 0);
@@ -64,20 +74,12 @@ public class HQRobot extends BaseRobot {
 			if (rc.isActive()) {
 
 				boolean upgrade = false;
-				if (!rc.hasUpgrade(Upgrade.DEFUSION) && enemyNukeHalfDone && DataCache.numAlliedSoldiers > 5) {
+//				if (!rc.hasUpgrade(Upgrade.DEFUSION) && enemyNukeHalfDone && DataCache.numAlliedSoldiers > 5) {
+//					upgrade = true;
+//					rc.researchUpgrade(Upgrade.DEFUSION);
+				if (rc.getTeamPower() < 150) {
 					upgrade = true;
-					rc.researchUpgrade(Upgrade.DEFUSION);
-				} else if (rc.getTeamPower() < 100) {
-					if (!rc.hasUpgrade(Upgrade.DEFUSION)) {
-						upgrade = true;
-						rc.researchUpgrade(Upgrade.DEFUSION);
-					} else if (!rc.hasUpgrade(Upgrade.PICKAXE)) {
-						upgrade = true;
-						rc.researchUpgrade(Upgrade.PICKAXE);
-					} else if (!rc.hasUpgrade(Upgrade.FUSION)) {
-						upgrade = true;
-						rc.researchUpgrade(Upgrade.FUSION);
-					}
+					rc.researchUpgrade(Upgrade.NUKE);
 				}
 				if (!upgrade) {
 

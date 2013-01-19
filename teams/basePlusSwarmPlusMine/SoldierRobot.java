@@ -38,6 +38,7 @@ public class SoldierRobot extends BaseRobot {
 	private int randInt;
 	private MapLocation miningStartLocation;
 	private Direction miningDirConstant;
+	private MapLocation miningDestination;
 	
 	public SoldierRobot(RobotController rc) throws GameActionException {
 		super(rc);
@@ -61,7 +62,7 @@ public class SoldierRobot extends BaseRobot {
 		// Set up mining
 		dirToEnemyHQ = rc.getLocation().directionTo(DataCache.enemyHQLocation);
 		miningDirConstant = dirToEnemyHQ.rotateLeft().rotateLeft();
-		int offset = 5;
+		int offset = 6;
 		int newOffset = 2 * offset + 1;
 		randInt = (Util.randInt() % newOffset);
 		if (randInt < 0) {
@@ -82,6 +83,7 @@ public class SoldierRobot extends BaseRobot {
 			newY = DataCache.mapHeight - 1;
 		}
 		miningStartLocation = new MapLocation(newX, newY);
+		miningDestination = DataCache.enemyHQLocation;
 		
 		rc.setIndicatorString(2, miningStartLocation.toString());
 	}
@@ -101,7 +103,14 @@ public class SoldierRobot extends BaseRobot {
 						enemyNukeHalfDone = true;
 					}
 				}
-				if (enemyNukeHalfDone) {
+				if (!ourNukeHalfDone) {
+					Message message = BroadcastSystem.read(ChannelType.OUR_NUKE_HALF_DONE);
+					if (message.isValid && message.body == 1) {
+						ourNukeHalfDone = true;
+					}
+				}
+				// TODO: also know how far we are on our own nuke
+				if (enemyNukeHalfDone && !ourNukeHalfDone) {
 					soldierState = SoldierState.ALL_IN;
 				}
 				
@@ -122,7 +131,7 @@ public class SoldierRobot extends BaseRobot {
 				switch (soldierState) {
 				case FINDING_START_MINE_POSITIONS:
 					if (DataCache.numTotalEnemyRobots == 0) {
-						if (rc.getLocation().distanceSquaredTo(miningStartLocation) <= 2) {
+						if (rc.getLocation().distanceSquaredTo(miningStartLocation) <= 8) {
 							soldierState = SoldierState.MINING;
 							// fall through
 						} else {
@@ -132,8 +141,8 @@ public class SoldierRobot extends BaseRobot {
 						}
 					} else {
 						soldierState = SoldierState.FIGHTING;
+						// fall through
 					}
-					
 				case MINING:
 					if (DataCache.numTotalEnemyRobots == 0) {
 						if (rc.hasUpgrade(Upgrade.PICKAXE)) {
@@ -143,7 +152,7 @@ public class SoldierRobot extends BaseRobot {
 								if ((2 * x + y) % 5 == 0 && rc.senseMine(rc.getLocation()) == null) {
 									rc.layMine();
 								} else {
-									Direction dir = rc.getLocation().directionTo(DataCache.enemyHQLocation);
+									Direction dir = rc.getLocation().directionTo(miningDestination);
 									NavSystem.goDirectionAndDefuse(dir);
 								}
 							}
@@ -153,7 +162,7 @@ public class SoldierRobot extends BaseRobot {
 								if (rc.senseMine(rc.getLocation()) == null) {
 									rc.layMine();
 								} else {
-									Direction dir = rc.getLocation().directionTo(DataCache.enemyHQLocation);
+									Direction dir = rc.getLocation().directionTo(miningDestination);
 									NavSystem.goDirectionAndDefuse(dir);
 								}
 							}
@@ -189,7 +198,6 @@ public class SoldierRobot extends BaseRobot {
 				case ALL_IN:
 					microCode();
 					break;
-					
 				case PUSHING: 
 					if (DataCache.numTotalEnemyRobots > 0) {
 						soldierState = SoldierState.FIGHTING;
@@ -203,8 +211,8 @@ public class SoldierRobot extends BaseRobot {
 						} else {
 							soldierState = SoldierState.PUSHING;
 						}
-						// Otherwise, just keep fighting
 					} else {
+						// Otherwise, just keep fighting
 						microCode();
 					}
 					break;
@@ -219,9 +227,11 @@ public class SoldierRobot extends BaseRobot {
 					// If there are enemies nearby, trigger FIGHTING SoldierState
 					if (DataCache.numTotalEnemyRobots > 0) {
 						soldierState = SoldierState.FIGHTING;
-					} else if (hqPowerLevel < 100) {
-						soldierState = SoldierState.PUSHING;
-					} else {
+					} 
+//					else if (hqPowerLevel < 100) {
+//						soldierState = SoldierState.PUSHING;
+//					} 
+					else {
 						boolean layedMine = false;
 						if (rc.senseMine(currentLocation) == null) {
 							if (rc.isActive() && Util.Random() < 0.1) {
