@@ -1,4 +1,4 @@
-package team162;
+package baseRush;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;

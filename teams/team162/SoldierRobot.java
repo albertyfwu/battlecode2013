@@ -79,7 +79,7 @@ public class SoldierRobot extends BaseRobot {
 					if (mineTeam != null && mineTeam != rc.getTeam()) {
 						soldierState = SoldierState.ESCAPE_HQ_MINES;
 					} else {
-						soldierState = SoldierState.RALLYING;
+						soldierState = SoldierState.PUSHING;
 					}
 				}
 				
@@ -108,7 +108,7 @@ public class SoldierRobot extends BaseRobot {
 						NavSystem.goToLocation(DataCache.ourHQLocation);
 					} else {
 						// We're done
-						soldierState = SoldierState.RALLYING;
+						soldierState = SoldierState.PUSHING;
 					}
 				case ALL_IN:
 					microCode();
@@ -123,7 +123,7 @@ public class SoldierRobot extends BaseRobot {
 				case FIGHTING:
 					if (DataCache.numTotalEnemyRobots == 0) {
 						if (DataCache.numAlliedSoldiers < Constants.FIGHTING_NOT_ENOUGH_ALLIED_SOLDIERS) {
-							soldierState = SoldierState.RALLYING;
+							soldierState = SoldierState.PUSHING;
 						} else {
 							soldierState = SoldierState.PUSHING;
 						}
@@ -132,32 +132,7 @@ public class SoldierRobot extends BaseRobot {
 						microCode();
 					}
 					break;
-				case RALLYING:
-					int hqPowerLevel = 10000;
-					Message message = BroadcastSystem.read(powerChannel);
-					if (message.isValid) {
-						hqPowerLevel = message.body;
-					}
-
-
-					// If there are enemies nearby, trigger FIGHTING SoldierState
-					if (DataCache.numTotalEnemyRobots > 0) {
-						soldierState = SoldierState.FIGHTING;
-					} else if (hqPowerLevel < 100) {
-						soldierState = SoldierState.PUSHING;
-					} else {
-						boolean layedMine = false;
-						if (rc.senseMine(currentLocation) == null) {
-							if (rc.isActive() && Util.Random() < 0.1) {
-								rc.layMine();
-								layedMine = true;
-							}
-						} 
-						if (!layedMine) {
-							NavSystem.goToLocation(rallyPoint);
-						}
-					}
-					break;
+				
 				default:
 					break;
 				}
