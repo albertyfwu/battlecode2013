@@ -30,12 +30,13 @@ public class ArtilleryRobot extends BaseRobot {
 	public MapLocation getBestTarget(Robot[] potentialTargets) throws GameActionException {
 		int highestScore = 0;
 		MapLocation bestLocation = null;
+		
 		for (Robot potentialTarget : potentialTargets){
 			int currentScore = 0;
 			MapLocation location = rc.senseLocationOf(potentialTarget);
 			Robot[] splashRobots = rc.senseNearbyGameObjects(Robot.class, location, GameConstants.ARTILLERY_SPLASH_RADIUS_SQUARED, null);
 			for (Robot splashRobot : splashRobots) {
-				if (splashRobot.getTeam() == rc.getTeam()) {
+				if (splashRobot.getTeam() == splashRobot.getTeam()) {
 					currentScore -= 20;
 				} else {
 					currentScore += 20;
