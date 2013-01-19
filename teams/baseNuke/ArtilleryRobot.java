@@ -30,6 +30,7 @@ public class ArtilleryRobot extends BaseRobot {
 	public MapLocation getBestTarget(Robot[] potentialTargets) throws GameActionException {
 		int highestScore = 0;
 		MapLocation bestLocation = null;
+		
 		for (Robot potentialTarget : potentialTargets){
 			int currentScore = 0;
 			MapLocation location = rc.senseLocationOf(potentialTarget);
