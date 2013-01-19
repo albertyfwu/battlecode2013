@@ -1,4 +1,4 @@
-package basePlusSwarmPlusMine;
+package baseNuke;
 
 import battlecode.common.Clock;
 

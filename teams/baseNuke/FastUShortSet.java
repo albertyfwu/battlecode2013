@@ -1,4 +1,4 @@
-package basePlusSwarmPlusMine;
+package baseNuke;
 
 /**
  * Fast set for storing unsigned shorts

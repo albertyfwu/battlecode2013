@@ -1,4 +1,4 @@
-package basePlusSwarmPlusMine;
+package baseNuke;
 
 /**
  * Message interface for sending broadcasts.

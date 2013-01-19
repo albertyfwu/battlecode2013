@@ -1,4 +1,4 @@
-package basePlusSwarmPlusMine;
+package baseNuke;
 
 public enum EncampmentJobMessageType {
 	COMPLETION,
