@@ -1,5 +1,6 @@
 package baseNuke;
 
+import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
@@ -37,7 +38,12 @@ public class SoldierRobot extends BaseRobot {
 	private int randInt;
 	private MapLocation miningStartLocation;
 	private Direction miningDirConstant;
+	private Direction miningDirConstantOpp;
 	private MapLocation miningDestination;
+	
+	// Line from our hq to enemy hq
+	private double lineA, lineB, lineC, lineDistanceDenom;
+	private int x1, y1, x2, y2;
 	
 	public MapLocation miningOffsetCenter = calculateMiningOffsetCenter();
 	public int miningCenterRadiusSquared = calculateMiningCenterRadiusSquared();
@@ -62,9 +68,36 @@ public class SoldierRobot extends BaseRobot {
 		soldierState = SoldierState.FINDING_START_MINE_POSITIONS;
 		
 		// Set up mining
+		x1 = DataCache.ourHQLocation.x;
+		y1 = DataCache.ourHQLocation.y;
+		x2 = DataCache.enemyHQLocation.x;
+		y2 = DataCache.enemyHQLocation.y;
+		
+		lineA = (double)(y2-y1)/(x2-x1);
+		lineB = -1;
+		lineC = y1 - lineA * x1;
+		lineDistanceDenom = Math.sqrt(lineA*lineA + lineB*lineB);
+		
 		dirToEnemyHQ = rc.getLocation().directionTo(DataCache.enemyHQLocation);
-		miningDirConstant = dirToEnemyHQ.rotateLeft().rotateLeft();
-		int offset = 5;
+		if (Util.randInt() % 2 == 0) {
+			miningDirConstant = dirToEnemyHQ.rotateLeft().rotateLeft();
+			miningDirConstantOpp = dirToEnemyHQ.rotateRight().rotateRight();
+		} else {
+			miningDirConstantOpp = dirToEnemyHQ.rotateLeft().rotateLeft();
+			miningDirConstant = dirToEnemyHQ.rotateRight().rotateRight();
+		}
+		int offset;
+		
+		if (Clock.getRoundNum() < 10 * 3) {
+			offset = 2;
+		} else if (Clock.getRoundNum() < 10 * 6) {
+			offset = 3;
+		} else if (Clock.getRoundNum() < 10 * 9) {
+			offset = 4;
+		} else {
+			offset = 4;
+		}
+		
 		int newOffset = 2 * offset + 1;
 		randInt = (Util.randInt() % newOffset);
 		if (randInt < 0) {
@@ -88,6 +121,12 @@ public class SoldierRobot extends BaseRobot {
 		miningDestination = DataCache.enemyHQLocation;
 		
 		rc.setIndicatorString(2, miningStartLocation.toString());
+	}
+	
+	public double distanceToLine(MapLocation location) {
+		int x = location.x;
+		int y = location.y;
+		return Math.abs(lineA * x + lineB * y + lineC) / lineDistanceDenom;
 	}
 	
 	public MapLocation calculateMiningOffsetCenter() {
@@ -145,7 +184,8 @@ public class SoldierRobot extends BaseRobot {
 				switch (soldierState) {
 				case FINDING_START_MINE_POSITIONS:
 					if (DataCache.numTotalEnemyRobots == 0) {
-						if (rc.getLocation().distanceSquaredTo(miningStartLocation) <= 8) {
+						if (rc.getLocation().distanceSquaredTo(miningStartLocation) <= 0 ||
+								(rc.getLocation().distanceSquaredTo(miningStartLocation) <= 2 && miningStartLocation.equals(DataCache.ourHQLocation))) {
 							soldierState = SoldierState.MINING;
 							// fall through
 						} else {
@@ -158,44 +198,7 @@ public class SoldierRobot extends BaseRobot {
 						// fall through
 					}
 				case MINING:
-					if (DataCache.numTotalEnemyRobots == 0) {
-						// Do mining
-						if (rc.hasUpgrade(Upgrade.PICKAXE)) {
-							if (rc.isActive()) {
-								int x = rc.getLocation().x;
-								int y = rc.getLocation().y;
-								if ((2 * x + y) % 5 == 0 && rc.senseMine(rc.getLocation()) == null) {
-									rc.layMine();
-								} else {
-									if (NavSystem.navMode == NavMode.NEUTRAL) {
-										NavSystem.setupMiningNav();
-									} else {
-										NavSystem.followWaypoints(true, false);
-									}
-//									Direction dir = rc.getLocation().directionTo(miningDestination);
-//									NavSystem.goDirectionAndDefuse(dir);
-								}
-							}
-						} else {
-							// no upgrade
-							if (rc.isActive()) {
-								if (rc.senseMine(rc.getLocation()) == null) {
-									rc.layMine();
-								} else {
-									if (NavSystem.navMode == NavMode.NEUTRAL) {
-										NavSystem.setupMiningNav();
-									} else {
-										NavSystem.followWaypoints(true, false);
-									}
-//									Direction dir = rc.getLocation().directionTo(miningDestination);
-//									NavSystem.goDirectionAndDefuse(dir);
-								}
-							}
-						}
-					} else {
-						// There are enemies, so ditch mining and go defend
-						soldierState = SoldierState.FIGHTING;
-					}
+					mineCode();
 					break;
 				case ESCAPE_HQ_MINES:
 					// We need to run away from the mines surrounding our base
@@ -286,6 +289,64 @@ public class SoldierRobot extends BaseRobot {
 	
 	public Platoon getPlatoon() {
 		return this.platoon;
+	}
+	
+	public void mineCode() throws GameActionException {
+		if (DataCache.numTotalEnemyRobots == 0) {
+			// Do mining
+			if (rc.hasUpgrade(Upgrade.PICKAXE)) {
+				if (rc.isActive()) {
+					int x = rc.getLocation().x;
+					int y = rc.getLocation().y;
+					if ((2 * x + y) % 5 == 0 && rc.senseMine(rc.getLocation()) == null) {
+						rc.layMine();
+					} else {
+//						if (NavSystem.navMode == NavMode.NEUTRAL) {
+//							NavSystem.setupMiningNav();
+//						} else {
+//							NavSystem.followWaypoints(true, false);
+//						}
+						MapLocation newLocation1 = rc.getLocation().add(miningDirConstant);
+						MapLocation newLocation2 = rc.getLocation().add(miningDirConstantOpp);
+						if (distanceToLine(newLocation1) <= 4 && rc.senseMine(newLocation1) == null) {
+							NavSystem.goDirectionAndDefuse(miningDirConstant);
+						} else if (distanceToLine(newLocation2) <= 4 && rc.senseMine(newLocation2) == null) {
+							NavSystem.goDirectionAndDefuse(miningDirConstantOpp);
+						}
+						
+						Direction dir = rc.getLocation().directionTo(miningDestination);
+						NavSystem.goDirectionAndDefuse(dir);
+					}
+				}
+			} else if (rc.getLocation().distanceSquaredTo(DataCache.ourHQLocation) <= 121) {
+				// no upgrade
+				if (rc.isActive()) {
+					if (rc.senseMine(rc.getLocation()) == null) {
+						rc.layMine();
+					} else {
+//						if (NavSystem.navMode == NavMode.NEUTRAL) {
+//							NavSystem.setupMiningNav();
+//						} else {
+//							NavSystem.followWaypoints(true, false);
+//						}
+						// check to see if mines on left or right are untaken
+						MapLocation newLocation1 = rc.getLocation().add(miningDirConstant);
+						MapLocation newLocation2 = rc.getLocation().add(miningDirConstantOpp);
+						if (distanceToLine(newLocation1) <= 4 && rc.senseMine(newLocation1) == null) {
+							NavSystem.goDirectionAndDefuse(miningDirConstant);
+						} else if (distanceToLine(newLocation2) <= 4 && rc.senseMine(newLocation2) == null) {
+							NavSystem.goDirectionAndDefuse(miningDirConstantOpp);
+						}
+						
+						Direction dir = rc.getLocation().directionTo(miningDestination);
+						NavSystem.goDirectionAndDefuse(dir);
+					}
+				}
+			}
+		} else {
+			// There are enemies, so ditch mining and go defend
+			soldierState = SoldierState.FIGHTING;
+		}
 	}
 	
 	/**

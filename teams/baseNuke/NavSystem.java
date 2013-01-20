@@ -221,7 +221,7 @@ public class NavSystem {
 	 */
 	public static void followWaypoints(boolean defuseMines, boolean swarm) throws GameActionException {
 		// If we're close to currentWaypoint, find the next one
-		if (rc.getLocation().distanceSquaredTo(destination) <= Constants.PATH_GO_ALL_IN_SQ_RADIUS) {
+		if (rc.getLocation().distanceSquaredTo(destination) <= Constants.PATH_GO_ALL_IN_SQ_RADIUS && navMode != NavMode.MINING) {
 			// Stop nav-ing?
 			navMode = NavMode.NEUTRAL;
 			// We're done following waypoints
@@ -230,7 +230,7 @@ public class NavSystem {
 			} else {
 				goToLocationAvoidMines(destination);
 			}
-		} else if (rc.getLocation().distanceSquaredTo(currentWaypoint) <= Constants.WAYPOINT_SQUARED_DISTANCE_CHECK){
+		} else if (rc.getLocation().distanceSquaredTo(currentWaypoint) <= Constants.WAYPOINT_SQUARED_DISTANCE_CHECK && navMode != NavMode.MINING){
 			// We're close to currentWaypoint, so find the next one
 			switch (navMode) {
 			case SMART:
@@ -250,7 +250,11 @@ public class NavSystem {
 					rc.setIndicatorString(2, currentWaypoint.toString());
 					goToLocationSwarm(currentWaypoint, true);
 				} else {
-					goToLocation(currentWaypoint);
+					if (navMode == NavMode.MINING) {
+						goToLocationAntiSwarm(currentWaypoint, true);
+					} else {
+						goToLocation(currentWaypoint);
+					}
 				}
 			} else {
 				if (swarm) {
@@ -266,19 +270,31 @@ public class NavSystem {
 					rc.setIndicatorString(2, currentWaypoint.toString());
 					goToLocationSwarm(currentWaypoint, true);
 				} else {
-					goToLocation(currentWaypoint);
+					if (navMode == NavMode.MINING) {
+						goToLocationAntiSwarm(currentWaypoint, true);
+					} else {
+						goToLocation(currentWaypoint);
+					}
 				}
 			} else {
 				if (swarm) {
 					goToLocationSwarm(currentWaypoint, false);
 				} else {
-					goToLocationAvoidMines(currentWaypoint);
+					goToLocation(currentWaypoint);
 				}
 			}
 		}
 	}
 	
+	private static void goToLocationAntiSwarm(MapLocation location, boolean defuseMines) throws GameActionException {
+		goToLocationSwarm(location, defuseMines, false);
+	}
+	
 	private static void goToLocationSwarm(MapLocation location, boolean defuseMines) throws GameActionException {
+		goToLocationSwarm(location, defuseMines, true);
+	}
+	
+	private static void goToLocationSwarm(MapLocation location, boolean defuseMines, boolean attract) throws GameActionException {
 		// Swarming
 		double dxToLocation = location.x - rc.getLocation().x;
 		double dyToLocation = location.y - rc.getLocation().y;
@@ -303,6 +319,9 @@ public class NavSystem {
 		}
 		
 		double c = 1.5;
+		if (!attract) {
+			c = -c;
+		}
 		double d = 0;
 		
 		double denom = Math.sqrt(totalDx*totalDx + totalDy*totalDy);
@@ -468,33 +487,52 @@ public class NavSystem {
 	}
 	
 	public static void getMiningWaypoint() throws GameActionException {
+		// TODO: Instead of finding local points, pick points in the beginning 
+		
 		MapLocation currentLocation = rc.getLocation();
 		// pick the best place to make mines
 		int bestScore = Integer.MAX_VALUE;
 		MapLocation bestLocation = null;
 		String s = "";
-		for (int i = 0; i < 8; i++) {
-			Direction dir = Direction.values()[i];
-			MapLocation iterLocation = currentLocation.add(dir, Constants.MINING_OFFSET_RADIUS);
-			if (iterLocation.x >= 0 && iterLocation.x < DataCache.mapWidth
-					&& iterLocation.y >= 0 && iterLocation.y < DataCache.mapHeight) {
-				int currentScore = miningScore(iterLocation, Constants.MINING_CHECK_RADIUS);
-				s += Integer.toString(i) + ": " + Integer.toString(currentScore) + ", ";
-				if (currentScore < bestScore) {
-					bestScore = currentScore;
-					bestLocation = iterLocation;
+		
+		for (int i = -2; i <= 2; i++) {
+			for (int j = -2; j <= 2; j++) {
+				MapLocation iterCenter = currentLocation.add(3 * i, 3 * j);
+				if (iterCenter.x >= 0 && iterCenter.x < DataCache.mapWidth
+						&& iterCenter.y >= 0 && iterCenter.y < DataCache.mapHeight) {
+					int currentScore = miningScore(iterCenter, 2);
+					if (currentScore < bestScore) {
+						bestScore = currentScore;
+						bestLocation = iterCenter;
+					}			
 				}
 			}
 		}
+		
+//		for (int i = 0; i < 8; i++) {
+//			Direction dir = Direction.values()[i];
+//			MapLocation iterLocation = currentLocation.add(dir, Constants.MINING_OFFSET_RADIUS);
+//			if (iterLocation.x >= 0 && iterLocation.x < DataCache.mapWidth
+//					&& iterLocation.y >= 0 && iterLocation.y < DataCache.mapHeight) {
+//				int currentScore = miningScore(iterLocation, Constants.MINING_CHECK_RADIUS_SQUARED);
+//				s += Integer.toString(i) + ": " + Integer.toString(currentScore) + ", ";
+//				if (currentScore < bestScore) {
+//					bestScore = currentScore;
+//					bestLocation = iterLocation;
+//				}
+//			}
+//		}
+		
 		rc.setIndicatorString(2, s);
 		currentWaypoint = bestLocation;
 		destination = bestLocation;
 	}
 	
-	public static int miningScore(MapLocation location, int radius) {
-		int numAlliedMines = rc.senseMineLocations(location, radius * radius, rc.getTeam()).length;
+	public static int miningScore(MapLocation location, int radiusSquared) {
+		int numAlliedMines = rc.senseMineLocations(location, radiusSquared, rc.getTeam()).length;
 		// Mines closer to HQ should be preferred
-		return numAlliedMines + (int)Math.sqrt(location.distanceSquaredTo(DataCache.ourHQLocation));
+		int distanceToHQ = (int)Math.sqrt(location.distanceSquaredTo(DataCache.ourHQLocation));
+		return numAlliedMines + (-1) * distanceToHQ;
 	}
 	
 	/**

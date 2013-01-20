@@ -27,7 +27,7 @@ public interface Constants {
 	public static final int MINING_OFFSET_RADIUS = 3;
 		
 	// How large of a circle we should be checking each time we calculate a new waypoint
-	public static final int MINING_CHECK_RADIUS = 2;
+	public static final int MINING_CHECK_RADIUS_SQUARED = 4;
 	
 	/**
 	 * All Waypoints
