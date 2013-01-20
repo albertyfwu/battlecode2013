@@ -242,7 +242,7 @@ public class SoldierRobot extends BaseRobot {
 						}
 					} else {
 						// Otherwise, just keep fighting
-						microCode();
+						defendMicro();
 					}
 					break;
 				case RALLYING:
@@ -289,6 +289,99 @@ public class SoldierRobot extends BaseRobot {
 	
 	public Platoon getPlatoon() {
 		return this.platoon;
+	}
+	private void defendMicro() throws GameActionException {
+		Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
+		int[] closestEnemyInfo = getClosestEnemy(enemiesList);
+		MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
+		double[][] activites = enemyActivites (currentLocation, rc.getTeam());
+		if (activites[2][0]+activites[1][0]+activites[0][0] == 0){
+			NavSystem.goToLocationAvoidMines(closestEnemyLocation);
+			rc.setIndicatorString(0, "Forward1");
+		}
+		if (!minedUpAndReadyToGo(currentLocation)){
+			if (activites[1][0]+activites[0][0]>2) {
+				NavSystem.goToLocationAvoidMines(DataCache.ourHQLocation);
+				rc.setIndicatorString(0, "Back1");
+			}
+		} else {
+			MapLocation bestLocation=currentLocation;
+			int positionQuality=-1000;
+			MapLocation newPosition;
+			int value;
+			for (int i=8;i!=0;i--){
+				newPosition = currentLocation.add(Direction.values()[i]);
+				value = positionValue(newPosition);
+				if (value>positionQuality) {
+					positionQuality=value;
+					bestLocation=newPosition;
+					break;
+				}
+			}
+			NavSystem.goToLocationAvoidMines(bestLocation);
+			rc.setIndicatorString(0, "Pos");
+		}
+	}
+	
+	private int positionValue(MapLocation location) throws GameActionException{
+		int points=0;
+		double[][] acts = enemyActivites(location, rc.getTeam());
+		if (!minedUpAndReadyToGo(location)){
+			if (acts[1][0]+acts[0][0]>0) {
+				points -= 2;
+			}
+			if (acts[0][1]!=0) {
+				points+=6*acts[0][1];
+			}
+		}
+		return points;
+	}
+	
+	private double[][] enemyActivites (MapLocation square, Team squareTeam) throws GameActionException{
+		double acount1 = 0;
+		double acount2 = 0;
+		double acount3 = 0;
+		double icount1 = 0;
+		double icount2 = 0;
+		double icount3 = 0;
+		Robot[] enemiesInVision = rc.senseNearbyGameObjects(Robot.class, 18, squareTeam.opponent());
+		for (Robot enemy: enemiesInVision) {
+			if (rc.senseRobotInfo(enemy).roundsUntilMovementIdle==0){
+				RobotInfo rinfo = rc.senseRobotInfo(enemy);
+				int dist = rinfo.location.distanceSquaredTo(currentLocation);
+				if (dist<=2) {
+					acount1++;
+				} else if(dist <=8) {
+					acount2++;
+				} else if (dist > 8 && (dist <= 14 || dist == 18)) {
+					acount3++;
+				}
+			} else {
+				RobotInfo rinfo = rc.senseRobotInfo(enemy);
+				int dist = rinfo.location.distanceSquaredTo(currentLocation);
+				if (dist<=2) {
+					icount1++;
+				} else if(dist <=8) {
+					icount2++;
+				} else if (dist > 8 && (dist <= 14 || dist == 18)) {
+					icount3++;
+				}
+			}
+		}
+		
+		double[][] output = {{acount1, icount1}, {acount2, icount2}, {acount3, icount3}};
+		return output;
+	}
+	
+	private boolean minedUpAndReadyToGo(MapLocation location){
+		boolean surrounded = true;
+		for (int i=8;i!=0;i--){
+			surrounded = (rc.getTeam() == rc.senseMine(location.add(Direction.values()[i])));
+			if (surrounded == false){
+				break;
+			}
+		}
+		return surrounded;
 	}
 	
 	public void mineCode() throws GameActionException {
