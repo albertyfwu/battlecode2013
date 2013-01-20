@@ -74,15 +74,11 @@ public class HQRobot extends BaseRobot {
 			if (rc.isActive()) {
 
 				boolean upgrade = false;
-//				if (!rc.hasUpgrade(Upgrade.DEFUSION) && enemyNukeHalfDone && DataCache.numAlliedSoldiers > 5) {
-//					upgrade = true;
-//					rc.researchUpgrade(Upgrade.DEFUSION);
 				if (rc.getTeamPower() < 150) {
 					upgrade = true;
 					rc.researchUpgrade(Upgrade.NUKE);
 				}
 				if (!upgrade) {
-
 					// Spawn a soldier
 					Direction desiredDir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
 					Direction dir = getSpawnDirection(rc, desiredDir);
@@ -91,63 +87,13 @@ public class HQRobot extends BaseRobot {
 						rc.spawn(dir);
 					}
 				}
-//				if (Clock.getRoundNum() < 5) {
-//					Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
-//					rc.spawn(dir);
-//				}
 			}
-
-			//			// TODO: find out what strategy to switch to?
-			//			// this.strategy = HQStrategy.xxx
-			//			if (rc.isActive()) {
-			//				switch (strategy) {
-			//				case CREATE_SOLDIER:
-			//					create_soldier();
-			//					break;
-			//				case RESEARCH_DEFUSION:
-			//					if (!rc.hasUpgrade(Upgrade.DEFUSION)) {
-			//						rc.researchUpgrade(Upgrade.DEFUSION);
-			//					}
-			//					break;
-			//				case RESEARCH_FUSION:
-			//					if (!rc.hasUpgrade(Upgrade.FUSION)) {
-			//						rc.researchUpgrade(Upgrade.FUSION);
-			//					}
-			//					break;
-			//				case RESEARCH_NUKE:
-			//					if (!rc.hasUpgrade(Upgrade.NUKE)) {
-			//						rc.researchUpgrade(Upgrade.NUKE);
-			//					}
-			//					break;
-			//				case RESEARCH_PICKAXE:
-			//					if (!rc.hasUpgrade(Upgrade.PICKAXE)) {
-			//						rc.researchUpgrade(Upgrade.PICKAXE);
-			//					}
-			//					break;
-			//				case RESEARCH_VISION:
-			//					if (!rc.hasUpgrade(Upgrade.VISION)) {
-			//						rc.researchUpgrade(Upgrade.VISION);
-			//					}
-			//					break;
-			//				default:
-			//					break;
-			//				}
-			//			}
 		} catch (Exception e) {
 			System.out.println("caught exception before it killed us:");
 			System.out.println(rc.getRobot().getID());
 			e.printStackTrace();
 		}
 	}
-
-//	public void create_soldier() throws GameActionException {
-//		// Spawn a soldier
-//		Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
-//		if (rc.canMove(dir)) {
-//			rc.spawn(dir);
-//		}
-//	}
-
 
 	/**
 	 * helper fcn to see what direction to actually go given a desired direction
