@@ -1,4 +1,4 @@
-package basePlusSwarm;
+package baseTurgid;
 
 import battlecode.common.GameActionException;
 import battlecode.common.GameConstants;
@@ -23,7 +23,7 @@ public class ArtilleryRobot extends BaseRobot {
 				}
 			}
 		} catch (Exception e) {
-			//
+			e.printStackTrace();
 		}
 	}
 
