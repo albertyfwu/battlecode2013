@@ -1,4 +1,4 @@
-package basePlusSwarm;
+package baseTurgid;
 
 import battlecode.common.RobotController;
 
@@ -13,7 +13,7 @@ public abstract class BaseRobot {
 	public BaseRobot(RobotController myRC) {
 		rc = myRC;
 		id = rc.getRobot().getID();
-		DataCache.init(this);
+		DataCache.init(this); // this must come first
 		BroadcastSystem.init(this);
 		EncampmentJobSystem.init(this);
 	}
