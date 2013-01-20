@@ -565,7 +565,7 @@ public class NavSystem {
 		BFSTurns = NavSystem.runBFS(encArray, goalCoord[1], goalCoord[0]);
 //		System.out.println("BFSTurns :" + BFSTurns.length);
 		if (BFSTurns.length == 0) { // if unreachable, tell to HQ and unassign himself
-			System.out.println("unreachable, unassigned: " + robot.unassigned + " soldierstate: " + ((SoldierRobot) robot).soldierState);
+//			System.out.println("unreachable, unassigned: " + robot.unassigned + " soldierstate: " + ((SoldierRobot) robot).soldierState);
 			EncampmentJobSystem.postUnreachableMessage(destination);
 			navMode = NavMode.NEUTRAL;
 			robot.unassigned = true;
@@ -577,9 +577,9 @@ public class NavSystem {
 			// we retry destination
 			setupGetCloser(destination);
 		} else {
-			System.out.println("BFS length: " + BFSTurns.length);
+//			System.out.println("BFS length: " + BFSTurns.length);
 
-			System.out.println("Direction: " + BFSTurns[BFSRound]);
+//			System.out.println("Direction: " + BFSTurns[BFSRound]);
 			Direction dir = Direction.values()[BFSTurns[BFSRound]];
 			boolean hasMoved = NavSystem.moveOrDefuse(dir);
 			if (hasMoved) {

@@ -7,12 +7,15 @@ public abstract class BaseRobot {
 	public RobotController rc;
 	public int id;
 	
+	public Strategy strategy;
+	
 	public boolean enemyNukeHalfDone = false;
 	
 	// Default constructor
 	public BaseRobot(RobotController myRC) {
 		rc = myRC;
 		id = rc.getRobot().getID();
+		
 		DataCache.init(this); // this must come first
 		BroadcastSystem.init(this);
 		EncampmentJobSystem.init(this);

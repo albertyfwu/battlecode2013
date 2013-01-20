@@ -541,7 +541,7 @@ public class EncampmentJobSystem {
 	}
 	
 	
-	public static int getRobotTypeToBuild(Strategy strategy) {
+	public static int getRobotTypeToBuild() {
 		if (supCount == 0 && genCount == 0) {
 			return 0;
 		}
@@ -612,8 +612,10 @@ public class EncampmentJobSystem {
 		int robotTypeInt = msgBody >> 22;
 		if (robotTypeInt == 0) {
 			return RobotType.SUPPLIER;
-		} else {
+		} else if (robotTypeInt == 1) {
 			return RobotType.GENERATOR;
+		} else {
+			return RobotType.ARTILLERY;
 		}
 	}
 	

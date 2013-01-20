@@ -4,6 +4,9 @@ import battlecode.common.GameConstants;
 
 public enum ChannelType {
 
+	// for strategy
+	STRATEGY,
+	
 	// for encampments
 	ENC1,
 	ENC2,
