@@ -64,6 +64,8 @@ public class EncampmentJobSystem {
 	public static int supCount;
 	public static int genCount;
 	
+	public static int hardEncampmentLimit;
+	
 	/**
 	 * Initializes BroadcastSystem by setting rc
 	 * @param myRobot
@@ -83,29 +85,37 @@ public class EncampmentJobSystem {
 		supCount = 0;
 		genCount = 0;
 		
+		hardEncampmentLimit = 3;
+		
 		numEncampmentsNeeded = 0;
 		
 		MapLocation[] possibleEncampments = getPossibleArtilleryLocations();
 		if (possibleEncampments.length == 0) {
 			numEncampmentsNeeded = 0;
 		} else {
-			MapLocation[] nearbyEncampments = rc.senseEncampmentSquares(hqloc, 16, Team.NEUTRAL);
+			MapLocation[] nearbyEncampments = rc.senseEncampmentSquares(hqloc, 9, Team.NEUTRAL);
 			for (MapLocation encLoc: nearbyEncampments) {
 				if (encLoc.x == hqloc.x){ 
 					unreachableEncampments[numUnreachableEncampments] = encLoc;
 					numUnreachableEncampments++;
 				}
 			}
+			
+			
 			if (possibleEncampments.length - numUnreachableEncampments > 0) {
-				numEncampmentsNeeded = 1;
-				MapLocation[] closestEncampments = getClosestMapLocations(HQLocation, possibleEncampments, 1);
-				
-				encampmentJobs[0] = closestEncampments[0];
+				numEncampmentsNeeded = Math.min(3, possibleEncampments.length - numUnreachableEncampments);
+				MapLocation[] closestEncampments = getClosestMapLocations(HQLocation, possibleEncampments, numEncampmentsNeeded);
 
-				// broadcast job opening
-				encampmentChannels[0] = encampmentJobChannelList[0];
+				for (int i=0; i<numEncampmentsNeeded; i++) {
+					// save in list of jobs
+					encampmentJobs[i] = closestEncampments[i];
+
+					// broadcast job opening
+					encampmentChannels[i] = encampmentJobChannelList[i];
+					
+					postJob(EncampmentJobSystem.encampmentChannels[i], encampmentJobs[i], getRobotTypeToBuild());
+				}
 				
-				postJob(EncampmentJobSystem.encampmentChannels[0], encampmentJobs[0], getRobotTypeToBuild());
 			} else {
 				numEncampmentsNeeded = 0;
 			}	
@@ -386,7 +396,7 @@ public class EncampmentJobSystem {
 				channelList[i] = oldChannelsList[arrayIndices[i]];
 			}
 		}
-		int alliedNumEncampments = rc.senseAlliedEncampmentSquares().length;
+//		int alliedNumEncampments = rc.senseAlliedEncampmentSquares().length;
 		// allocate unused channels for new jobs
 		for (int i=0; i<newJobsList.length; i++) {
 			if (arrayIndices[i] == -1 && newJobsList[i] != null) {
@@ -431,11 +441,14 @@ public class EncampmentJobSystem {
 	 */
 	public static void updateJobs() throws GameActionException {
 		
-		System.out.println("numEncampmentsNeeded: " + numEncampmentsNeeded);
-		System.out.println("numUnreachableEncampments: " + numUnreachableEncampments);
+//		System.out.println("numEncampmentsNeeded: " + numEncampmentsNeeded);
+//		System.out.println("numUnreachableEncampments: " + numUnreachableEncampments);
 		
+		if (DataCache.numAlliedEncampments >= hardEncampmentLimit) {
+			numEncampmentsNeeded = 0;
+		}
 //		System.out.println("Before update: " + Clock.getBytecodeNum());
-		MapLocation[] neutralEncampments = rc.senseEncampmentSquares(HQLocation, 10000, Team.NEUTRAL);
+		MapLocation[] neutralEncampments = rc.senseEncampmentSquares(getArtilleryCenter(), rushDistSquared/16, Team.NEUTRAL);
 		if (numEncampmentsNeeded > neutralEncampments.length){
 			numEncampmentsNeeded = neutralEncampments.length;
 		}
@@ -494,6 +507,8 @@ public class EncampmentJobSystem {
 	
 	public static MapLocation[] getPossibleArtilleryLocations() throws GameActionException {
 		MapLocation artCenter = getArtilleryCenter();
+		System.out.println("getArtilleryCenter: " + artCenter);
+		System.out.println("rushDistSquared/16: " + rushDistSquared/16);
 		return rc.senseEncampmentSquares(artCenter, rushDistSquared/16, Team.NEUTRAL);
 	}
 	/**
