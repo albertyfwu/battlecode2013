@@ -1,12 +1,12 @@
 package baseTurgid;
 
+import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.Robot;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
-import battlecode.common.Upgrade;
 
 public class DataCache {
 	
@@ -15,6 +15,8 @@ public class DataCache {
 	
 	public static MapLocation ourHQLocation;
 	public static MapLocation enemyHQLocation;
+	
+	public static Direction[] directionArray = Direction.values();
 	
 	// Round variables - army sizes
 	// Allied robots
@@ -33,9 +35,9 @@ public class DataCache {
 	public static int numNearbyEnemySoldiers;
 	
 	// Round variables - upgrades
-	public static boolean have_fusion;
-	public static boolean have_defusion;
-	public static boolean have_pickaxe;
+//	public static boolean hasFusion;
+//	public static boolean hasDefusion;
+//	public static boolean hasPickaxe;
 	
 	public static void init(BaseRobot myRobot) {
 		robot = myRobot;
@@ -70,11 +72,14 @@ public class DataCache {
 		numNearbyEnemyRobots = nearbyEnemyRobots.length;
 		numEnemyRobots = rc.senseNearbyGameObjects(Robot.class, 10000, rc.getTeam().opponent()).length;
 		
-		if (!have_defusion) {
-			have_defusion = rc.hasUpgrade(Upgrade.DEFUSION);
-		}
-		if (!have_pickaxe) {
-			have_pickaxe = rc.hasUpgrade(Upgrade.PICKAXE);
-		}
+//		if (!hasFusion) {
+//			hasFusion = rc.hasUpgrade(Upgrade.FUSION);
+//		}
+//		if (!hasDefusion) {
+//			hasDefusion = rc.hasUpgrade(Upgrade.DEFUSION);
+//		}
+//		if (!hasPickaxe) {
+//			hasPickaxe = rc.hasUpgrade(Upgrade.PICKAXE);
+//		}
 	}
 }

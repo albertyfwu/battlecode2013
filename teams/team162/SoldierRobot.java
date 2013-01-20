@@ -38,7 +38,15 @@ public class SoldierRobot extends BaseRobot {
 	private int randInt;
 	private MapLocation miningStartLocation;
 	private Direction miningDirConstant;
+	private Direction miningDirConstantOpp;
 	private MapLocation miningDestination;
+	
+	// Line from our hq to enemy hq
+	private double lineA, lineB, lineC, lineDistanceDenom;
+	private int x1, y1, x2, y2;
+	
+	public MapLocation miningOffsetCenter = calculateMiningOffsetCenter();
+	public int miningCenterRadiusSquared = calculateMiningCenterRadiusSquared();
 	
 	public SoldierRobot(RobotController rc) throws GameActionException {
 		super(rc);
@@ -60,9 +68,36 @@ public class SoldierRobot extends BaseRobot {
 		soldierState = SoldierState.FINDING_START_MINE_POSITIONS;
 		
 		// Set up mining
+		x1 = DataCache.ourHQLocation.x;
+		y1 = DataCache.ourHQLocation.y;
+		x2 = DataCache.enemyHQLocation.x;
+		y2 = DataCache.enemyHQLocation.y;
+		
+		lineA = (double)(y2-y1)/(x2-x1);
+		lineB = -1;
+		lineC = y1 - lineA * x1;
+		lineDistanceDenom = Math.sqrt(lineA*lineA + lineB*lineB);
+		
 		dirToEnemyHQ = rc.getLocation().directionTo(DataCache.enemyHQLocation);
-		miningDirConstant = dirToEnemyHQ.rotateLeft().rotateLeft();
-		int offset = 5;
+		if (Util.randInt() % 2 == 0) {
+			miningDirConstant = dirToEnemyHQ.rotateLeft().rotateLeft();
+			miningDirConstantOpp = dirToEnemyHQ.rotateRight().rotateRight();
+		} else {
+			miningDirConstantOpp = dirToEnemyHQ.rotateLeft().rotateLeft();
+			miningDirConstant = dirToEnemyHQ.rotateRight().rotateRight();
+		}
+		int offset;
+		
+		if (Clock.getRoundNum() < 10 * 3) {
+			offset = 2;
+		} else if (Clock.getRoundNum() < 10 * 6) {
+			offset = 3;
+		} else if (Clock.getRoundNum() < 10 * 9) {
+			offset = 4;
+		} else {
+			offset = 4;
+		}
+		
 		int newOffset = 2 * offset + 1;
 		randInt = (Util.randInt() % newOffset);
 		if (randInt < 0) {
@@ -86,6 +121,24 @@ public class SoldierRobot extends BaseRobot {
 		miningDestination = DataCache.enemyHQLocation;
 		
 		rc.setIndicatorString(2, miningStartLocation.toString());
+	}
+	
+	public double distanceToLine(MapLocation location) {
+		int x = location.x;
+		int y = location.y;
+		return Math.abs(lineA * x + lineB * y + lineC) / lineDistanceDenom;
+	}
+	
+	public MapLocation calculateMiningOffsetCenter() {
+		int ourX = DataCache.ourHQLocation.x;
+		int ourY = DataCache.ourHQLocation.y;
+		int enemyX = DataCache.enemyHQLocation.x;
+		int enemyY = DataCache.enemyHQLocation.y;
+		return new MapLocation((4 * ourX + enemyX) / 5, (4 * ourY + enemyY) / 5);
+	}
+	
+	public int calculateMiningCenterRadiusSquared() {
+		return DataCache.ourHQLocation.distanceSquaredTo(DataCache.enemyHQLocation) / (5 * 5);
 	}
 	
 	@Override
@@ -131,7 +184,8 @@ public class SoldierRobot extends BaseRobot {
 				switch (soldierState) {
 				case FINDING_START_MINE_POSITIONS:
 					if (DataCache.numTotalEnemyRobots == 0) {
-						if (rc.getLocation().distanceSquaredTo(miningStartLocation) <= 8) {
+						if (rc.getLocation().distanceSquaredTo(miningStartLocation) <= 0 ||
+								(rc.getLocation().distanceSquaredTo(miningStartLocation) <= 2 && miningStartLocation.equals(DataCache.ourHQLocation))) {
 							soldierState = SoldierState.MINING;
 							// fall through
 						} else {
@@ -144,32 +198,7 @@ public class SoldierRobot extends BaseRobot {
 						// fall through
 					}
 				case MINING:
-					if (DataCache.numTotalEnemyRobots == 0) {
-						if (rc.hasUpgrade(Upgrade.PICKAXE)) {
-							if (rc.isActive()) {
-								int x = rc.getLocation().x;
-								int y = rc.getLocation().y;
-								if ((2 * x + y) % 5 == 0 && rc.senseMine(rc.getLocation()) == null) {
-									rc.layMine();
-								} else {
-									Direction dir = rc.getLocation().directionTo(miningDestination);
-									NavSystem.goDirectionAndDefuse(dir);
-								}
-							}
-						} else {
-							// no upgrade
-							if (rc.isActive()) {
-								if (rc.senseMine(rc.getLocation()) == null) {
-									rc.layMine();
-								} else {
-									Direction dir = rc.getLocation().directionTo(miningDestination);
-									NavSystem.goDirectionAndDefuse(dir);
-								}
-							}
-						}
-					} else {
-						soldierState = SoldierState.FIGHTING;
-					}
+					mineCode();
 					break;
 				case ESCAPE_HQ_MINES:
 					// We need to run away from the mines surrounding our base
@@ -213,7 +242,7 @@ public class SoldierRobot extends BaseRobot {
 						}
 					} else {
 						// Otherwise, just keep fighting
-						microCode();
+						defendMicro();
 					}
 					break;
 				case RALLYING:
@@ -260,6 +289,157 @@ public class SoldierRobot extends BaseRobot {
 	
 	public Platoon getPlatoon() {
 		return this.platoon;
+	}
+	private void defendMicro() throws GameActionException {
+		Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
+		int[] closestEnemyInfo = getClosestEnemy(enemiesList);
+		MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
+		double[][] activites = enemyActivites (currentLocation, rc.getTeam());
+		if (activites[2][0]+activites[1][0]+activites[0][0] == 0){
+			NavSystem.goToLocationAvoidMines(closestEnemyLocation);
+			rc.setIndicatorString(0, "Forward1");
+		}
+		if (!minedUpAndReadyToGo(currentLocation)){
+			if (activites[1][0]+activites[0][0]>2) {
+				NavSystem.goToLocationAvoidMines(DataCache.ourHQLocation);
+				rc.setIndicatorString(0, "Back1");
+			}
+		} else {
+			MapLocation bestLocation=currentLocation;
+			int positionQuality=-1000;
+			MapLocation newPosition;
+			int value;
+			for (int i=8;i!=0;i--){
+				newPosition = currentLocation.add(Direction.values()[i]);
+				value = positionValue(newPosition);
+				if (value>positionQuality) {
+					positionQuality=value;
+					bestLocation=newPosition;
+					break;
+				}
+			}
+			NavSystem.goToLocationAvoidMines(bestLocation);
+			rc.setIndicatorString(0, "Pos");
+		}
+	}
+	
+	private int positionValue(MapLocation location) throws GameActionException{
+		int points=0;
+		double[][] acts = enemyActivites(location, rc.getTeam());
+		if (!minedUpAndReadyToGo(location)){
+			if (acts[1][0]+acts[0][0]>0) {
+				points -= 2;
+			}
+			if (acts[0][1]!=0) {
+				points+=6*acts[0][1];
+			}
+		}
+		return points;
+	}
+	
+	private double[][] enemyActivites (MapLocation square, Team squareTeam) throws GameActionException{
+		double acount1 = 0;
+		double acount2 = 0;
+		double acount3 = 0;
+		double icount1 = 0;
+		double icount2 = 0;
+		double icount3 = 0;
+		Robot[] enemiesInVision = rc.senseNearbyGameObjects(Robot.class, 18, squareTeam.opponent());
+		for (Robot enemy: enemiesInVision) {
+			if (rc.senseRobotInfo(enemy).roundsUntilMovementIdle==0){
+				RobotInfo rinfo = rc.senseRobotInfo(enemy);
+				int dist = rinfo.location.distanceSquaredTo(currentLocation);
+				if (dist<=2) {
+					acount1++;
+				} else if(dist <=8) {
+					acount2++;
+				} else if (dist > 8 && (dist <= 14 || dist == 18)) {
+					acount3++;
+				}
+			} else {
+				RobotInfo rinfo = rc.senseRobotInfo(enemy);
+				int dist = rinfo.location.distanceSquaredTo(currentLocation);
+				if (dist<=2) {
+					icount1++;
+				} else if(dist <=8) {
+					icount2++;
+				} else if (dist > 8 && (dist <= 14 || dist == 18)) {
+					icount3++;
+				}
+			}
+		}
+		
+		double[][] output = {{acount1, icount1}, {acount2, icount2}, {acount3, icount3}};
+		return output;
+	}
+	
+	private boolean minedUpAndReadyToGo(MapLocation location){
+		boolean surrounded = true;
+		for (int i=8;i!=0;i--){
+			surrounded = (rc.getTeam() == rc.senseMine(location.add(Direction.values()[i])));
+			if (surrounded == false){
+				break;
+			}
+		}
+		return surrounded;
+	}
+	
+	public void mineCode() throws GameActionException {
+		if (DataCache.numTotalEnemyRobots == 0) {
+			// Do mining
+			if (rc.hasUpgrade(Upgrade.PICKAXE)) {
+				if (rc.isActive()) {
+					int x = rc.getLocation().x;
+					int y = rc.getLocation().y;
+					if ((2 * x + y) % 5 == 0 && rc.senseMine(rc.getLocation()) == null) {
+						rc.layMine();
+					} else {
+//						if (NavSystem.navMode == NavMode.NEUTRAL) {
+//							NavSystem.setupMiningNav();
+//						} else {
+//							NavSystem.followWaypoints(true, false);
+//						}
+						MapLocation newLocation1 = rc.getLocation().add(miningDirConstant);
+						MapLocation newLocation2 = rc.getLocation().add(miningDirConstantOpp);
+						if (distanceToLine(newLocation1) <= 4 && rc.senseMine(newLocation1) == null) {
+							NavSystem.goDirectionAndDefuse(miningDirConstant);
+						} else if (distanceToLine(newLocation2) <= 4 && rc.senseMine(newLocation2) == null) {
+							NavSystem.goDirectionAndDefuse(miningDirConstantOpp);
+						}
+						
+						Direction dir = rc.getLocation().directionTo(miningDestination);
+						NavSystem.goDirectionAndDefuse(dir);
+					}
+				}
+			} else if (rc.getLocation().distanceSquaredTo(DataCache.ourHQLocation) <= 121) {
+				// no upgrade
+				if (rc.isActive()) {
+					if (rc.senseMine(rc.getLocation()) == null) {
+						rc.layMine();
+					} else {
+//						if (NavSystem.navMode == NavMode.NEUTRAL) {
+//							NavSystem.setupMiningNav();
+//						} else {
+//							NavSystem.followWaypoints(true, false);
+//						}
+						// check to see if mines on left or right are untaken
+						MapLocation newLocation1 = rc.getLocation().add(miningDirConstant);
+						MapLocation newLocation2 = rc.getLocation().add(miningDirConstantOpp);
+						if (distanceToLine(newLocation1) <= 4 && rc.senseMine(newLocation1) == null) {
+							NavSystem.goDirectionAndDefuse(miningDirConstant);
+						} else if (distanceToLine(newLocation2) <= 4 && rc.senseMine(newLocation2) == null) {
+							NavSystem.goDirectionAndDefuse(miningDirConstantOpp);
+						}
+						
+						Direction dir = rc.getLocation().directionTo(miningDestination);
+						NavSystem.goDirectionAndDefuse(dir);
+					}
+				}
+			}
+		} else {
+			// There are enemies, so ditch mining and go defend
+			soldierState = SoldierState.FIGHTING;
+		}
 	}
 	
 	/**

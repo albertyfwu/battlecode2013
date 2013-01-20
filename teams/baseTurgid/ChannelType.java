@@ -28,7 +28,10 @@ public enum ChannelType {
 	HQPOWERLEVEL,
 	
 	// checking if enemy nuke is half done
-	ENEMY_NUKE_HALF_DONE;
+	ENEMY_NUKE_HALF_DONE,
+	
+	// check if our nuke is half done
+	OUR_NUKE_HALF_DONE;
 	
 	public static final int size = ChannelType.values().length;
 	public static final int range = GameConstants.BROADCAST_MAX_CHANNELS / size;

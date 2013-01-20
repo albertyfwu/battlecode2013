@@ -6,4 +6,4 @@ public enum NavMode {
 	BACKDOOR,
 	GETCLOSER,
 	BFSMODE;
-	}
+}

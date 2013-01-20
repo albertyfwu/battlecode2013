@@ -20,6 +20,16 @@ public interface Constants {
 	public static final int MAX_MESSAGE = 0xFFFFFF;
 	
 	/**
+	 * Mining Waypoints
+	 */
+	
+	// How far off we should look each time we need to calculate a new waypoint
+	public static final int MINING_OFFSET_RADIUS = 3;
+		
+	// How large of a circle we should be checking each time we calculate a new waypoint
+	public static final int MINING_CHECK_RADIUS_SQUARED = 4;
+	
+	/**
 	 * All Waypoints
 	 */
 	
