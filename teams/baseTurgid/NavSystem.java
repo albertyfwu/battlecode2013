@@ -15,26 +15,27 @@ public class NavSystem {
 	
 	public static SoldierRobot robot;
 	public static RobotController rc;
+	
 	public static int[] directionOffsets;
 	
+	// For escaping HQ mines
 	public static MapLocation safeLocationAwayFromHQMines;
 	
 	// Used by both smart and backdoor nav
-	public static MapLocation currentWaypoint;
 	public static NavMode navMode = NavMode.NEUTRAL;
+	public static MapLocation currentWaypoint;
 	public static MapLocation destination;
 	
 	// Used to store the waypoints of a backdoor nav computation
 	public static MapLocation[] backdoorWaypoints; // Should always have four MapLocations
 	public static int backdoorWaypointsIndex;
-	
-	public static MapLocation HQLocation;
-	public static MapLocation enemyHQLocation;
 
+	// Map size
 	public static int mapHeight;
 	public static int mapWidth;
 	public static MapLocation mapCenter;
 	
+	// For BFS
 	public static int BFSRound = 0;
 	public static int[] BFSTurns;
 	public static int BFSIdle = 0;
@@ -54,10 +55,7 @@ public class NavSystem {
 		} else {
 			directionOffsets = new int[]{0,-1,1,-2,2};
 		}
-		
-		// Get locations of our HQ and enemy HQ
-		HQLocation = rc.senseHQLocation();
-		enemyHQLocation = rc.senseEnemyHQLocation();
+
 		// Get map dimensions
 		mapHeight = rc.getMapHeight();
 		mapWidth = rc.getMapWidth();
