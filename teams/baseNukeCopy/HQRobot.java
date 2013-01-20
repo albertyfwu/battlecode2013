@@ -19,6 +19,8 @@ public class HQRobot extends BaseRobot {
 	public MapLocation HQLocation;
 	public MapLocation EnemyHQLocation;
 	public ChannelType powerChannel = ChannelType.HQPOWERLEVEL;
+	
+	public int enemyNukeHalfDoneFirstRound; // the first round that we sense the enemy nuke is half done
 
 	public HQRobot(RobotController rc) throws GameActionException {
 		super(rc);
@@ -31,15 +33,13 @@ public class HQRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
-//			if (!rc.hasUpgrade(Upgrade.PICKAXE)) {
-//				rc.researchUpgrade(Upgrade.PICKAXE);
-//			}
 			BroadcastSystem.write(powerChannel, (int) rc.getTeamPower());
 			DataCache.updateRoundVariables();
 			
 			// Check if enemy's nuke is half done
 			if (!enemyNukeHalfDone) {
 				enemyNukeHalfDone = rc.senseEnemyNukeHalfDone();
+				enemyNukeHalfDoneFirstRound = Clock.getRoundNum();
 			}
 			if (enemyNukeHalfDone) {
 				// Broadcast this
@@ -55,15 +55,6 @@ public class HQRobot extends BaseRobot {
 				// Broadcast this
 				BroadcastSystem.write(ChannelType.OUR_NUKE_HALF_DONE, 1);
 			}
-
-//			if (Clock.getRoundNum() < 20) {
-//				BroadcastSystem.write(ChannelType.CHANNEL1, 0);
-//				BroadcastSystem.read(ChannelType.CHANNEL1);
-//				BroadcastSystem.write(ChannelType.CHANNEL1, 0);
-//			} else {
-//				rc.resign();
-//			}
-//			
 			
 			if (Clock.getRoundNum() % Constants.CHANNEL_CYCLE == 0 && Clock.getRoundNum() > 0) {
                 EncampmentJobSystem.updateJobsOnCycle();
@@ -72,7 +63,6 @@ public class HQRobot extends BaseRobot {
 	        }
 			
 			if (rc.isActive()) {
-
 				boolean upgrade = false;
 				if (rc.getTeamPower() < 150) {
 					upgrade = true;

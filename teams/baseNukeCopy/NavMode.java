@@ -5,5 +5,6 @@ public enum NavMode {
 	SMART,
 	BACKDOOR,
 	GETCLOSER,
-	BFSMODE;
+	BFSMODE,
+	MINING;
 	}

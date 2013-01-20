@@ -27,6 +27,16 @@ public interface Constants {
 	public static final int WAYPOINT_SQUARED_DISTANCE_CHECK = 5;
 	
 	/**
+	 * Mining Waypoints
+	 */
+	
+	// How far off we should look each time we need to calculate a new waypoint
+	public static final int MINING_OFFSET_RADIUS = 2;
+		
+	// How large of a circle we should be checking each time we calculate a new waypoint
+	public static final int MINING_CHECK_RADIUS = 2;
+	
+	/**
 	 * Smart Waypoints
 	 */
 	

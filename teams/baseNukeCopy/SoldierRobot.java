@@ -37,6 +37,9 @@ public class SoldierRobot extends BaseRobot {
 	private Direction miningDirConstant;
 	private MapLocation miningDestination;
 	
+	public MapLocation miningOffsetCenter = calculateMiningOffsetCenter();
+	public int miningCenterRadiusSquared = calculateMiningCenterRadiusSquared();
+	
 	private MapLocation encampmentLocation = null;
 	private MapLocation[] encampmentSquares;
 	
@@ -98,6 +101,18 @@ public class SoldierRobot extends BaseRobot {
 		}
 	}
 	
+	public MapLocation calculateMiningOffsetCenter() {
+		int ourX = DataCache.ourHQLocation.x;
+		int ourY = DataCache.ourHQLocation.y;
+		int enemyX = DataCache.enemyHQLocation.x;
+		int enemyY = DataCache.enemyHQLocation.y;
+		return new MapLocation((4 * ourX + enemyX) / 5, (4 * ourY + enemyY) / 5);
+	}
+	
+	public int calculateMiningCenterRadiusSquared() {
+		return DataCache.ourHQLocation.distanceSquaredTo(DataCache.enemyHQLocation) / (5 * 5);
+	}
+	
 	@Override
 	public void run() {
 		try {
@@ -106,7 +121,7 @@ public class SoldierRobot extends BaseRobot {
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
 			
 			if (encampmentLocation == null) {
-				rc.setIndicatorString(0, "hello");
+//				rc.setIndicatorString(1, "hello");
 				
 				// Check if enemy nuke is half done
 				if (!enemyNukeHalfDone) {
@@ -142,6 +157,7 @@ public class SoldierRobot extends BaseRobot {
 				
 				switch (soldierState) {
 				case FINDING_START_MINE_POSITIONS:
+					rc.setIndicatorString(0, miningStartLocation + " " + Integer.toString(rc.getLocation().distanceSquaredTo(miningStartLocation)));
 					if (DataCache.numTotalEnemyRobots == 0) {
 						if (rc.getLocation().distanceSquaredTo(miningStartLocation) <= 8) {
 							soldierState = SoldierState.MINING;
@@ -157,6 +173,7 @@ public class SoldierRobot extends BaseRobot {
 					}
 				case MINING:
 					if (DataCache.numTotalEnemyRobots == 0) {
+						// Do mining
 						if (rc.hasUpgrade(Upgrade.PICKAXE)) {
 							if (rc.isActive()) {
 								int x = rc.getLocation().x;
@@ -164,8 +181,13 @@ public class SoldierRobot extends BaseRobot {
 								if ((2 * x + y) % 5 == 0 && rc.senseMine(rc.getLocation()) == null) {
 									rc.layMine();
 								} else {
-									Direction dir = rc.getLocation().directionTo(miningDestination);
-									NavSystem.goDirectionAndDefuse(dir);
+									if (NavSystem.navMode == NavMode.NEUTRAL) {
+										NavSystem.setupMiningNav();
+									} else {
+										NavSystem.followWaypoints(true, false);
+									}
+//									Direction dir = rc.getLocation().directionTo(miningDestination);
+//									NavSystem.goDirectionAndDefuse(dir);
 								}
 							}
 						} else {
@@ -174,12 +196,18 @@ public class SoldierRobot extends BaseRobot {
 								if (rc.senseMine(rc.getLocation()) == null) {
 									rc.layMine();
 								} else {
-									Direction dir = rc.getLocation().directionTo(miningDestination);
-									NavSystem.goDirectionAndDefuse(dir);
+									if (NavSystem.navMode == NavMode.NEUTRAL) {
+										NavSystem.setupMiningNav();
+									} else {
+										NavSystem.followWaypoints(true, false);
+									}
+//									Direction dir = rc.getLocation().directionTo(miningDestination);
+//									NavSystem.goDirectionAndDefuse(dir);
 								}
 							}
 						}
 					} else {
+						// There are enemies, so ditch mining and go defend
 						soldierState = SoldierState.FIGHTING;
 					}
 					break;
@@ -260,20 +288,23 @@ public class SoldierRobot extends BaseRobot {
 					break;
 				}
 			} else {
-				rc.setIndicatorString(0, "bye");
+//				rc.setIndicatorString(1, "bye");
 				// This soldier has an encampment job, so it should go do that job
 //				captureCode();
 				if (rc.getLocation().distanceSquaredTo(encampmentLocation) == 0) {
+					// If we're on the encampment square, then just build the encampment
 					if (rc.isActive()) {
 						rc.captureEncampment(RobotType.ARTILLERY);
 					}
 				} else if (rc.getLocation().distanceSquaredTo(encampmentLocation) <= 14) {
+					// If we're within vision range, just sense the object at the encampmentLocation
 					GameObject gameObject = rc.senseObjectAtLocation(encampmentLocation);
 					if (gameObject != null) {
 						Robot robot = (Robot) gameObject;
 						RobotInfo robotInfo = rc.senseRobotInfo(robot);
 						int rounds = robotInfo.roundsUntilMovementIdle;
-						rc.setIndicatorString(2, Integer.toString(rounds));
+						
+//						rc.setIndicatorString(2, Integer.toString(rounds));
 						
 						if (rounds > 10 || robotInfo.type == RobotType.ARTILLERY) {
 							// that robot's already capturing the encampment
