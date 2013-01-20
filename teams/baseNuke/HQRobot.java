@@ -72,8 +72,11 @@ public class HQRobot extends BaseRobot {
 	        }
 			
 			if (rc.isActive()) {
-
 				boolean upgrade = false;
+//				if (!rc.hasUpgrade(Upgrade.PICKAXE)) {
+//					upgrade = true;
+//					rc.researchUpgrade(Upgrade.PICKAXE);
+//				}
 //				if (!rc.hasUpgrade(Upgrade.DEFUSION) && enemyNukeHalfDone && DataCache.numAlliedSoldiers > 5) {
 //					upgrade = true;
 //					rc.researchUpgrade(Upgrade.DEFUSION);
