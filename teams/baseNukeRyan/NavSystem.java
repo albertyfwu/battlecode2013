@@ -1,4 +1,4 @@
-package baseNuke;
+package baseNukeRyan;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -239,9 +239,6 @@ public class NavSystem {
 			case BACKDOOR:
 				getBackdoorWaypoint();
 				break;
-			case MINING:
-				getMiningWaypoint();
-				break;
 			default:
 				break;
 			}
@@ -460,41 +457,6 @@ public class NavSystem {
 		navMode = NavMode.SMART;
 		destination = endLocation;
 		getSmartWaypoint();
-	}
-	
-	public static void setupMiningNav() throws GameActionException {
-		navMode = NavMode.MINING;
-		getMiningWaypoint();
-	}
-	
-	public static void getMiningWaypoint() throws GameActionException {
-		MapLocation currentLocation = rc.getLocation();
-		// pick the best place to make mines
-		int bestScore = Integer.MAX_VALUE;
-		MapLocation bestLocation = null;
-		String s = "";
-		for (int i = 0; i < 8; i++) {
-			Direction dir = Direction.values()[i];
-			MapLocation iterLocation = currentLocation.add(dir, Constants.MINING_OFFSET_RADIUS);
-			if (iterLocation.x >= 0 && iterLocation.x < DataCache.mapWidth
-					&& iterLocation.y >= 0 && iterLocation.y < DataCache.mapHeight) {
-				int currentScore = miningScore(iterLocation, Constants.MINING_CHECK_RADIUS);
-				s += Integer.toString(i) + ": " + Integer.toString(currentScore) + ", ";
-				if (currentScore < bestScore) {
-					bestScore = currentScore;
-					bestLocation = iterLocation;
-				}
-			}
-		}
-		rc.setIndicatorString(2, s);
-		currentWaypoint = bestLocation;
-		destination = bestLocation;
-	}
-	
-	public static int miningScore(MapLocation location, int radius) {
-		int numAlliedMines = rc.senseMineLocations(location, radius * radius, rc.getTeam()).length;
-		// Mines closer to HQ should be preferred
-		return numAlliedMines + (int)Math.sqrt(location.distanceSquaredTo(DataCache.ourHQLocation));
 	}
 	
 	/**

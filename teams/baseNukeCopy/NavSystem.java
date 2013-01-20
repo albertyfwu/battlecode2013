@@ -241,6 +241,7 @@ public class NavSystem {
 				break;
 			case MINING:
 				getMiningWaypoint();
+				break;
 			default:
 				break;
 			}

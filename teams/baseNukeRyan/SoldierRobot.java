@@ -1,5 +1,6 @@
-package baseNuke;
+package baseNukeRyan;
 
+import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
@@ -38,9 +39,6 @@ public class SoldierRobot extends BaseRobot {
 	private MapLocation miningStartLocation;
 	private Direction miningDirConstant;
 	private MapLocation miningDestination;
-	
-	public MapLocation miningOffsetCenter = calculateMiningOffsetCenter();
-	public int miningCenterRadiusSquared = calculateMiningCenterRadiusSquared();
 	
 	public SoldierRobot(RobotController rc) throws GameActionException {
 		super(rc);
@@ -88,18 +86,6 @@ public class SoldierRobot extends BaseRobot {
 		miningDestination = DataCache.enemyHQLocation;
 		
 		rc.setIndicatorString(2, miningStartLocation.toString());
-	}
-	
-	public MapLocation calculateMiningOffsetCenter() {
-		int ourX = DataCache.ourHQLocation.x;
-		int ourY = DataCache.ourHQLocation.y;
-		int enemyX = DataCache.enemyHQLocation.x;
-		int enemyY = DataCache.enemyHQLocation.y;
-		return new MapLocation((4 * ourX + enemyX) / 5, (4 * ourY + enemyY) / 5);
-	}
-	
-	public int calculateMiningCenterRadiusSquared() {
-		return DataCache.ourHQLocation.distanceSquaredTo(DataCache.enemyHQLocation) / (5 * 5);
 	}
 	
 	@Override
@@ -159,7 +145,6 @@ public class SoldierRobot extends BaseRobot {
 					}
 				case MINING:
 					if (DataCache.numTotalEnemyRobots == 0) {
-						// Do mining
 						if (rc.hasUpgrade(Upgrade.PICKAXE)) {
 							if (rc.isActive()) {
 								int x = rc.getLocation().x;
@@ -167,13 +152,8 @@ public class SoldierRobot extends BaseRobot {
 								if ((2 * x + y) % 5 == 0 && rc.senseMine(rc.getLocation()) == null) {
 									rc.layMine();
 								} else {
-									if (NavSystem.navMode == NavMode.NEUTRAL) {
-										NavSystem.setupMiningNav();
-									} else {
-										NavSystem.followWaypoints(true, false);
-									}
-//									Direction dir = rc.getLocation().directionTo(miningDestination);
-//									NavSystem.goDirectionAndDefuse(dir);
+									Direction dir = rc.getLocation().directionTo(miningDestination);
+									NavSystem.goDirectionAndDefuse(dir);
 								}
 							}
 						} else {
@@ -182,18 +162,12 @@ public class SoldierRobot extends BaseRobot {
 								if (rc.senseMine(rc.getLocation()) == null) {
 									rc.layMine();
 								} else {
-									if (NavSystem.navMode == NavMode.NEUTRAL) {
-										NavSystem.setupMiningNav();
-									} else {
-										NavSystem.followWaypoints(true, false);
-									}
-//									Direction dir = rc.getLocation().directionTo(miningDestination);
-//									NavSystem.goDirectionAndDefuse(dir);
+									Direction dir = rc.getLocation().directionTo(miningDestination);
+									NavSystem.goDirectionAndDefuse(dir);
 								}
 							}
 						}
 					} else {
-						// There are enemies, so ditch mining and go defend
 						soldierState = SoldierState.FIGHTING;
 					}
 					break;
