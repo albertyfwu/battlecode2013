@@ -19,6 +19,8 @@ public class HQRobot extends BaseRobot {
 	public MapLocation HQLocation;
 	public MapLocation EnemyHQLocation;
 	public ChannelType powerChannel = ChannelType.HQPOWERLEVEL;
+	
+	public boolean allInMode = false;
 
 	public HQRobot(RobotController rc) throws GameActionException {
 		super(rc);
@@ -37,12 +39,17 @@ public class HQRobot extends BaseRobot {
 			BroadcastSystem.write(powerChannel, (int) rc.getTeamPower());
 			DataCache.updateRoundVariables();
 			
+			rc.setIndicatorString(0, Integer.toString(rc.checkResearchProgress(Upgrade.NUKE)));
+			
 			// Check if enemy's nuke is half done
 			if (!enemyNukeHalfDone) {
 				enemyNukeHalfDone = rc.senseEnemyNukeHalfDone();
 			}
 			if (enemyNukeHalfDone) {
 				// Broadcast this
+				if (!ourNukeHalfDone) {
+					allInMode = true;
+				}
 				BroadcastSystem.write(ChannelType.ENEMY_NUKE_HALF_DONE, 1);
 			}
 			// Check if our nuke is half done
@@ -72,15 +79,32 @@ public class HQRobot extends BaseRobot {
 	        }
 			
 			if (rc.isActive()) {
-
 				boolean upgrade = false;
-//				if (!rc.hasUpgrade(Upgrade.DEFUSION) && enemyNukeHalfDone && DataCache.numAlliedSoldiers > 5) {
+				if (allInMode) {
+					if (!rc.hasUpgrade(Upgrade.DEFUSION)) {
+						upgrade = true;
+						rc.researchUpgrade(Upgrade.DEFUSION);
+					}
+					
+					if (!upgrade) {
+
+						// Spawn a soldier
+						Direction desiredDir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
+						Direction dir = getSpawnDirection(rc, desiredDir);
+						if (dir != null && rc.isActive()) {
+							EncampmentJobSystem.updateJobs();
+							rc.spawn(dir);
+						}
+					}
+				} else {
+//					if (!rc.hasUpgrade(Upgrade.DEFUSION) && enemyNukeHalfDone && DataCache.numAlliedSoldiers > 5) {
 //					upgrade = true;
 //					rc.researchUpgrade(Upgrade.DEFUSION);
-				if (rc.getTeamPower() < 150) {
+				if (rc.getTeamPower() < 150 || (DataCache.numNearbyEnemySoldiers == 0 && rc.checkResearchProgress(Upgrade.NUKE) > 375)) {
 					upgrade = true;
 					rc.researchUpgrade(Upgrade.NUKE);
 				}
+				
 				if (!upgrade) {
 
 					// Spawn a soldier
@@ -91,6 +115,10 @@ public class HQRobot extends BaseRobot {
 						rc.spawn(dir);
 					}
 				}
+
+				}
+				
+				
 //				if (Clock.getRoundNum() < 5) {
 //					Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
 //					rc.spawn(dir);

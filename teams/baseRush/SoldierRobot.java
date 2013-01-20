@@ -311,7 +311,7 @@ public class SoldierRobot extends BaseRobot {
 	}
 	
 	public void aggressiveMicroCode() throws GameActionException {
-		Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
+		Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 33, rc.getTeam().opponent());
 		int[] closestEnemyInfo = getClosestEnemy(enemiesList);
 		MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
 		

@@ -196,7 +196,13 @@ public class SoldierRobot extends BaseRobot {
 						soldierState = SoldierState.RALLYING;
 					}
 				case ALL_IN:
-					microCode();
+					if (DataCache.numTotalEnemyRobots > 0) {
+						System.out.println("aggro");
+						aggressiveMicroCode();
+					} else {
+						System.out.println("push");
+						pushCode();
+					}
 					break;
 				case PUSHING: 
 					if (DataCache.numTotalEnemyRobots > 0) {
@@ -402,6 +408,18 @@ public class SoldierRobot extends BaseRobot {
 			}
 		}
 	}
+	
+	public void aggressiveMicroCode() throws GameActionException {
+		Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 50, rc.getTeam().opponent());
+		int[] closestEnemyInfo = getClosestEnemy(enemiesList);
+		MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
+		
+		if (DataCache.numNearbyAlliedSoldiers > 1.5 * DataCache.numNearbyEnemyRobots) {
+			NavSystem.goToLocation(closestEnemyLocation);
+		} else {
+			microCode();
+		}
+	}
 
 
 
@@ -499,11 +517,18 @@ public class SoldierRobot extends BaseRobot {
 	}
 	
 	private void pushCode() throws GameActionException {		
-		if (NavSystem.navMode != NavMode.SMART || NavSystem.destination != EnemyHQLocation) {
-			NavSystem.setupSmartNav(EnemyHQLocation);
-		} else {
-			NavSystem.followWaypoints(true, true);
+		if (NavSystem.navMode != NavMode.GETCLOSER || NavSystem.destination != EnemyHQLocation) {
+			NavSystem.setupGetCloser(EnemyHQLocation);
 		}
+		
+		NavSystem.moveCloserFavorNoMines();
+//		if (NavSystem.navMode != NavMode.SMART || NavSystem.destination != EnemyHQLocation) {
+//			System.out.println("smartnav!");
+//			NavSystem.setupSmartNav(EnemyHQLocation);
+//		} else {
+//			NavSystem.followWaypoints(true, true);
+//			System.out.println("waypoints!");
+//		}
 	}
 	/** code to be used by capturers
 	 * 
