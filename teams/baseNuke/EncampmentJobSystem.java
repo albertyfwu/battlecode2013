@@ -64,6 +64,8 @@ public class EncampmentJobSystem {
 	public static int supCount;
 	public static int genCount;
 	
+	public static int hardEncampmentLimit;
+	
 	/**
 	 * Initializes BroadcastSystem by setting rc
 	 * @param myRobot
@@ -82,6 +84,8 @@ public class EncampmentJobSystem {
 		rushDistSquared = hqloc.distanceSquaredTo(enemyloc);
 		supCount = 0;
 		genCount = 0;
+		
+		hardEncampmentLimit = 4;
 		
 		numEncampmentsNeeded = 0;
 		
@@ -434,8 +438,11 @@ public class EncampmentJobSystem {
 		System.out.println("numEncampmentsNeeded: " + numEncampmentsNeeded);
 		System.out.println("numUnreachableEncampments: " + numUnreachableEncampments);
 		
+		if (DataCache.numAlliedEncampments >= hardEncampmentLimit) {
+			numEncampmentsNeeded = 0;
+		}
 //		System.out.println("Before update: " + Clock.getBytecodeNum());
-		MapLocation[] neutralEncampments = rc.senseEncampmentSquares(HQLocation, 10000, Team.NEUTRAL);
+		MapLocation[] neutralEncampments = rc.senseEncampmentSquares(getArtilleryCenter(), rushDistSquared/16, Team.NEUTRAL);
 		if (numEncampmentsNeeded > neutralEncampments.length){
 			numEncampmentsNeeded = neutralEncampments.length;
 		}
@@ -494,6 +501,8 @@ public class EncampmentJobSystem {
 	
 	public static MapLocation[] getPossibleArtilleryLocations() throws GameActionException {
 		MapLocation artCenter = getArtilleryCenter();
+		System.out.println("getArtilleryCenter: " + artCenter);
+		System.out.println("rushDistSquared/16: " + rushDistSquared/16);
 		return rc.senseEncampmentSquares(artCenter, rushDistSquared/16, Team.NEUTRAL);
 	}
 	/**

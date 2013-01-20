@@ -82,23 +82,23 @@ public class EncampmentJobSystem {
 		genCount = 0;
 		
 		MapLocation[] allEncampments = rc.senseEncampmentSquares(hqloc, 10000, Team.NEUTRAL);
-		if (allEncampments.length == 0) {
-			numEncampmentsNeeded = 0;
-		} else {
-			MapLocation[] nearbyEncampments = rc.senseEncampmentSquares(hqloc, 16, Team.NEUTRAL);
-			for (MapLocation encLoc: nearbyEncampments) {
-				if (encLoc.x == hqloc.x){ 
-					unreachableEncampments[numUnreachableEncampments] = encLoc;
-					numUnreachableEncampments++;
-				}
+		MapLocation[] nearbyEncampments = rc.senseEncampmentSquares(hqloc, 16, Team.NEUTRAL);
+		for (MapLocation encLoc: nearbyEncampments) {
+			if (encLoc.x == hqloc.x){ 
+				unreachableEncampments[numUnreachableEncampments] = encLoc;
+				numUnreachableEncampments++;
 			}
-			if (allEncampments.length - numUnreachableEncampments > 0) {
-				numEncampmentsNeeded = 1;
-			} else {
-				numEncampmentsNeeded = 0;
-			}	
 		}
-
+		if (allEncampments.length - numUnreachableEncampments  == 0) {
+			numEncampmentsNeeded = 0;
+		} else if (allEncampments.length - numUnreachableEncampments < 10) {
+			numEncampmentsNeeded = 1;
+		} else if (allEncampments.length - numUnreachableEncampments< 30) {
+			numEncampmentsNeeded = 2;
+		} else {
+			numEncampmentsNeeded = 3;
+		}
+		
 		MapLocation[] closestEncampments = getClosestMapLocations(HQLocation, allEncampments, numEncampmentsNeeded);
 
 		for (int i=0; i<numEncampmentsNeeded; i++) {
