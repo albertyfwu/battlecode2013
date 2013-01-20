@@ -111,7 +111,7 @@ public class SoldierRobot extends BaseRobot {
 						soldierState = SoldierState.RALLYING;
 					}
 				case ALL_IN:
-					microCode();
+					aggressiveMicroCode();
 					break;
 					
 				case PUSHING: 
@@ -394,6 +394,18 @@ public class SoldierRobot extends BaseRobot {
 		return output;
 	}
 
+	public void aggressiveMicroCode() throws GameActionException {
+		Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
+		int[] closestEnemyInfo = getClosestEnemy(enemiesList);
+		MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
+		
+		if (DataCache.numNearbyAlliedSoldiers > 1.5 * DataCache.numNearbyEnemyRobots) {
+			NavSystem.goToLocation(closestEnemyLocation);
+		} else {
+			microCode();
+		}
+	}
+	
 	public int[] getClosestEnemy(Robot[] enemyRobots) throws GameActionException {
 		int closestDist = rc.getLocation().distanceSquaredTo(rc.senseEnemyHQLocation());
 		MapLocation closestEnemy=rc.senseEnemyHQLocation(); // default to HQ

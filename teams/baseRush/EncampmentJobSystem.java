@@ -82,7 +82,7 @@ public class EncampmentJobSystem {
 		genCount = 0;
 		
 		MapLocation[] allEncampments = rc.senseEncampmentSquares(hqloc, 10000, Team.NEUTRAL);
-		MapLocation[] nearbyEncampments = rc.senseEncampmentSquares(hqloc, 16, Team.NEUTRAL);
+		MapLocation[] nearbyEncampments = rc.senseEncampmentSquares(hqloc, 9, Team.NEUTRAL);
 		for (MapLocation encLoc: nearbyEncampments) {
 			if (encLoc.x == hqloc.x){ 
 				unreachableEncampments[numUnreachableEncampments] = encLoc;

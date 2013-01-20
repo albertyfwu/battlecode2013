@@ -79,7 +79,7 @@ public class SoldierRobot extends BaseRobot {
 					if (mineTeam != null && mineTeam != rc.getTeam()) {
 						soldierState = SoldierState.ESCAPE_HQ_MINES;
 					} else {
-						soldierState = SoldierState.PUSHING;
+						soldierState = SoldierState.RALLYING;
 					}
 				}
 				
@@ -132,7 +132,25 @@ public class SoldierRobot extends BaseRobot {
 						microCode();
 					}
 					break;
-				
+				case RALLYING:
+//					int hqPowerLevel = 10000;
+//					Message message = BroadcastSystem.read(powerChannel);
+//					if (message.isValid) {
+//						hqPowerLevel = message.body;
+//					} else {
+//						hqPowerLevel = (int) rc.getTeamPower();
+//					}
+
+
+					// If there are enemies nearby, trigger FIGHTING SoldierState
+					if (DataCache.numTotalEnemyRobots > 0) {
+						soldierState = SoldierState.FIGHTING;
+					} else if (DataCache.numAlliedSoldiers > 25 ) {
+						soldierState = SoldierState.PUSHING;
+					} else {
+						NavSystem.goToLocation(rallyPoint);
+					}
+					break;
 				default:
 					break;
 				}
@@ -297,8 +315,11 @@ public class SoldierRobot extends BaseRobot {
 		int[] closestEnemyInfo = getClosestEnemy(enemiesList);
 		MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
 		
-		
-		NavSystem.goToLocation(closestEnemyLocation);
+		if (DataCache.numNearbyAlliedSoldiers > 1.5 * DataCache.numNearbyEnemyRobots) {
+			NavSystem.goToLocation(closestEnemyLocation);
+		} else {
+			microCode();
+		}
 	}
 
 
