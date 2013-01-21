@@ -272,8 +272,11 @@ public class SoldierRobot extends BaseRobot {
 						}
 					} else {
 						// Otherwise, just keep fighting
-						defendMicro();
-//						microCode();
+						if (strategy == Strategy.NUKE) {
+							defendMicro();
+						} else {
+							microCode();
+						}
 					}
 					break;
 				case RALLYING:
