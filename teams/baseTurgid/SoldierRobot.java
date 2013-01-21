@@ -204,8 +204,7 @@ public class SoldierRobot extends BaseRobot {
 					} else {
 						mineCode();
 					}
-					break;					
-					
+					break;
 				// FOR ESCAPING MINES IF THEY SURROUND THE HQ
 				case ESCAPE_HQ_MINES:
 					// We need to run away from the mines surrounding our base
@@ -258,8 +257,8 @@ public class SoldierRobot extends BaseRobot {
 						}
 					} else {
 						// Otherwise, just keep fighting
-//						defendMicro();
-						microCode();
+						defendMicro();
+//						microCode();
 					}
 					break;
 				case RALLYING:
