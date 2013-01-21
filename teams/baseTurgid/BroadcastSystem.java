@@ -145,7 +145,7 @@ public class BroadcastSystem {
 		int rangeStart = channelType.ordinal() * ChannelType.range;
 		constant += 1;
 		for (int i = 0; i < Constants.REDUNDANT_CHANNELS; i++) {
-			int offset = ((Integer.toString(((constant << 4 + 17 * channelType.ordinal()) << 4 + i)).hashCode())+1) % ChannelType.range;
+			int offset = ((Integer.toString(((constant << 4 + 17 * channelType.ordinal()) << 4 + i)).hashCode())+rc.getTeam().ordinal()) % ChannelType.range;
 			// ensure that the offset is nonnegative
 			if (offset < 0) {
 				offset += ChannelType.range;
