@@ -327,13 +327,13 @@ public class SoldierRobot extends BaseRobot {
 		double[][] activites = enemyActivites (currentLocation, rc.getTeam());
 		if (activites[2][0]+activites[1][0]+activites[0][0] == 0){
 			NavSystem.goToLocationAvoidMines(closestEnemyLocation);
-			rc.setIndicatorString(0, "Forward1");
+//			rc.setIndicatorString(0, "Forward1");
 		}
 		if (!minedUpAndReadyToGo(currentLocation)){
 			if (activites[1][0]+activites[0][0]>2) {
 //			if (activites[1][0]>1 || activites[0][0] == 0) {
 				NavSystem.goToLocationAvoidMines(DataCache.ourHQLocation);
-				rc.setIndicatorString(0, "Back1");
+//				rc.setIndicatorString(0, "Back1");
 			}
 		} else {
 			MapLocation bestLocation = currentLocation;
@@ -350,7 +350,7 @@ public class SoldierRobot extends BaseRobot {
 				}
 			}
 			NavSystem.goToLocationAvoidMines(bestLocation);
-			rc.setIndicatorString(0, "Pos");
+//			rc.setIndicatorString(0, "Pos");
 		}
 	}
 	
