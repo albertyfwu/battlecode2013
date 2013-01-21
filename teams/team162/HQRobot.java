@@ -17,7 +17,7 @@ public class HQRobot extends BaseRobot {
 
 	public HQRobot(RobotController rc) throws GameActionException {
 		super(rc);
-		strategy = Strategy.NUKE; // default to NUKE strategy
+		strategy = Strategy.ECON; // default to NUKE strategy
 		
 //		if (rc.getTeam() == Team.A) {
 //			strategy = Strategy.ECON;
@@ -31,6 +31,8 @@ public class HQRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
+//			rc.setIndicatorString(0, Integer.toString(rc.checkResearchProgress(Upgrade.NUKE)));
+			
 			DataCache.updateRoundVariables();
 			BroadcastSystem.write(powerChannel, (int) rc.getTeamPower()); // broadcast the team power
 			BroadcastSystem.write(strategyChannel, strategy.ordinal()); // broadcast the strategy
@@ -117,7 +119,6 @@ public class HQRobot extends BaseRobot {
 		Direction desiredDir = rc.getLocation().directionTo(DataCache.enemyHQLocation);
 		Direction dir = getSpawnDirection(desiredDir);
 		if (dir != null) {
-			EncampmentJobSystem.updateJobs();
 			rc.spawn(dir);
 		}
 	}
