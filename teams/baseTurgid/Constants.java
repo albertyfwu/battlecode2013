@@ -64,6 +64,13 @@ public interface Constants {
 	/**
 	 * Mining
 	 */
+	
+	// How far to mine from HQ at the beginning before stopping
+	public static final int MAXIMUM_MINING_DISTANCE_SQUARED_FROM_HQ = 121;
+	
+	// TODO: dynamically adjust this? how close are the encampments?
+	// Width of the mining pattern at beginning
+	public static final int MINING_WIDTH = 4;
 
 	// Radius of the initial mining circle
 	public static final int INITIAL_MINING_RADIUS = 2;

@@ -17,7 +17,7 @@ public class HQRobot extends BaseRobot {
 
 	public HQRobot(RobotController rc) throws GameActionException {
 		super(rc);
-		strategy = Strategy.ECON; // default to NUKE strategy
+		strategy = Strategy.NUKE; // default to NUKE strategy
 		
 //		if (rc.getTeam() == Team.A) {
 //			strategy = Strategy.ECON;
@@ -98,7 +98,8 @@ public class HQRobot extends BaseRobot {
 							spawnSoldier();
 						}
 					} else {
-						if (rc.getTeamPower() < 150 || (DataCache.numNearbyEnemySoldiers == 0 && rc.checkResearchProgress(Upgrade.NUKE) > 380)) {
+						if (rc.getTeamPower() < 150 ||
+								(DataCache.numNearbyEnemySoldiers == 0 && rc.checkResearchProgress(Upgrade.NUKE) > 385 && rc.getEnergon() > 475)) {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.NUKE);
 						}
