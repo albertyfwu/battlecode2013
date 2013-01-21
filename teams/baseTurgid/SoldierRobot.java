@@ -432,10 +432,12 @@ public class SoldierRobot extends BaseRobot {
 //						}
 						MapLocation newLocation1 = rc.getLocation().add(miningDirConstant);
 						MapLocation newLocation2 = rc.getLocation().add(miningDirConstantOpp);
-						if (distanceToLine(newLocation1) <= 4 && rc.senseMine(newLocation1) == null) {
+						if (distanceToLine(newLocation1) <= 4 && rc.senseMine(newLocation1) == null && rc.senseEncampmentSquares(newLocation1, 0, null).length == 0) {
 							NavSystem.goDirectionAndDefuse(miningDirConstant);
-						} else if (distanceToLine(newLocation2) <= 4 && rc.senseMine(newLocation2) == null) {
+							return;
+						} else if (distanceToLine(newLocation2) <= 4 && rc.senseMine(newLocation2) == null && rc.senseEncampmentSquares(newLocation2, 0, null).length == 0) {
 							NavSystem.goDirectionAndDefuse(miningDirConstantOpp);
+							return;
 						}
 						
 						Direction dir = rc.getLocation().directionTo(miningDestination);
@@ -456,10 +458,12 @@ public class SoldierRobot extends BaseRobot {
 						// check to see if mines on left or right are untaken
 						MapLocation newLocation1 = rc.getLocation().add(miningDirConstant);
 						MapLocation newLocation2 = rc.getLocation().add(miningDirConstantOpp);
-						if (distanceToLine(newLocation1) <= 4 && rc.senseMine(newLocation1) == null) {
+						if (distanceToLine(newLocation1) <= 4 && rc.senseMine(newLocation1) == null && rc.senseEncampmentSquares(newLocation1, 0, null).length == 0) {
 							NavSystem.goDirectionAndDefuse(miningDirConstant);
-						} else if (distanceToLine(newLocation2) <= 4 && rc.senseMine(newLocation2) == null) {
+							return;
+						} else if (distanceToLine(newLocation2) <= 4 && rc.senseMine(newLocation2) == null && rc.senseEncampmentSquares(newLocation2, 0, null).length == 0) {
 							NavSystem.goDirectionAndDefuse(miningDirConstantOpp);
+							return;
 						}
 						
 						Direction dir = rc.getLocation().directionTo(miningDestination);
