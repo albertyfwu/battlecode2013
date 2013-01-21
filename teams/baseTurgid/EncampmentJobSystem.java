@@ -52,6 +52,8 @@ public class EncampmentJobSystem {
 	public static int rushDistSquared;
 	public static int artCount;
 	
+	public static int hardEncampmentLimit;
+	
 	/**
 	 * Initializes BroadcastSystem by setting rc
 	 * @param myRobot
@@ -69,6 +71,11 @@ public class EncampmentJobSystem {
 		supCount = 0;
 		genCount = 0;
 		artCount = 0;
+		if (robot.strategy == Strategy.NUKE) {
+			hardEncampmentLimit = 3;
+		} else {
+			hardEncampmentLimit = Integer.MAX_VALUE;
+		}
 		
 		MapLocation[] allEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, Team.NEUTRAL);
 		
@@ -463,6 +470,9 @@ public class EncampmentJobSystem {
 //		System.out.println("numEncampmentsNeeded: " + numEncampmentsNeeded);
 //		System.out.println("numUnreachableEncampments: " + numUnreachableEncampments);
 		
+		if (DataCache.numAlliedEncampments >= hardEncampmentLimit) {
+			numEncampmentsNeeded = 0;
+		}
 //		System.out.println("Before update: " + Clock.getBytecodeNum());
 		MapLocation[] neutralEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, Team.NEUTRAL);
 		if (numEncampmentsNeeded > neutralEncampments.length){
