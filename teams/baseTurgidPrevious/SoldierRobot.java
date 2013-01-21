@@ -1,4 +1,4 @@
-package baseTurgid;
+package baseTurgidPrevious;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;

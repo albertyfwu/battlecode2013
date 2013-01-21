@@ -498,6 +498,7 @@ public class EncampmentJobSystem {
 	public static MapLocation[] getClosestMapLocations(MapLocation origin, MapLocation[] allLoc, int k) {
 		MapLocation[] currentTopLocations = new MapLocation[k];
 		
+		System.out.println("before: " + Clock.getBytecodeNum());
 		// make arrays of 0s and 1s corresponding to allLoc where 1 if unreachable
 		int[] unreachableCheckArray = new int[allLoc.length];
 		for (int j=0; j<numUnreachableEncampments; j++) {
@@ -530,6 +531,7 @@ public class EncampmentJobSystem {
 			currentTopLocations[j] = runningLoc;
 			allLocIndex[runningIndex] = 1;
 		}
+		System.out.println("after: " + Clock.getBytecodeNum());
 
 		return currentTopLocations;
 	}

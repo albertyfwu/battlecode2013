@@ -1,4 +1,4 @@
-package baseTurgid;
+package baseTurgidPrevious;
 
 public enum Strategy {
 	NUKE,

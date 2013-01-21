@@ -1,4 +1,4 @@
-package baseTurgid;
+package team162;
 
 public enum Strategy {
 	NUKE,
