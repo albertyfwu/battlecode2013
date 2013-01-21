@@ -12,8 +12,6 @@ import battlecode.common.Team;
 
 public class SoldierRobot extends BaseRobot {
 	
-	public Platoon platoon;
-	
 	public SoldierState soldierState = SoldierState.NEW;
 	
 	// For mining
@@ -172,10 +170,6 @@ public class SoldierRobot extends BaseRobot {
 			System.out.println(rc.getRobot().getID());
 			e.printStackTrace();
 		}
-	}
-	
-	public Platoon getPlatoon() {
-		return this.platoon;
 	}
 	
 	/**
