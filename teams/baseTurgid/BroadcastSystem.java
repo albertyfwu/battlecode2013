@@ -1,6 +1,11 @@
 package baseTurgid;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+
 import battlecode.common.Clock;
+import battlecode.common.GameConstants;
 import battlecode.common.RobotController;
 
 /**
@@ -100,6 +105,7 @@ public class BroadcastSystem {
 	 */
 	public static int[] getChannelNosPrecomputed(ChannelType channelType, int round_cycle) {
 		return PrecomputedChannelNos.precomputedChannelNos[round_cycle][channelType.ordinal()];
+//		return new int[0];
 	}
 	
 	public static Message readLastCycle(ChannelType channelType) {
@@ -132,14 +138,14 @@ public class BroadcastSystem {
 	}
 	
 	public static int[] getChannelNos(ChannelType channelType, int constant) {
-//		if (constant < Constants.MAX_PRECOMPUTED_ROUNDS / Constants.CHANNEL_CYCLE) {
-//			return getChannelNosPrecomputed(channelType, constant);
-//		}
+		if (constant < Constants.MAX_PRECOMPUTED_ROUNDS / Constants.CHANNEL_CYCLE) {
+			return getChannelNosPrecomputed(channelType, constant);
+		}
 		int[] channelNos = new int[Constants.REDUNDANT_CHANNELS];
 		int rangeStart = channelType.ordinal() * ChannelType.range;
 		constant += 1;
 		for (int i = 0; i < Constants.REDUNDANT_CHANNELS; i++) {
-			int offset = ((Integer.toString(((constant << 4 + 17 * channelType.ordinal()) << 4 + i)).hashCode())+rc.getTeam().ordinal()) % ChannelType.range;
+			int offset = ((Integer.toString(((constant << 4 + 17 * channelType.ordinal()) << 4 + i)).hashCode())+1) % ChannelType.range;
 			// ensure that the offset is nonnegative
 			if (offset < 0) {
 				offset += ChannelType.range;
@@ -159,18 +165,18 @@ public class BroadcastSystem {
 	
 	// All code below this point is for pre-computing channels
 	
-	/**
-	 * Right now, we're using this for pre-generating a list of channels so we don't have to calculate them during the game.
-	 * This writes to PrecomputedChannelNos.java
-	 * @param args
-	 */
-	public static void main(String[] args) {
+//	/**
+//	 * Right now, we're using this for pre-generating a list of channels so we don't have to calculate them during the game.
+//	 * This writes to PrecomputedChannelNos.java
+//	 * @param args
+//	 */
+//	public static void main(String[] args) {
 //		try {
-//			String filename = System.getProperty("user.dir") + "\\teams\\base\\PrecomputedChannelNos.java";
+//			String filename = System.getProperty("user.dir") + "\\teams\\baseTurgid\\PrecomputedChannelNos.java";
 //			FileWriter fw = new FileWriter(filename);
 //			BufferedWriter bw = new BufferedWriter(fw, 100000000);
 //			
-//			bw.write("package base;\n\n");
+//			bw.write("package baseTurgid;\n\n");
 //			bw.write("public class PrecomputedChannelNos {\n\n");
 //			bw.write("public static int[][][] precomputedChannelNos =\n");
 //			bw.write("\t{");
@@ -207,5 +213,5 @@ public class BroadcastSystem {
 //		} catch (IOException e) {
 //			e.printStackTrace();
 //		}
-	}
+//	}
 }
