@@ -10,6 +10,7 @@ public abstract class BaseRobot {
 	public Strategy strategy;
 	
 	public boolean enemyNukeHalfDone = false;
+	public boolean ourNukeHalfDone = false;
 	
 	// Default constructor
 	public BaseRobot(RobotController myRC) {

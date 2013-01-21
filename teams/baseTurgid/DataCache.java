@@ -19,6 +19,10 @@ public class DataCache {
 	
 	public static Direction[] directionArray = Direction.values();
 	
+	// Map width
+	public static int mapWidth;
+	public static int mapHeight;
+	
 	// Round variables - army sizes
 	// Allied robots
 	public static int numAlliedRobots;
@@ -46,6 +50,9 @@ public class DataCache {
 		
 		ourHQLocation = rc.senseHQLocation();
 		enemyHQLocation = rc.senseEnemyHQLocation();
+		
+		mapWidth = rc.getMapWidth();
+		mapHeight = rc.getMapHeight();
 	}
 	
 	/**

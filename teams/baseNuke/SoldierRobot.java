@@ -49,9 +49,6 @@ public class SoldierRobot extends BaseRobot {
 		super(rc);
 		
 		NavSystem.init(this);
-		
-		HQLocation = rc.senseHQLocation();
-		EnemyHQLocation = rc.senseEnemyHQLocation();
 
 		rallyPoint = findRallyPoint();
 		
@@ -676,8 +673,8 @@ public class SoldierRobot extends BaseRobot {
 	}
 	
 	private void pushCode() throws GameActionException {		
-		if (NavSystem.navMode != NavMode.SMART || NavSystem.destination != EnemyHQLocation) {
-			NavSystem.setupSmartNav(EnemyHQLocation);
+		if (NavSystem.navMode != NavMode.SMART || NavSystem.destination != DataCache.enemyHQLocation) {
+			NavSystem.setupSmartNav(DataCache.enemyHQLocation);
 		} else {
 			NavSystem.followWaypoints(true, true);
 		}
@@ -739,8 +736,8 @@ public class SoldierRobot extends BaseRobot {
 	}
 	
 	private MapLocation findRallyPoint() {
-		MapLocation enemyLoc = EnemyHQLocation;
-		MapLocation ourLoc = HQLocation;
+		MapLocation enemyLoc = DataCache.enemyHQLocation;
+		MapLocation ourLoc = DataCache.ourHQLocation;
 		int x, y;
 		x = (enemyLoc.x+3*ourLoc.x)/4;
 		y = (enemyLoc.y+3*ourLoc.y)/4;
