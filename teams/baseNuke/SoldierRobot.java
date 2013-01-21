@@ -293,7 +293,8 @@ public class SoldierRobot extends BaseRobot {
 			rc.setIndicatorString(0, "Forward1");
 		}
 		if (!minedUpAndReadyToGo(currentLocation)){
-			if (activites[1][0]>1 || activites[0][0] == 0) {
+			if (activites[1][0]+activites[0][0]>2) {
+//			if (activites[1][0]>1 || activites[0][0] == 0) {
 				NavSystem.goToLocationAvoidMines(DataCache.ourHQLocation);
 				rc.setIndicatorString(0, "Back1");
 			}
@@ -321,10 +322,12 @@ public class SoldierRobot extends BaseRobot {
 		double[][] acts = enemyActivites(location, rc.getTeam());
 		if (!minedUpAndReadyToGo(location)){
 			if (acts[1][0]+acts[0][0]>0) {
-				points -= 2*(acts[0][0]+acts[1][0]);
+				points -= 2;
+//				points -= 2*(acts[0][0]+acts[1][0]);
 			}
 			if (acts[0][1]!=0) {
-				points+=3*acts[0][1];
+				points+=6*acts[0][1];
+//				points+=3*acts[0][1];
 			}
 		}
 		return points;

@@ -31,6 +31,7 @@ public class HQRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
+			rc.setIndicatorString(0, Integer.toString(rc.checkResearchProgress(Upgrade.NUKE)));
 //			if (!rc.hasUpgrade(Upgrade.PICKAXE)) {
 //				rc.researchUpgrade(Upgrade.PICKAXE);
 //			}

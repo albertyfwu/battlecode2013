@@ -32,7 +32,9 @@ public class SoldierRobot extends BaseRobot {
 	public ChannelType powerChannel = ChannelType.HQPOWERLEVEL;
 	
 	// for mining for nuke bots
-	public Direction dirToEnemyHQ;
+	public Direction dirToEnemyHQ;	
+	public int offset;
+	public int newOffset;
 	public int randInt;
 	public MapLocation miningStartLocation;
 	public Direction miningDirConstant;
@@ -79,16 +81,25 @@ public class SoldierRobot extends BaseRobot {
 			miningDirConstant = dirToEnemyHQ.rotateRight().rotateRight();
 		}
 		
-		int offset;
-		if (Clock.getRoundNum() < 10 * 3) {
-			offset = 2;
-		} else if (Clock.getRoundNum() < 10 * 6) {
-			offset = 3;
+		if (strategy == Strategy.NUKE) {
+			if (Clock.getRoundNum() < 10 * 3) {
+				offset = 2;
+			} else if (Clock.getRoundNum() < 10 * 6) {
+				offset = 2;
+			} else {
+				offset = 3;
+			}
 		} else {
-			offset = 4;
+			if (Clock.getRoundNum() < 10 * 3) {
+				offset = 2;
+			} else if (Clock.getRoundNum() < 10 * 6) {
+				offset = 3;
+			} else {
+				offset = 4;
+			}
 		}
 		
-		int newOffset = 2 * offset + 1;
+		newOffset = 2 * offset + 1;
 		randInt = (Util.randInt() % newOffset);
 		if (randInt < 0) {
 			randInt += newOffset;
@@ -173,11 +184,15 @@ public class SoldierRobot extends BaseRobot {
 				// FOR THE BEGINNING, WHEN WE FIND THE STARTING MINING LOCATIONS
 				case FINDING_START_MINE_POSITIONS:
 					if (DataCache.numEnemyRobots == 0) {
-						if (rc.getLocation().distanceSquaredTo(miningStartLocation) <= 0 ||
-								(rc.getLocation().distanceSquaredTo(miningStartLocation) <= 2 && miningStartLocation.equals(DataCache.ourHQLocation))) {
+						int distanceSquaredToMiningStartLocation = rc.getLocation().distanceSquaredTo(miningStartLocation);
+						if (distanceSquaredToMiningStartLocation == 0 ||
+								(distanceSquaredToMiningStartLocation <= 2 && miningStartLocation.equals(DataCache.ourHQLocation))) {
 							soldierState = SoldierState.MINING;
 							break;
 							// TODO: fall through?
+						} else if (distanceSquaredToMiningStartLocation <= 2 && rc.senseEncampmentSquares(miningStartLocation, 0, null).length == 1) {
+							// Choose another miningStartLocation
+							miningStartLocation = DataCache.ourHQLocation.add(miningDirConstant, (randInt + 1) % offset);;
 						} else {
 							Direction dir = rc.getLocation().directionTo(miningStartLocation);
 							NavSystem.goDirectionAndDefuse(dir);
@@ -313,6 +328,7 @@ public class SoldierRobot extends BaseRobot {
 		}
 		if (!minedUpAndReadyToGo(currentLocation)){
 			if (activites[1][0]+activites[0][0]>2) {
+//			if (activites[1][0]>1 || activites[0][0] == 0) {
 				NavSystem.goToLocationAvoidMines(DataCache.ourHQLocation);
 				rc.setIndicatorString(0, "Back1");
 			}
@@ -335,15 +351,17 @@ public class SoldierRobot extends BaseRobot {
 		}
 	}
 	
-	private int positionValue(MapLocation location) throws GameActionException{
+	private int positionValue(MapLocation location) throws GameActionException {
 		int points=0;
 		double[][] acts = enemyActivites(location, rc.getTeam());
 		if (!minedUpAndReadyToGo(location)){
-			if (acts[1][0] + acts[0][0] > 0) {
+			if (acts[1][0]+acts[0][0]>0) {
 				points -= 2;
+//				points -= 2*(acts[0][0]+acts[1][0]);
 			}
 			if (acts[0][1]!=0) {
-				points += 6 * acts[0][1];
+				points+=6*acts[0][1];
+//				points+=3*acts[0][1];
 			}
 		}
 		return points;

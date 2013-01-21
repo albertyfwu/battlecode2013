@@ -31,6 +31,8 @@ public class HQRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
+//			rc.setIndicatorString(0, Integer.toString(rc.checkResearchProgress(Upgrade.NUKE)));
+			
 			DataCache.updateRoundVariables();
 			BroadcastSystem.write(powerChannel, (int) rc.getTeamPower()); // broadcast the team power
 			BroadcastSystem.write(strategyChannel, strategy.ordinal()); // broadcast the strategy
