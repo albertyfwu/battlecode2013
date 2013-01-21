@@ -40,7 +40,7 @@ public class EncampmentJobSystem {
 
 	public static int numEncampmentsNeeded; // must be less than encampmentJobChannelList.length
 	
-	public static MapLocation[] unreachableEncampments;
+	public static FastLocSet unreachableEncampments;
 	public static int numUnreachableEncampments;
 	
 	public static RobotType assignedRobotType;
@@ -64,7 +64,7 @@ public class EncampmentJobSystem {
 	public static void initializeConstants() throws GameActionException {		
 		numEncampmentsNeeded = Constants.INITIAL_NUM_ENCAMPMENTS_NEEDED; 
 		numUnreachableEncampments = 0;
-		unreachableEncampments = new MapLocation[100];
+		unreachableEncampments = new FastLocSet();
 		rushDistSquared = DataCache.ourHQLocation.distanceSquaredTo(DataCache.enemyHQLocation);
 		supCount = 0;
 		genCount = 0;
@@ -76,7 +76,7 @@ public class EncampmentJobSystem {
 		for (int i = nearbyEncampments.length; --i >= 0; ) {
 			MapLocation encLoc = nearbyEncampments[i];
 			if (encLoc.x == DataCache.ourHQLocation.x){ 
-				unreachableEncampments[numUnreachableEncampments] = encLoc;
+				unreachableEncampments.add(encLoc);
 				numUnreachableEncampments++;
 			}
 		}
@@ -272,7 +272,7 @@ public class EncampmentJobSystem {
 //			System.out.println("locy: " + locY + " locx: " + locX);
 			if (unreachableBit == 1) { // if unreachable
 //				System.out.println("unreachable!!!");
-				unreachableEncampments[numUnreachableEncampments] = new MapLocation(locY, locX);
+				unreachableEncampments.add(new MapLocation(locY, locX));
 				numUnreachableEncampments++;
 				return EncampmentJobMessageType.FAILURE;
 			} else { // it's a completion message
@@ -297,7 +297,7 @@ public class EncampmentJobSystem {
 			int unreachableBit = message.body >> 16;
 //			System.out.println("locy: " + locY + " locx: " + locX);
 			if (unreachableBit == 1) { // if unreachable
-				unreachableEncampments[numUnreachableEncampments] = new MapLocation(locY, locX);
+				unreachableEncampments.add(new MapLocation(locY, locX));
 				numUnreachableEncampments++;
 				return EncampmentJobMessageType.FAILURE;
 			} else { // it's a completion message
@@ -364,7 +364,6 @@ public class EncampmentJobSystem {
 						postJobWithoutIncrementing(channel, parseLocation(msgLastCycle.body), robotTypeToBuild);
 					}
 				}
-
 			}
 		}
 	}
@@ -502,16 +501,6 @@ public class EncampmentJobSystem {
 	 */
 	public static MapLocation[] getClosestMapLocations(MapLocation origin, MapLocation[] allLoc, int k) {
 		MapLocation[] currentTopLocations = new MapLocation[k];
-		
-		// make arrays of 0s and 1s corresponding to allLoc where 1 if unreachable
-		int[] unreachableCheckArray = new int[allLoc.length];
-		for (int j = numUnreachableEncampments; --j >= 0; ) {
-			for (int i = allLoc.length; --i >= 0; ) {
-				if (allLoc[i].equals(unreachableEncampments[j])) {
-					unreachableCheckArray[i] = 1;
-				}
-			}
-		}
 
 		int[] allDistances = new int[allLoc.length];
 		for (int i = allLoc.length; --i >= 0; ) {
@@ -519,14 +508,15 @@ public class EncampmentJobSystem {
 		}
 
 		int[] allLocIndex = new int[allLoc.length];
-
+		
 		int runningDist = 1000000;
 		MapLocation runningLoc = null;
 		int runningIndex = 0;
 		for (int j = k; --j >= 0; ) {
 			runningDist = 1000000;
 			for (int i = allLoc.length; --i >= 0; ) {
-				if (allDistances[i] < runningDist && allLocIndex[i] == 0 && unreachableCheckArray[i] == 0) {
+				if (allDistances[i] < runningDist && allLocIndex[i] == 0 && !unreachableEncampments.contains(allLoc[i])) { 
+					// if distances are smaller and it's not unreachable
 					runningDist = allDistances[i];
 					runningLoc = allLoc[i];
 					runningIndex = i;
@@ -535,7 +525,6 @@ public class EncampmentJobSystem {
 			currentTopLocations[j] = runningLoc;
 			allLocIndex[runningIndex] = 1;
 		}
-
 		return currentTopLocations;
 	}
 	
