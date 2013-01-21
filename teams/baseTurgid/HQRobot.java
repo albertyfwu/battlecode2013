@@ -17,7 +17,7 @@ public class HQRobot extends BaseRobot {
 
 	public HQRobot(RobotController rc) throws GameActionException {
 		super(rc);
-		strategy = Strategy.NUKE; // default to NUKE strategy
+		strategy = Strategy.ECON; // default to NUKE strategy
 		EncampmentJobSystem.initializeConstants();
 	}
 	

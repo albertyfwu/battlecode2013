@@ -601,8 +601,8 @@ public class EncampmentJobSystem {
 	 */
 	public static MapLocation[] getPossibleArtilleryLocations() throws GameActionException {
 		MapLocation artCenter = getArtilleryCenter();
-		System.out.println("getArtilleryCenter: " + artCenter);
-		System.out.println("rushDistSquared/16: " + rushDistSquared/16);
+//		System.out.println("getArtilleryCenter: " + artCenter);
+//		System.out.println("rushDistSquared/16: " + rushDistSquared/16);
 		return rc.senseEncampmentSquares(artCenter, rushDistSquared/16, Team.NEUTRAL);
 	}
 
