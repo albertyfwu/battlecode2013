@@ -31,6 +31,7 @@ public class HQRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
+			System.out.println("1: " + Clock.getBytecodeNum());
 			DataCache.updateRoundVariables();
 			BroadcastSystem.write(powerChannel, (int) rc.getTeamPower()); // broadcast the team power
 			BroadcastSystem.write(strategyChannel, strategy.ordinal()); // broadcast the strategy
@@ -56,14 +57,16 @@ public class HQRobot extends BaseRobot {
 				}
 				BroadcastSystem.write(ChannelType.ENEMY_NUKE_HALF_DONE, 1);
 			}
-			
+			System.out.println("2: " + Clock.getBytecodeNum());
+
 			// to handle broadcasting between channel cycles
 			if (Clock.getRoundNum() % Constants.CHANNEL_CYCLE == 0 && Clock.getRoundNum() > 0) {
                 EncampmentJobSystem.updateJobsOnCycle();
 	        } else {
 	            EncampmentJobSystem.updateJobsAfterChecking();
 	        }
-			
+			System.out.println("3: " + Clock.getBytecodeNum());
+
 			if (rc.isActive()) {
 				if (strategy == Strategy.ECON || strategy == Strategy.RUSH) {
 					boolean upgrade = false;
@@ -82,6 +85,8 @@ public class HQRobot extends BaseRobot {
 							rc.researchUpgrade(Upgrade.NUKE);
 						}
 					}
+					System.out.println("3.5: " + Clock.getBytecodeNum());
+
 					if (!upgrade) {
 						spawnSoldier();
 					}
@@ -105,6 +110,7 @@ public class HQRobot extends BaseRobot {
 						}
 					}
 				}
+				System.out.println("4: " + Clock.getBytecodeNum());
 			}
 		} catch (Exception e) {
 			System.out.println("caught exception before it killed us:");
@@ -117,7 +123,6 @@ public class HQRobot extends BaseRobot {
 		Direction desiredDir = rc.getLocation().directionTo(DataCache.enemyHQLocation);
 		Direction dir = getSpawnDirection(desiredDir);
 		if (dir != null) {
-			EncampmentJobSystem.updateJobs();
 			rc.spawn(dir);
 		}
 	}

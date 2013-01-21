@@ -119,7 +119,6 @@ public class HQRobot extends BaseRobot {
 		Direction desiredDir = rc.getLocation().directionTo(DataCache.enemyHQLocation);
 		Direction dir = getSpawnDirection(desiredDir);
 		if (dir != null) {
-			EncampmentJobSystem.updateJobs();
 			rc.spawn(dir);
 		}
 	}
