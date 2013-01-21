@@ -207,7 +207,6 @@ public class EncampmentJobSystem {
 							assignedChannel = channel;
 							return channel;
 						}
-
 					}
 				}
 

@@ -1,7 +1,7 @@
 package baseTurgid;
 
 public enum NavMode {
-	NEUTRAL,
+	REGULAR,
 	SMART,
 	BACKDOOR,
 	GETCLOSER,

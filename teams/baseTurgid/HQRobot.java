@@ -60,14 +60,14 @@ public class HQRobot extends BaseRobot {
 			if (rc.isActive()) {
 				if (strategy == Strategy.ECON || strategy == Strategy.RUSH) {
 					boolean upgrade = false;
-					if (enemyNukeHalfDone && !rc.hasUpgrade(Upgrade.DEFUSION) && DataCache.numAlliedSoldiers > 5) {
+					if (enemyNukeHalfDone && !DataCache.hasDefusion && DataCache.numAlliedSoldiers > 5) {
 						upgrade = true;
 						rc.researchUpgrade(Upgrade.DEFUSION);
 					} else if (rc.getTeamPower() < 100) {
-						if (!rc.hasUpgrade(Upgrade.DEFUSION)) {
+						if (!DataCache.hasDefusion) {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.DEFUSION);
-						} else if (!rc.hasUpgrade(Upgrade.FUSION)) {
+						} else if (!DataCache.hasFusion) {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.FUSION);
 						} else {
@@ -81,7 +81,7 @@ public class HQRobot extends BaseRobot {
 				} else if (strategy == Strategy.NUKE) {
 					boolean upgrade = false;
 					if (allInMode) {
-						if (!rc.hasUpgrade(Upgrade.DEFUSION)) {
+						if (!DataCache.hasDefusion) {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.DEFUSION);
 						}						

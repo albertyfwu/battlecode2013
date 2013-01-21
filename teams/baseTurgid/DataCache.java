@@ -7,6 +7,7 @@ import battlecode.common.Robot;
 import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
+import battlecode.common.Upgrade;
 
 public class DataCache {
 	
@@ -35,9 +36,9 @@ public class DataCache {
 	public static int numNearbyEnemySoldiers;
 	
 	// Round variables - upgrades
-//	public static boolean hasFusion;
-//	public static boolean hasDefusion;
-//	public static boolean hasPickaxe;
+	public static boolean hasFusion;
+	public static boolean hasDefusion;
+	public static boolean hasPickaxe;
 	
 	public static void init(BaseRobot myRobot) {
 		robot = myRobot;
@@ -72,14 +73,14 @@ public class DataCache {
 		numNearbyEnemyRobots = nearbyEnemyRobots.length;
 		numEnemyRobots = rc.senseNearbyGameObjects(Robot.class, 10000, rc.getTeam().opponent()).length;
 		
-//		if (!hasFusion) {
-//			hasFusion = rc.hasUpgrade(Upgrade.FUSION);
-//		}
-//		if (!hasDefusion) {
-//			hasDefusion = rc.hasUpgrade(Upgrade.DEFUSION);
-//		}
-//		if (!hasPickaxe) {
-//			hasPickaxe = rc.hasUpgrade(Upgrade.PICKAXE);
-//		}
+		if (!hasFusion) {
+			hasFusion = rc.hasUpgrade(Upgrade.FUSION);
+		}
+		if (!hasDefusion) {
+			hasDefusion = rc.hasUpgrade(Upgrade.DEFUSION);
+		}
+		if (!hasPickaxe) {
+			hasPickaxe = rc.hasUpgrade(Upgrade.PICKAXE);
+		}
 	}
 }
