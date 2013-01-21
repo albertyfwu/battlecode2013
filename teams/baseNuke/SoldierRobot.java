@@ -49,7 +49,6 @@ public class SoldierRobot extends BaseRobot {
 		super(rc);
 		
 		NavSystem.init(this);
-
 		rallyPoint = findRallyPoint();
 		
 		ChannelType channel = EncampmentJobSystem.findJob();
