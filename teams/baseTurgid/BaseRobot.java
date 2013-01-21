@@ -20,6 +20,14 @@ public abstract class BaseRobot {
 		DataCache.init(this); // this must come first
 		BroadcastSystem.init(this);
 		EncampmentJobSystem.init(this);
+		
+		// find out what strategy we're using
+		Message message = BroadcastSystem.read(ChannelType.STRATEGY);
+		if (message.isValid) {
+			strategy = Strategy.values()[message.body];
+		} else {
+			// choose a strategy
+		}
 	}
 	
 	// Actions for a specific robot

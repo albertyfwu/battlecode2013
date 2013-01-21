@@ -43,10 +43,20 @@ public class SoldierRobot extends BaseRobot {
 	public double lineA, lineB, lineC, lineDistanceDenom;
 	public int x1, y1, x2, y2; // coordinates of our hq and enemy hq
 	
+	// strategy
+	public Strategy strategy;
+	
 	public SoldierRobot(RobotController rc) throws GameActionException {
 		super(rc);
 		
 		NavSystem.init(this);
+		
+		// find out what strategy we're using
+		Message message = BroadcastSystem.read(ChannelType.STRATEGY);
+		if (message.isValid) {
+			strategy = Strategy.values()[message.body];
+		}
+		
 		rallyPoint = findRallyPoint();
 		
 		ChannelType channel = EncampmentJobSystem.findJob();
