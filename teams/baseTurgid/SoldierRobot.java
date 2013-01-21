@@ -125,7 +125,7 @@ public class SoldierRobot extends BaseRobot {
 		int x = location.x;
 		int y = location.y;
 		return Math.abs(lineA * x + lineB * y + lineC) / lineDistanceDenom;
-	}	
+	}
 	
 	@Override
 	public void run() {
@@ -199,7 +199,7 @@ public class SoldierRobot extends BaseRobot {
 					
 					if (DataCache.numEnemyRobots > 0) {
 						soldierState = SoldierState.FIGHTING;
-					} else if (hqPowerLevel < 10*(1+DataCache.numAlliedEncampments) ) {
+					} else if (hqPowerLevel < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel < 100 ) {
 						soldierState = SoldierState.PUSHING;
 					} else {
 						mineCode();
@@ -274,7 +274,7 @@ public class SoldierRobot extends BaseRobot {
 					// If there are enemies nearby, trigger FIGHTING SoldierState
 					if (DataCache.numEnemyRobots > 0) {
 						soldierState = SoldierState.FIGHTING;
-					} else if (hqPowerLevel2 < 10*(1+DataCache.numAlliedEncampments) ) {
+					} else if (hqPowerLevel2 < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel2 < 100) {
 						soldierState = SoldierState.PUSHING;
 					} else {
 						boolean layedMine = false;
@@ -283,7 +283,7 @@ public class SoldierRobot extends BaseRobot {
 								rc.layMine();
 								layedMine = true;
 							}
-						} 
+						}
 						if (!layedMine) {
 							NavSystem.goToLocation(rallyPoint);
 						}
@@ -532,7 +532,7 @@ public class SoldierRobot extends BaseRobot {
 //						rc.setIndicatorString(0, "stay3");
 					}
 				} else {
-					if (enemy23[2] >= 7) {
+					if (enemy23[2] - our23[2] > 3) {
 						NavSystem.goToLocationAvoidMines(closestEnemyLocation);
 					}
 					// otherwise, stay
@@ -552,7 +552,7 @@ public class SoldierRobot extends BaseRobot {
 			Robot enemy = enemiesInVision[i];
 			RobotInfo rinfo = rc.senseRobotInfo(enemy);
 			int dist = rinfo.location.distanceSquaredTo(rc.getLocation());
-			if (rinfo.type == RobotType.SOLDIER) {
+			if (rinfo.type == RobotType.SOLDIER && rinfo.roundsUntilMovementIdle < 3) {
 				if (dist <= 2) {
 					count1++;
 				} else if (dist <=8) {
@@ -562,11 +562,11 @@ public class SoldierRobot extends BaseRobot {
 				}
 			} else {
 				if (dist <= 2) {
-					count1++;
+					count1 += 0.2;
 				} else if (dist <=8) {
-					count2 += 1;
+					count2 += 0.2;
 				} else if (dist > 8 && (dist <= 14 || dist == 18)) {
-					count3 += 1;
+					count3 += 0.2;
 				}
 			}
 		}
@@ -584,7 +584,7 @@ public class SoldierRobot extends BaseRobot {
 			Robot enemy = enemiesInVision[i];
 			RobotInfo rinfo = rc.senseRobotInfo(enemy);
 			int dist = rinfo.location.distanceSquaredTo(square);
-			if (rinfo.type == RobotType.SOLDIER) {
+			if (rinfo.type == RobotType.SOLDIER && rinfo.roundsUntilMovementIdle < 3) {
 				if (dist <= 2) {
 					count1++;
 				} else if (dist <=8) {
@@ -594,11 +594,11 @@ public class SoldierRobot extends BaseRobot {
 				}
 			} else {
 				if (dist <= 2) {
-					count1++;
+					count1 += 0.2;
 				} else if (dist <=8) {
-					count2 += 1;
+					count2 += 0.2;
 				} else if (dist <= 14 || dist == 18) {
-					count3 += 1;
+					count3 += 0.2;
 				}
 			}
 		}
