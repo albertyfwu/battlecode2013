@@ -71,7 +71,7 @@ public class EncampmentJobSystem {
 		
 		MapLocation[] allEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, Team.NEUTRAL);
 		
-		MapLocation[] nearbyEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 16, Team.NEUTRAL);
+		MapLocation[] nearbyEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 9, Team.NEUTRAL);
 		
 		for (int i = nearbyEncampments.length; --i >= 0; ) {
 			MapLocation encLoc = nearbyEncampments[i];
