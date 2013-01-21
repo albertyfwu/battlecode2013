@@ -330,14 +330,14 @@ public class SoldierRobot extends BaseRobot {
 		Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
 		int[] closestEnemyInfo = getClosestEnemy(enemiesList);
 		MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
-		double[][] activites = enemyActivites (currentLocation, rc.getTeam());
-		if (activites[2][0]+activites[1][0]+activites[0][0] == 0){
+		double[][] activities = enemyActivites (currentLocation, rc.getTeam());
+		if (activities[2][0]+activities[1][0]+activities[0][0] == 0){
 			NavSystem.goToLocationAvoidMines(closestEnemyLocation);
 //			rc.setIndicatorString(0, "Forward1");
 		}
 		if (!minedUpAndReadyToGo(currentLocation)){
-			if (activites[1][0]+activites[0][0]>2) {
-//			if (activites[1][0]>1 || activites[0][0] == 0) {
+			if (activities[1][0]+activities[0][0]>2) {
+//			if (activities[1][0]>1 || activities[0][0] == 0) {
 				NavSystem.goToLocationAvoidMines(DataCache.ourHQLocation);
 //				rc.setIndicatorString(0, "Back1");
 			}
