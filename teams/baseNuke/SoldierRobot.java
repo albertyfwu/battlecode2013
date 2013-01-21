@@ -27,9 +27,6 @@ public class SoldierRobot extends BaseRobot {
 	
 	public MapLocation currentLocation;
 	
-	public MapLocation HQLocation;
-	public MapLocation EnemyHQLocation;
-	
 	public MapLocation rallyPoint;
 	
 	public ChannelType powerChannel = ChannelType.HQPOWERLEVEL;
