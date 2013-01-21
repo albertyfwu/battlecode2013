@@ -3,48 +3,38 @@ package team162;
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.Team;
 import battlecode.common.Upgrade;
 
 public class HQRobot extends BaseRobot {
-
-//	// these two arrays must have bijective correspondence
-//	// the job associated with encampmentJobs[i] must always write to channelList[i] for each i
-//	public MapLocation[] encampmentJobs = new MapLocation[EncampmentJobSystem.maxEncampmentJobs]; // length is constant
-//	public ChannelType[] encampmentChannels = new ChannelType[EncampmentJobSystem.maxEncampmentJobs]; // length is constant
-//
-//	public int numEncampmentsNeeded; // must be less than encampmentJobChannelList.length
-	public MapLocation HQLocation;
-	public MapLocation EnemyHQLocation;
+	
 	public ChannelType powerChannel = ChannelType.HQPOWERLEVEL;
+	public ChannelType strategyChannel = ChannelType.STRATEGY;
+	
+	public boolean allInMode = false;
+	public boolean ourNukeHalfDone = false;
 
 	public HQRobot(RobotController rc) throws GameActionException {
 		super(rc);
-		HQLocation = rc.getLocation();
-		EnemyHQLocation = rc.senseEnemyHQLocation();
-		EncampmentJobSystem.initializeConstants(HQLocation, EnemyHQLocation);
-
+		strategy = Strategy.ECON; // default to NUKE strategy
+		
+//		if (rc.getTeam() == Team.A) {
+//			strategy = Strategy.ECON;
+//		} else {
+//			strategy = Strategy.NUKE;
+//		}
+		
+		EncampmentJobSystem.initializeConstants();
 	}
 	
 	@Override
 	public void run() {
 		try {
-//			if (!rc.hasUpgrade(Upgrade.PICKAXE)) {
-//				rc.researchUpgrade(Upgrade.PICKAXE);
-//			}
-			BroadcastSystem.write(powerChannel, (int) rc.getTeamPower());
 			DataCache.updateRoundVariables();
+			BroadcastSystem.write(powerChannel, (int) rc.getTeamPower()); // broadcast the team power
+			BroadcastSystem.write(strategyChannel, strategy.ordinal()); // broadcast the strategy
 			
-			// Check if enemy's nuke is half done
-			if (!enemyNukeHalfDone) {
-				enemyNukeHalfDone = rc.senseEnemyNukeHalfDone();
-			}
-			if (enemyNukeHalfDone) {
-				// Broadcast this
-				BroadcastSystem.write(ChannelType.ENEMY_NUKE_HALF_DONE, 1);
-			}
 			// Check if our nuke is half done
 			if (!ourNukeHalfDone) {
 				if (rc.checkResearchProgress(Upgrade.NUKE) >= 200) {
@@ -55,16 +45,19 @@ public class HQRobot extends BaseRobot {
 				// Broadcast this
 				BroadcastSystem.write(ChannelType.OUR_NUKE_HALF_DONE, 1);
 			}
-
-//			if (Clock.getRoundNum() < 20) {
-//				BroadcastSystem.write(ChannelType.CHANNEL1, 0);
-//				BroadcastSystem.read(ChannelType.CHANNEL1);
-//				BroadcastSystem.write(ChannelType.CHANNEL1, 0);
-//			} else {
-//				rc.resign();
-//			}
-//			
+			// Check if enemy's nuke is half done
+			if (!enemyNukeHalfDone) {
+				enemyNukeHalfDone = rc.senseEnemyNukeHalfDone();
+			}
+			if (enemyNukeHalfDone) {
+				// If it is half done, broadcast it
+				if (!ourNukeHalfDone) {
+					allInMode = true;
+				}
+				BroadcastSystem.write(ChannelType.ENEMY_NUKE_HALF_DONE, 1);
+			}
 			
+			// to handle broadcasting between channel cycles
 			if (Clock.getRoundNum() % Constants.CHANNEL_CYCLE == 0 && Clock.getRoundNum() > 0) {
                 EncampmentJobSystem.updateJobsOnCycle();
 	        } else {
@@ -72,85 +65,62 @@ public class HQRobot extends BaseRobot {
 	        }
 			
 			if (rc.isActive()) {
-				boolean upgrade = false;
-//				if (!rc.hasUpgrade(Upgrade.PICKAXE)) {
-//					upgrade = true;
-//					rc.researchUpgrade(Upgrade.PICKAXE);
-//				}
-//				if (!rc.hasUpgrade(Upgrade.DEFUSION) && enemyNukeHalfDone && DataCache.numAlliedSoldiers > 5) {
-//					upgrade = true;
-//					rc.researchUpgrade(Upgrade.DEFUSION);
-				if (rc.getTeamPower() < 150) {
-					upgrade = true;
-					rc.researchUpgrade(Upgrade.NUKE);
-				}
-				if (!upgrade) {
-
-					// Spawn a soldier
-					Direction desiredDir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
-					Direction dir = getSpawnDirection(rc, desiredDir);
-					if (dir != null && rc.isActive()) {
-						EncampmentJobSystem.updateJobs();
-						rc.spawn(dir);
+				if (strategy == Strategy.ECON || strategy == Strategy.RUSH) {
+					boolean upgrade = false;
+					if (enemyNukeHalfDone && !DataCache.hasDefusion && DataCache.numAlliedSoldiers > 5) {
+						upgrade = true;
+						rc.researchUpgrade(Upgrade.DEFUSION);
+					} else if (rc.getTeamPower() < 100) {
+						if (!DataCache.hasDefusion) {
+							upgrade = true;
+							rc.researchUpgrade(Upgrade.DEFUSION);
+						} else if (!DataCache.hasFusion) {
+							upgrade = true;
+							rc.researchUpgrade(Upgrade.FUSION);
+						} else {
+							upgrade = true;
+							rc.researchUpgrade(Upgrade.NUKE);
+						}
+					}
+					if (!upgrade) {
+						spawnSoldier();
+					}
+				} else if (strategy == Strategy.NUKE) {
+					boolean upgrade = false;
+					if (allInMode) {
+						if (!DataCache.hasDefusion) {
+							upgrade = true;
+							rc.researchUpgrade(Upgrade.DEFUSION);
+						}						
+						if (!upgrade) {
+							spawnSoldier();
+						}
+					} else {
+						if (rc.getTeamPower() < 150 || (DataCache.numNearbyEnemySoldiers == 0 && rc.checkResearchProgress(Upgrade.NUKE) > 380)) {
+							upgrade = true;
+							rc.researchUpgrade(Upgrade.NUKE);
+						}
+						if (!upgrade) {
+							spawnSoldier();
+						}
 					}
 				}
-//				if (Clock.getRoundNum() < 5) {
-//					Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
-//					rc.spawn(dir);
-//				}
 			}
-
-			//			// TODO: find out what strategy to switch to?
-			//			// this.strategy = HQStrategy.xxx
-			//			if (rc.isActive()) {
-			//				switch (strategy) {
-			//				case CREATE_SOLDIER:
-			//					create_soldier();
-			//					break;
-			//				case RESEARCH_DEFUSION:
-			//					if (!rc.hasUpgrade(Upgrade.DEFUSION)) {
-			//						rc.researchUpgrade(Upgrade.DEFUSION);
-			//					}
-			//					break;
-			//				case RESEARCH_FUSION:
-			//					if (!rc.hasUpgrade(Upgrade.FUSION)) {
-			//						rc.researchUpgrade(Upgrade.FUSION);
-			//					}
-			//					break;
-			//				case RESEARCH_NUKE:
-			//					if (!rc.hasUpgrade(Upgrade.NUKE)) {
-			//						rc.researchUpgrade(Upgrade.NUKE);
-			//					}
-			//					break;
-			//				case RESEARCH_PICKAXE:
-			//					if (!rc.hasUpgrade(Upgrade.PICKAXE)) {
-			//						rc.researchUpgrade(Upgrade.PICKAXE);
-			//					}
-			//					break;
-			//				case RESEARCH_VISION:
-			//					if (!rc.hasUpgrade(Upgrade.VISION)) {
-			//						rc.researchUpgrade(Upgrade.VISION);
-			//					}
-			//					break;
-			//				default:
-			//					break;
-			//				}
-			//			}
 		} catch (Exception e) {
 			System.out.println("caught exception before it killed us:");
 			System.out.println(rc.getRobot().getID());
 			e.printStackTrace();
 		}
 	}
-
-//	public void create_soldier() throws GameActionException {
-//		// Spawn a soldier
-//		Direction dir = rc.getLocation().directionTo(rc.senseEnemyHQLocation());
-//		if (rc.canMove(dir)) {
-//			rc.spawn(dir);
-//		}
-//	}
-
+	
+	public void spawnSoldier() throws GameActionException {
+		Direction desiredDir = rc.getLocation().directionTo(DataCache.enemyHQLocation);
+		Direction dir = getSpawnDirection(desiredDir);
+		if (dir != null) {
+			EncampmentJobSystem.updateJobs();
+			rc.spawn(dir);
+		}
+	}
 
 	/**
 	 * helper fcn to see what direction to actually go given a desired direction
@@ -158,12 +128,13 @@ public class HQRobot extends BaseRobot {
 	 * @param dir
 	 * @return
 	 */
-	private static Direction getSpawnDirection(RobotController rc, Direction dir) {
+	private Direction getSpawnDirection(Direction dir) {
 		Direction canMoveDirection = null;
 		int desiredDirOffset = dir.ordinal();
-		int[] dirOffsets = new int[]{0, 1, -1, 2, -2, 3, -3, 4};
-		for (int dirOffset : dirOffsets) {
-			Direction currentDirection = Direction.values()[(desiredDirOffset + dirOffset + 8) % 8];
+		int[] dirOffsets = new int[]{4, -3, 3, -2, 2, -1, 1, 0};
+		for (int i = dirOffsets.length; --i >= 0; ) {
+			int dirOffset = dirOffsets[i];
+			Direction currentDirection = DataCache.directionArray[(desiredDirOffset + dirOffset + 8) % 8];
 			if (rc.canMove(currentDirection)) {
 				if (canMoveDirection == null) {
 					canMoveDirection = currentDirection;

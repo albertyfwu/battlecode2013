@@ -1,6 +1,5 @@
 package team162;
 
-import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.GameConstants;
 import battlecode.common.MapLocation;
@@ -24,7 +23,7 @@ public class ArtilleryRobot extends BaseRobot {
 				}
 			}
 		} catch (Exception e) {
-			//
+			e.printStackTrace();
 		}
 	}
 

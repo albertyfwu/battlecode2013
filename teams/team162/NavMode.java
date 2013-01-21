@@ -1,10 +1,9 @@
 package team162;
 
 public enum NavMode {
-	NEUTRAL,
+	REGULAR,
 	SMART,
 	BACKDOOR,
 	GETCLOSER,
-	BFSMODE,
-	MINING;
-	}
+	BFSMODE;
+}

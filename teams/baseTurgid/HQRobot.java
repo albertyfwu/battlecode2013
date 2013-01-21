@@ -18,6 +18,13 @@ public class HQRobot extends BaseRobot {
 	public HQRobot(RobotController rc) throws GameActionException {
 		super(rc);
 		strategy = Strategy.ECON; // default to NUKE strategy
+		
+//		if (rc.getTeam() == Team.A) {
+//			strategy = Strategy.ECON;
+//		} else {
+//			strategy = Strategy.NUKE;
+//		}
+		
 		EncampmentJobSystem.initializeConstants();
 	}
 	

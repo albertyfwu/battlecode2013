@@ -15,29 +15,34 @@ public class NavSystem {
 	
 	public static SoldierRobot robot;
 	public static RobotController rc;
+	
 	public static int[] directionOffsets;
 	
+	// For escaping HQ mines
 	public static MapLocation safeLocationAwayFromHQMines;
 	
 	// Used by both smart and backdoor nav
+	public static NavMode navMode = NavMode.REGULAR;
 	public static MapLocation currentWaypoint;
-	public static NavMode navMode = NavMode.NEUTRAL;
 	public static MapLocation destination;
 	
 	// Used to store the waypoints of a backdoor nav computation
 	public static MapLocation[] backdoorWaypoints; // Should always have four MapLocations
 	public static int backdoorWaypointsIndex;
-	
-	public static MapLocation HQLocation;
-	public static MapLocation enemyHQLocation;
 
+	// Map size
 	public static int mapHeight;
 	public static int mapWidth;
 	public static MapLocation mapCenter;
 	
+	// For BFS
 	public static int BFSRound = 0;
 	public static int[] BFSTurns;
 	public static int BFSIdle = 0;
+	
+	// For swarm coefficients
+	public static double swarmC;
+	public static double swarmD = 0;
 	
 	/**
 	 * MUST CALL THIS METHOD BEFORE USING NavSystem
@@ -46,23 +51,26 @@ public class NavSystem {
 	public static void init(SoldierRobot myRobot) {
 		robot = myRobot;
 		rc = robot.rc;
-		int robotID = rc.getRobot().getID();
 		
 		// Randomly assign soldiers priorities for trying to move left or right
-		if (robotID % 4 == 0 || robotID % 4 == 1) {
+		if (rc.getRobot().getID() % 4 <= 1) {
 			directionOffsets = new int[]{0,1,-1,2,-2};
 		} else {
 			directionOffsets = new int[]{0,-1,1,-2,2};
 		}
-		
-		// Get locations of our HQ and enemy HQ
-		HQLocation = rc.senseHQLocation();
-		enemyHQLocation = rc.senseEnemyHQLocation();
+
 		// Get map dimensions
 		mapHeight = rc.getMapHeight();
 		mapWidth = rc.getMapWidth();
 		// Calculate the center of the map
 		mapCenter = new MapLocation(mapWidth / 2, mapHeight / 2);
+		
+		// swarm coefficients
+		if (robot.strategy == Strategy.NUKE) {
+			swarmC = 0;
+		} else {
+			swarmC = 1.5;
+		}
 	}
 	
 	/**
@@ -185,7 +193,6 @@ public class NavSystem {
 	
 	public static boolean moveOrDefuse(Direction dir) throws GameActionException {
 		if (rc.isActive()) {
-			boolean hasMoved = false;
 			if (rc.canMove(dir)) {
 				if (!hasBadMine(rc.getLocation().add(dir))) {
 					rc.move(dir);
@@ -221,16 +228,16 @@ public class NavSystem {
 	 */
 	public static void followWaypoints(boolean defuseMines, boolean swarm) throws GameActionException {
 		// If we're close to currentWaypoint, find the next one
-		if (rc.getLocation().distanceSquaredTo(destination) <= Constants.PATH_GO_ALL_IN_SQ_RADIUS && navMode != NavMode.MINING) {
+		if (rc.getLocation().distanceSquaredTo(destination) <= Constants.PATH_GO_ALL_IN_SQ_RADIUS) {
 			// Stop nav-ing?
-			navMode = NavMode.NEUTRAL;
+			navMode = NavMode.REGULAR;
 			// We're done following waypoints
 			if (defuseMines) {
 				goToLocation(destination);
 			} else {
 				goToLocationAvoidMines(destination);
 			}
-		} else if (rc.getLocation().distanceSquaredTo(currentWaypoint) <= Constants.WAYPOINT_SQUARED_DISTANCE_CHECK && navMode != NavMode.MINING){
+		} else if (rc.getLocation().distanceSquaredTo(currentWaypoint) <= Constants.WAYPOINT_SQUARED_DISTANCE_CHECK){
 			// We're close to currentWaypoint, so find the next one
 			switch (navMode) {
 			case SMART:
@@ -239,22 +246,15 @@ public class NavSystem {
 			case BACKDOOR:
 				getBackdoorWaypoint();
 				break;
-			case MINING:
-				getMiningWaypoint();
-				break;
 			default:
 				break;
 			}
 			if (defuseMines) {
 				if (swarm) {
-					rc.setIndicatorString(2, currentWaypoint.toString());
+//					rc.setIndicatorString(2, currentWaypoint.toString());
 					goToLocationSwarm(currentWaypoint, true);
 				} else {
-					if (navMode == NavMode.MINING) {
-						goToLocationAntiSwarm(currentWaypoint, true);
-					} else {
-						goToLocation(currentWaypoint);
-					}
+					goToLocation(currentWaypoint);
 				}
 			} else {
 				if (swarm) {
@@ -267,34 +267,22 @@ public class NavSystem {
 			// Keep moving to the current waypoint
 			if (defuseMines) {
 				if (swarm) {
-					rc.setIndicatorString(2, currentWaypoint.toString());
+//					rc.setIndicatorString(2, currentWaypoint.toString());
 					goToLocationSwarm(currentWaypoint, true);
 				} else {
-					if (navMode == NavMode.MINING) {
-						goToLocationAntiSwarm(currentWaypoint, true);
-					} else {
-						goToLocation(currentWaypoint);
-					}
+					goToLocation(currentWaypoint);
 				}
 			} else {
 				if (swarm) {
 					goToLocationSwarm(currentWaypoint, false);
 				} else {
-					goToLocation(currentWaypoint);
+					goToLocationAvoidMines(currentWaypoint);
 				}
 			}
 		}
 	}
 	
-	private static void goToLocationAntiSwarm(MapLocation location, boolean defuseMines) throws GameActionException {
-		goToLocationSwarm(location, defuseMines, false);
-	}
-	
 	private static void goToLocationSwarm(MapLocation location, boolean defuseMines) throws GameActionException {
-		goToLocationSwarm(location, defuseMines, true);
-	}
-	
-	private static void goToLocationSwarm(MapLocation location, boolean defuseMines, boolean attract) throws GameActionException {
 		// Swarming
 		double dxToLocation = location.x - rc.getLocation().x;
 		double dyToLocation = location.y - rc.getLocation().y;
@@ -305,24 +293,19 @@ public class NavSystem {
 		int totalDy = 0;
 		int totalNearbyerDx = 0;
 		int totalNearbyerDy = 0;
-		for (Robot alliedRobot : nearbyAlliedRobots) {
-			RobotInfo robotInfo = rc.senseRobotInfo(alliedRobot);
+		for (int i = nearbyAlliedRobots.length; --i >= 0; ) {
+			RobotInfo robotInfo = rc.senseRobotInfo(nearbyAlliedRobots[i]);
 			if (robotInfo.type == RobotType.SOLDIER) {
 				MapLocation iterLocation = robotInfo.location;
 				totalDx += (iterLocation.x - rc.getLocation().x);
 				totalDy += (iterLocation.y - rc.getLocation().y);
 				if (rc.getLocation().distanceSquaredTo(iterLocation) <= 5) {
+					// for repelling
 					totalNearbyerDx += (iterLocation.x - rc.getLocation().x);
 					totalNearbyerDy += (iterLocation.y - rc.getLocation().y);
 				}
 			}
 		}
-		
-		double c = 1.5;
-		if (!attract) {
-			c = -c;
-		}
-		double d = 0;
 		
 		double denom = Math.sqrt(totalDx*totalDx + totalDy*totalDy);
 		double nearbyerDenom = Math.sqrt(totalNearbyerDx*totalNearbyerDx + totalNearbyerDy*totalNearbyerDy);
@@ -332,29 +315,29 @@ public class NavSystem {
 		if (Math.abs(totalDx) < 0.01) {
 			addX = 0;
 		} else {
-			addX = c * totalDx / denom;
+			addX = swarmC * totalDx / denom;
 		}
 		if (Math.abs(totalDy) < 0.01) {
 			addY = 0;
 		} else {
-			addY = c * totalDy / denom;
+			addY = swarmC * totalDy / denom;
 		}
 		
 		if (Math.abs(totalNearbyerDx) < 0.01) {
 			addXNearbyer = 0;
 		} else {
-			addXNearbyer = d * totalNearbyerDx / nearbyerDenom;
+			addXNearbyer = swarmD * totalNearbyerDx / nearbyerDenom;
 		}
 		if (Math.abs(totalNearbyerDy) < 0.01) {
 			addYNearbyer = 0;
 		} else {
-			addYNearbyer = d * totalNearbyerDy / nearbyerDenom;
+			addYNearbyer = swarmD * totalNearbyerDy / nearbyerDenom;
 		}
 		double finalDx = dxToLocation / distanceToLocation + addX - addXNearbyer;
 		double finalDy = dyToLocation / distanceToLocation + addY - addYNearbyer;
 		
-		rc.setIndicatorString(0, "totalDx: " + Integer.toString(totalDx) + ", finalDx: " + Double.toString(finalDx));
-		rc.setIndicatorString(1, "totalDy: " + Integer.toString(totalDy) + ", finalDy: " + Double.toString(finalDy));
+//		rc.setIndicatorString(0, "totalDx: " + Integer.toString(totalDx) + ", finalDx: " + Double.toString(finalDx));
+//		rc.setIndicatorString(1, "totalDy: " + Integer.toString(totalDy) + ", finalDy: " + Double.toString(finalDy));
 		
 		int dirOffset;
 		double ratioCutoff = 2.5;
@@ -481,60 +464,6 @@ public class NavSystem {
 		getSmartWaypoint();
 	}
 	
-	public static void setupMiningNav() throws GameActionException {
-		navMode = NavMode.MINING;
-		getMiningWaypoint();
-	}
-	
-	public static void getMiningWaypoint() throws GameActionException {
-		// TODO: Instead of finding local points, pick points in the beginning 
-		
-		MapLocation currentLocation = rc.getLocation();
-		// pick the best place to make mines
-		int bestScore = Integer.MAX_VALUE;
-		MapLocation bestLocation = null;
-		String s = "";
-		
-		for (int i = -2; i <= 2; i++) {
-			for (int j = -2; j <= 2; j++) {
-				MapLocation iterCenter = currentLocation.add(3 * i, 3 * j);
-				if (iterCenter.x >= 0 && iterCenter.x < DataCache.mapWidth
-						&& iterCenter.y >= 0 && iterCenter.y < DataCache.mapHeight) {
-					int currentScore = miningScore(iterCenter, 2);
-					if (currentScore < bestScore) {
-						bestScore = currentScore;
-						bestLocation = iterCenter;
-					}			
-				}
-			}
-		}
-		
-//		for (int i = 0; i < 8; i++) {
-//			Direction dir = Direction.values()[i];
-//			MapLocation iterLocation = currentLocation.add(dir, Constants.MINING_OFFSET_RADIUS);
-//			if (iterLocation.x >= 0 && iterLocation.x < DataCache.mapWidth
-//					&& iterLocation.y >= 0 && iterLocation.y < DataCache.mapHeight) {
-//				int currentScore = miningScore(iterLocation, Constants.MINING_CHECK_RADIUS_SQUARED);
-//				s += Integer.toString(i) + ": " + Integer.toString(currentScore) + ", ";
-//				if (currentScore < bestScore) {
-//					bestScore = currentScore;
-//					bestLocation = iterLocation;
-//				}
-//			}
-//		}
-		
-		rc.setIndicatorString(2, s);
-		currentWaypoint = bestLocation;
-		destination = bestLocation;
-	}
-	
-	public static int miningScore(MapLocation location, int radiusSquared) {
-		int numAlliedMines = rc.senseMineLocations(location, radiusSquared, rc.getTeam()).length;
-		// Mines closer to HQ should be preferred
-		int distanceToHQ = (int)Math.sqrt(location.distanceSquaredTo(DataCache.ourHQLocation));
-		return numAlliedMines + (-1) * distanceToHQ;
-	}
-	
 	/**
 	 * Gets the next backdoor waypoint that was calculated when setupBackdoorNav() was called.
 	 * @throws GameActionException
@@ -588,8 +517,9 @@ public class NavSystem {
 		int penalty = numMines + 3 * numEncampments;
 		// maximum number of mines within this radius should be 3 * radius^2
 		int distanceSquared = location.distanceSquaredTo(endLocation);
+		// TODO: optimize this
 		int mineDelay;
-		if (rc.hasUpgrade(Upgrade.DEFUSION)) {
+		if (DataCache.hasDefusion) {
 			mineDelay = GameConstants.MINE_DEFUSE_DEFUSION_DELAY;
 		} else {
 			mineDelay = GameConstants.MINE_DEFUSE_DELAY;
@@ -612,16 +542,43 @@ public class NavSystem {
 	public static boolean moveCloser() throws GameActionException {
 		// first try to get closer
 		double distance = rc.getLocation().distanceSquaredTo(destination);
-		for (int i=0; i<8; i++) {
-			if (rc.canMove(Direction.values()[i])) {
-				MapLocation nextLoc = rc.getLocation().add(Direction.values()[i]);
+		for (int i = 8; --i >= 0; ) {
+			if (rc.canMove(DataCache.directionArray[i])) {
+				MapLocation nextLoc = rc.getLocation().add(DataCache.directionArray[i]);
 				if (nextLoc.distanceSquaredTo(destination) < distance) {
-					NavSystem.moveOrDefuse(Direction.values()[i]);
+					NavSystem.moveOrDefuse(DataCache.directionArray[i]);
 					return true;
 				}
 			}
 		}
 		return false;
+	}
+	
+	public static void moveCloserFavorNoMines() throws GameActionException {
+		Direction dir = rc.getLocation().directionTo(destination);
+		double distance = rc.getLocation().distanceSquaredTo(destination);
+		double currDist;
+		if (rc.canMove(dir) && !hasBadMine(rc.getLocation().add(dir))) {
+			rc.move(dir);
+		} else {
+			Direction bestDir = dir;
+			Direction currentDir = dir;
+			for (int directionOffset: directionOffsets) {
+				if (directionOffset != 0) {
+					currentDir = Direction.values()[(dir.ordinal() + directionOffset+8) % 8];
+					if (rc.canMove(currentDir) && !hasBadMine(rc.getLocation().add(currentDir))) {
+						currDist = rc.getLocation().add(currentDir).distanceSquaredTo(destination);
+						if (currDist < distance) {
+							distance = currDist;
+							bestDir = currentDir;
+						}
+						
+					}
+				}
+			}
+			
+			NavSystem.moveOrDefuse(bestDir);
+		}
 	}
 	
 	public static void tryMoveCloser() throws GameActionException {
@@ -641,9 +598,9 @@ public class NavSystem {
 		BFSTurns = NavSystem.runBFS(encArray, goalCoord[1], goalCoord[0]);
 //		System.out.println("BFSTurns :" + BFSTurns.length);
 		if (BFSTurns.length == 0) { // if unreachable, tell to HQ and unassign himself
-			System.out.println("unreachable, unassigned: " + robot.unassigned + " soldierstate: " + ((SoldierRobot) robot).soldierState);
+//			System.out.println("unreachable, unassigned: " + robot.unassigned + " soldierstate: " + ((SoldierRobot) robot).soldierState);
 			EncampmentJobSystem.postUnreachableMessage(destination);
-			navMode = NavMode.NEUTRAL;
+			navMode = NavMode.REGULAR;
 			robot.unassigned = true;
 		}
 	}
@@ -653,9 +610,9 @@ public class NavSystem {
 			// we retry destination
 			setupGetCloser(destination);
 		} else {
-			System.out.println("BFS length: " + BFSTurns.length);
+//			System.out.println("BFS length: " + BFSTurns.length);
 
-			System.out.println("Direction: " + BFSTurns[BFSRound]);
+//			System.out.println("Direction: " + BFSTurns[BFSRound]);
 			Direction dir = Direction.values()[BFSTurns[BFSRound]];
 			boolean hasMoved = NavSystem.moveOrDefuse(dir);
 			if (hasMoved) {
@@ -675,8 +632,8 @@ public class NavSystem {
 	public static int[] runBFS(int[][] encArray, int goalx, int goaly) {
 		int[][] distanceArray = new int[encArray.length][encArray[0].length];
 		distanceArray[2][2] = 1;
-		for (int y = 0; y<5; y++) {
-			for (int x=0; x<5; x++) {
+		for (int y = 5; --y >= 0; ) {
+			for (int x = 5; --x >= 0; ) {
 				if (encArray[y][x] > 0) {
 					distanceArray[y][x] = -1;
 				}
@@ -685,9 +642,9 @@ public class NavSystem {
 		
 		int currValue = 1;
 		boolean reached = false;
-		whileLoop: while(currValue < 20) {			
-			for (int y = 0; y<5; y++) {
-				for (int x=0; x<5; x++) {
+		whileLoop: while(currValue < 20) {
+			for (int y = 5; --y >= 0; ) {
+				for (int x = 5; --x >= 0; ) {
 					if (distanceArray[y][x] == currValue) {
 						if (y == goaly && x == goalx) {
 							reached = true;
@@ -714,7 +671,8 @@ public class NavSystem {
 		
 		while(currValue > 1) {
 			int[][] neighbors = getNeighbors(currx, curry);
-			forloop: for (int[] neighbor: neighbors) {
+			forloop: for (int i = neighbors.length; --i >= 0; ) {
+				int[] neighbor = neighbors[i];
 				int nx = neighbor[0];
 				int ny = neighbor[1];
 				if (ny < 5 && ny >= 0 && nx < 5 && nx >= 0) {
@@ -743,20 +701,20 @@ public class NavSystem {
 	 */
 	public static void propagate(int[][] distanceArray, int x, int y, int value) {
 		int[][] neighbors = getNeighbors(x,y);
-		for (int[] neighbor: neighbors) {
+		for (int i = neighbors.length; --i >= 0; ) {
+			int[] neighbor = neighbors[i];
 			int ny = neighbor[1];
 			int nx = neighbor[0];
 			if (ny < 5 && ny >= 0 && nx < 5 && nx >= 0) {
 				if (distanceArray[ny][nx] > value || distanceArray[ny][nx] == 0) {
-					distanceArray[ny][nx] = value;
-					
+					distanceArray[ny][nx] = value;					
 				}
 			}
 		}
 	}
 	
 	public static int[][] getNeighbors(int x, int y) {
-		int[][] output = {{x-1, y}, {x-1, y+1}, {x, y+1}, {x+1, y+1},{x+1, y}, {x+1, y-1}, {x, y-1}, {x-1, y-1}};
+		int[][] output = {{x-1, y}, {x-1, y+1}, {x, y+1}, {x+1, y+1}, {x+1, y}, {x+1, y-1}, {x, y-1}, {x-1, y-1}};
 		return output;
 	}
 	
@@ -789,17 +747,17 @@ public class NavSystem {
 		return index;
 	}
 	
-	public static int[][] populate5by5board() throws GameActionException{
-		
-		MapLocation myLoc=rc.getLocation();
+	public static int[][] populate5by5board() throws GameActionException{		
+		MapLocation myLoc = rc.getLocation();
 		int[][] array = new int[5][5];
 
-		Robot[] nearbyRobots = rc.senseNearbyGameObjects(Robot.class,8);
+		Robot[] nearbyRobots = rc.senseNearbyGameObjects(Robot.class, 8);
 //		rc.setIndicatorString(2, "number of bots: "+nearbyRobots.length);
-		for (Robot aRobot:nearbyRobots){
+		for (int i = nearbyRobots.length; --i >= 0; ) {
+			Robot aRobot = nearbyRobots[i];
 			RobotInfo info = rc.senseRobotInfo(aRobot);
-			int[] index = locToIndex(myLoc,info.location,2);
-			if(index[0]>=0&&index[0]<=4&&index[1]>=0&&index[1]<=4){
+			int[] index = locToIndex(myLoc,info.location, 2);
+			if(index[0] >= 0 && index[0] <= 4 && index[1] >= 0 && index[1] <= 4){
 				if (info.type != RobotType.SOLDIER) {
 					array[index[0]][index[1]]=100;
 				}
@@ -807,5 +765,4 @@ public class NavSystem {
 		}
 		return array;
 	}
-
 }

@@ -1,12 +1,6 @@
 package team162;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-
 import battlecode.common.Clock;
-import battlecode.common.GameConstants;
 import battlecode.common.RobotController;
 
 /**
@@ -32,12 +26,10 @@ public class BroadcastSystem {
 	
 	/**
 	 * Reads a message on channelType. Checks if signature is correct.
-	 * Takes 69 bytecodes to read from two redundant channels.
 	 * @param channelType
 	 * @return
 	 */
 	public static Message read(ChannelType channelType) {
-		// TODO: Add caching of messages
 		try {
 			if (rc != null) {
 				for (int channelNo : getChannelNos(channelType)) {
@@ -60,7 +52,6 @@ public class BroadcastSystem {
 	
 	/**
 	 * Writes a message to channelType.
-	 * Takes 64 bytecodes to write to two redundant channels.
 	 * WARNING: Only can use 24 low-order bits from the body
 	 * @param channelType
 	 * @param header
@@ -74,7 +65,7 @@ public class BroadcastSystem {
 					rc.broadcast(channelNo, result);
 				}
 			} catch (Exception e) {
-				//
+				e.printStackTrace();
 			}
 		}
 	}
@@ -86,14 +77,7 @@ public class BroadcastSystem {
 	 */
 	public static int[] getChannelNos(ChannelType channelType) {
 		int round = Clock.getRoundNum();
-		int round_cycle = round / Constants.CHANNEL_CYCLE;
-		
-//		if (getChannelNos(channelType, round_cycle)[0] != getChannelNosPrecomputed(channelType, round_cycle)[0]) {
-//			System.out.println("failed!!!!!!");
-//		} else {
-//			System.out.println("worked!!!!");
-//		}
-		
+		int round_cycle = round / Constants.CHANNEL_CYCLE;		
 		return getChannelNos(channelType, round_cycle);
 	}
 	
@@ -108,6 +92,12 @@ public class BroadcastSystem {
 		return getChannelNos(channelType, round_cycle);
 	}
 	
+	/**
+	 * For precomputed channels.
+	 * @param channelType
+	 * @param round_cycle
+	 * @return
+	 */
 	public static int[] getChannelNosPrecomputed(ChannelType channelType, int round_cycle) {
 		return PrecomputedChannelNos.precomputedChannelNos[round_cycle][channelType.ordinal()];
 	}
@@ -139,13 +129,7 @@ public class BroadcastSystem {
 	 */
 	public static void writeMaxMessage(ChannelType channelType) {
 		write(channelType, Constants.MAX_MESSAGE);
-	}	
-	
-//	public static int hash(int a, int b, int c) {
-//		int h = (((a << 4) + b) << 4) + c;
-//		h ^= (h >>> 20) ^ (h >>> 12);
-//	    return h ^ (h >>> 7) ^ (h >>> 4);
-//	}
+	}
 	
 	public static int[] getChannelNos(ChannelType channelType, int constant) {
 //		if (constant < Constants.MAX_PRECOMPUTED_ROUNDS / Constants.CHANNEL_CYCLE) {
@@ -155,10 +139,7 @@ public class BroadcastSystem {
 		int rangeStart = channelType.ordinal() * ChannelType.range;
 		constant += 1;
 		for (int i = 0; i < Constants.REDUNDANT_CHANNELS; i++) {
-//			System.out.println("start: " + Clock.getBytecodeNum());
 			int offset = ((Integer.toString(((constant << 4 + 17 * channelType.ordinal()) << 4 + i)).hashCode())+rc.getTeam().ordinal()) % ChannelType.range;
-//			int offset = hash(constant, channelType.ordinal(), i) % ChannelType.range;
-//			System.out.println("end: " + Clock.getBytecodeNum());
 			// ensure that the offset is nonnegative
 			if (offset < 0) {
 				offset += ChannelType.range;

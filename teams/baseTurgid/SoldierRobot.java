@@ -160,11 +160,12 @@ public class SoldierRobot extends BaseRobot {
 					if (mineTeam != null && mineTeam != rc.getTeam()) {
 						soldierState = SoldierState.ESCAPE_HQ_MINES;
 					} else {
-						if (strategy == Strategy.NUKE) {
-							soldierState = SoldierState.FINDING_START_MINE_POSITIONS;
-						} else {
-							soldierState = SoldierState.RALLYING;
-						}
+//						if (strategy == Strategy.NUKE) {
+//							soldierState = SoldierState.FINDING_START_MINE_POSITIONS;
+//						} else {
+//							soldierState = SoldierState.RALLYING;
+//						}
+						soldierState = SoldierState.FINDING_START_MINE_POSITIONS;
 					}
 				}
 				
@@ -188,8 +189,23 @@ public class SoldierRobot extends BaseRobot {
 						// TOOD: fall through?
 					}
 				case MINING:
-					mineCode();
-					break;
+					int hqPowerLevel = Integer.MAX_VALUE;
+					Message message = BroadcastSystem.read(powerChannel);
+					if (message.isValid) {
+						hqPowerLevel = message.body;
+					} else {
+						hqPowerLevel = (int) rc.getTeamPower();
+					}
+					
+					if (DataCache.numEnemyRobots > 0) {
+						soldierState = SoldierState.FIGHTING;
+					} else if (hqPowerLevel < 10*(1+DataCache.numAlliedEncampments) ) {
+						soldierState = SoldierState.PUSHING;
+					} else {
+						mineCode();
+					}
+					break;					
+					
 				// FOR ESCAPING MINES IF THEY SURROUND THE HQ
 				case ESCAPE_HQ_MINES:
 					// We need to run away from the mines surrounding our base
@@ -219,6 +235,7 @@ public class SoldierRobot extends BaseRobot {
 							soldierState = SoldierState.RALLYING;
 						}
 					}
+					break;
 				case ALL_IN:
 					if (DataCache.numEnemyRobots > 0) {
 						aggressiveMicroCode();
@@ -241,22 +258,23 @@ public class SoldierRobot extends BaseRobot {
 						}
 					} else {
 						// Otherwise, just keep fighting
-						defendMicro();
+//						defendMicro();
+						microCode();
 					}
 					break;
 				case RALLYING:
-					int hqPowerLevel = Integer.MAX_VALUE;
-					Message message = BroadcastSystem.read(powerChannel);
-					if (message.isValid) {
-						hqPowerLevel = message.body;
+					int hqPowerLevel2 = Integer.MAX_VALUE;
+					Message message2 = BroadcastSystem.read(powerChannel);
+					if (message2.isValid) {
+						hqPowerLevel2 = message2.body;
 					} else {
-						hqPowerLevel = (int) rc.getTeamPower();
+						hqPowerLevel2 = (int) rc.getTeamPower();
 					}
 
 					// If there are enemies nearby, trigger FIGHTING SoldierState
 					if (DataCache.numEnemyRobots > 0) {
 						soldierState = SoldierState.FIGHTING;
-					} else if (hqPowerLevel < 10*(1+DataCache.numAlliedEncampments) ) {
+					} else if (hqPowerLevel2 < 10*(1+DataCache.numAlliedEncampments) ) {
 						soldierState = SoldierState.PUSHING;
 					} else {
 						boolean layedMine = false;
@@ -639,7 +657,9 @@ public class SoldierRobot extends BaseRobot {
 		if (NavSystem.navMode != NavMode.GETCLOSER || NavSystem.destination != DataCache.enemyHQLocation) {
 			NavSystem.setupGetCloser(DataCache.enemyHQLocation);
 		}
-		NavSystem.moveCloserFavorNoMines();
+		if (rc.isActive()) {
+			NavSystem.moveCloserFavorNoMines();
+		}
 	}
 	
 	/**
