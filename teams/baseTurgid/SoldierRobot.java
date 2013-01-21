@@ -160,7 +160,11 @@ public class SoldierRobot extends BaseRobot {
 					if (mineTeam != null && mineTeam != rc.getTeam()) {
 						soldierState = SoldierState.ESCAPE_HQ_MINES;
 					} else {
-						soldierState = SoldierState.FINDING_START_MINE_POSITIONS;
+						if (strategy == Strategy.NUKE) {
+							soldierState = SoldierState.FINDING_START_MINE_POSITIONS;
+						} else {
+							soldierState = SoldierState.RALLYING;
+						}
 					}
 				}
 				
@@ -209,7 +213,11 @@ public class SoldierRobot extends BaseRobot {
 						NavSystem.goToLocation(DataCache.ourHQLocation);
 					} else {
 						// We're done
-						soldierState = SoldierState.FINDING_START_MINE_POSITIONS;
+						if (strategy == Strategy.NUKE) { 
+							soldierState = SoldierState.FINDING_START_MINE_POSITIONS;
+						} else {
+							soldierState = SoldierState.RALLYING;
+						}
 					}
 				case ALL_IN:
 					if (DataCache.numEnemyRobots > 0) {
