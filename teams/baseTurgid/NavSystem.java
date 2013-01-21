@@ -40,6 +40,10 @@ public class NavSystem {
 	public static int[] BFSTurns;
 	public static int BFSIdle = 0;
 	
+	// For swarm coefficients
+	public static double swarmC;
+	public static double swarmD = 0;
+	
 	/**
 	 * MUST CALL THIS METHOD BEFORE USING NavSystem
 	 * @param myRC
@@ -60,6 +64,13 @@ public class NavSystem {
 		mapWidth = rc.getMapWidth();
 		// Calculate the center of the map
 		mapCenter = new MapLocation(mapWidth / 2, mapHeight / 2);
+		
+		// swarm coefficients
+		if (robot.strategy == Strategy.NUKE) {
+			swarmC = 0;
+		} else {
+			swarmC = 1.5;
+		}
 	}
 	
 	/**
@@ -296,9 +307,6 @@ public class NavSystem {
 			}
 		}
 		
-		double c = 1.5;
-		double d = 0;
-		
 		double denom = Math.sqrt(totalDx*totalDx + totalDy*totalDy);
 		double nearbyerDenom = Math.sqrt(totalNearbyerDx*totalNearbyerDx + totalNearbyerDy*totalNearbyerDy);
 		double addX, addY;
@@ -307,23 +315,23 @@ public class NavSystem {
 		if (Math.abs(totalDx) < 0.01) {
 			addX = 0;
 		} else {
-			addX = c * totalDx / denom;
+			addX = swarmC * totalDx / denom;
 		}
 		if (Math.abs(totalDy) < 0.01) {
 			addY = 0;
 		} else {
-			addY = c * totalDy / denom;
+			addY = swarmC * totalDy / denom;
 		}
 		
 		if (Math.abs(totalNearbyerDx) < 0.01) {
 			addXNearbyer = 0;
 		} else {
-			addXNearbyer = d * totalNearbyerDx / nearbyerDenom;
+			addXNearbyer = swarmD * totalNearbyerDx / nearbyerDenom;
 		}
 		if (Math.abs(totalNearbyerDy) < 0.01) {
 			addYNearbyer = 0;
 		} else {
-			addYNearbyer = d * totalNearbyerDy / nearbyerDenom;
+			addYNearbyer = swarmD * totalNearbyerDy / nearbyerDenom;
 		}
 		double finalDx = dxToLocation / distanceToLocation + addX - addXNearbyer;
 		double finalDy = dyToLocation / distanceToLocation + addY - addYNearbyer;
@@ -544,6 +552,33 @@ public class NavSystem {
 			}
 		}
 		return false;
+	}
+	
+	public static void moveCloserFavorNoMines() throws GameActionException {
+		Direction dir = rc.getLocation().directionTo(destination);
+		double distance = rc.getLocation().distanceSquaredTo(destination);
+		double currDist;
+		if (rc.canMove(dir) && !hasBadMine(rc.getLocation().add(dir))) {
+			rc.move(dir);
+		} else {
+			Direction bestDir = dir;
+			Direction currentDir = dir;
+			for (int directionOffset: directionOffsets) {
+				if (directionOffset != 0) {
+					currentDir = Direction.values()[(dir.ordinal() + directionOffset+8) % 8];
+					if (rc.canMove(currentDir) && !hasBadMine(rc.getLocation().add(currentDir))) {
+						currDist = rc.getLocation().add(currentDir).distanceSquaredTo(destination);
+						if (currDist < distance) {
+							distance = currDist;
+							bestDir = currentDir;
+						}
+						
+					}
+				}
+			}
+			
+			NavSystem.moveOrDefuse(bestDir);
+		}
 	}
 	
 	public static void tryMoveCloser() throws GameActionException {

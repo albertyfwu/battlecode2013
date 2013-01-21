@@ -43,19 +43,10 @@ public class SoldierRobot extends BaseRobot {
 	public double lineA, lineB, lineC, lineDistanceDenom;
 	public int x1, y1, x2, y2; // coordinates of our hq and enemy hq
 	
-	// strategy
-	public Strategy strategy;
-	
 	public SoldierRobot(RobotController rc) throws GameActionException {
 		super(rc);
 		
 		NavSystem.init(this);
-		
-		// find out what strategy we're using
-		Message message = BroadcastSystem.read(ChannelType.STRATEGY);
-		if (message.isValid) {
-			strategy = Strategy.values()[message.body];
-		}
 		
 		rallyPoint = findRallyPoint();
 		
@@ -138,7 +129,7 @@ public class SoldierRobot extends BaseRobot {
 	
 	@Override
 	public void run() {
-		try {			
+		try {
 			DataCache.updateRoundVariables();
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
 			
@@ -169,7 +160,11 @@ public class SoldierRobot extends BaseRobot {
 					if (mineTeam != null && mineTeam != rc.getTeam()) {
 						soldierState = SoldierState.ESCAPE_HQ_MINES;
 					} else {
-						soldierState = SoldierState.FINDING_START_MINE_POSITIONS;
+						if (strategy == Strategy.NUKE) {
+							soldierState = SoldierState.FINDING_START_MINE_POSITIONS;
+						} else {
+							soldierState = SoldierState.RALLYING;
+						}
 					}
 				}
 				
@@ -218,16 +213,24 @@ public class SoldierRobot extends BaseRobot {
 						NavSystem.goToLocation(DataCache.ourHQLocation);
 					} else {
 						// We're done
-						soldierState = SoldierState.FINDING_START_MINE_POSITIONS;
+						if (strategy == Strategy.NUKE) { 
+							soldierState = SoldierState.FINDING_START_MINE_POSITIONS;
+						} else {
+							soldierState = SoldierState.RALLYING;
+						}
 					}
 				case ALL_IN:
-					aggressiveMicroCode();
+					if (DataCache.numEnemyRobots > 0) {
+						aggressiveMicroCode();
+					} else{
+						pushCodeGetCloser();
+					}
 					break;
 				case PUSHING: 
 					if (DataCache.numEnemyRobots > 0) {
 						soldierState = SoldierState.FIGHTING;
 					} else {
-						pushCode();
+						pushCodeSmart();
 					}
 				case FIGHTING:
 					if (DataCache.numEnemyRobots == 0) {
@@ -236,9 +239,9 @@ public class SoldierRobot extends BaseRobot {
 						} else {
 							soldierState = SoldierState.PUSHING;
 						}
-						// Otherwise, just keep fighting
 					} else {
-						microCode();
+						// Otherwise, just keep fighting
+						defendMicro();
 					}
 					break;
 				case RALLYING:
@@ -597,7 +600,7 @@ public class SoldierRobot extends BaseRobot {
 	}
 
 	public void aggressiveMicroCode() throws GameActionException {
-		Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
+		Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 50, rc.getTeam().opponent());
 		int[] closestEnemyInfo = getClosestEnemy(enemiesList);
 		MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
 		
@@ -628,12 +631,26 @@ public class SoldierRobot extends BaseRobot {
 		return output;
 	}
 	
-	private void pushCode() throws GameActionException {		
+	/**
+	 * Push code that uses getcloser nav
+	 * @throws GameActionException
+	 */
+	public void pushCodeGetCloser() throws GameActionException {
+		if (NavSystem.navMode != NavMode.GETCLOSER || NavSystem.destination != DataCache.enemyHQLocation) {
+			NavSystem.setupGetCloser(DataCache.enemyHQLocation);
+		}
+		NavSystem.moveCloserFavorNoMines();
+	}
+	
+	/**
+	 * Push code that uses smart nav
+	 * @throws GameActionException
+	 */
+	public void pushCodeSmart() throws GameActionException {		
 		if (NavSystem.navMode != NavMode.SMART || NavSystem.destination != DataCache.enemyHQLocation) {
 			NavSystem.setupSmartNav(DataCache.enemyHQLocation);
-		} else {
-			NavSystem.followWaypoints(true, true);
 		}
+		NavSystem.followWaypoints(true, true);
 	}
 	
 	/** code to be used by capturers
