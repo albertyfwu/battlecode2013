@@ -68,6 +68,7 @@ public class EncampmentJobSystem {
 		rushDistSquared = DataCache.ourHQLocation.distanceSquaredTo(DataCache.enemyHQLocation);
 		supCount = 0;
 		genCount = 0;
+		artCount = 0;
 		
 		MapLocation[] allEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, Team.NEUTRAL);
 		
@@ -530,14 +531,19 @@ public class EncampmentJobSystem {
 	
 	
 	public static int getRobotTypeToBuild() {
-		if (supCount == 0 && genCount == 0) {
-			return 0;
-		}
-		if (((double) supCount)/(supCount + genCount) > 0.8) {
-			return 1;
+		if (robot.strategy == Strategy.NUKE) {
+			return 2; // artillery
 		} else {
-			return 0;
+			if (supCount == 0 && genCount == 0) {
+				return 0; // supplier
+			}
+			if (((double) supCount)/(supCount + genCount) > 0.8) {
+				return 1; // generator
+			} else {
+				return 0; // supplier
+			}
 		}
+		
 	}
 	
 	/**
@@ -602,7 +608,7 @@ public class EncampmentJobSystem {
 			return RobotType.SUPPLIER;
 		} else if (robotTypeInt == 1) {
 			return RobotType.GENERATOR;
-		} else {
+		} else { // 2
 			return RobotType.ARTILLERY;
 		}
 	}
