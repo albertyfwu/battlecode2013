@@ -1,4 +1,4 @@
-package baseLessGreedy;
+package baseEcon;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -15,10 +15,7 @@ public class HQRobot extends BaseRobot {
 	
 	public boolean allInMode = false;
 	public boolean ourNukeHalfDone = false;
-	
-	public int nukeProgress = 0;
-	public int nukePowerThreshold = 150;
-	
+
 	public HQRobot(RobotController rc) throws GameActionException {
 		super(rc);
 		strategy = decideStrategy();
@@ -33,24 +30,25 @@ public class HQRobot extends BaseRobot {
 	}
 	
 	public Strategy decideStrategy() throws GameActionException {
-		int numPossibleArtilleryLocations = EncampmentJobSystem.getPossibleArtilleryLocations().length;
-		
-		rc.setIndicatorString(1, Integer.toString(numPossibleArtilleryLocations));
-		MapLocation midPoint = findMidPoint();
-		int rSquared = DataCache.rushDistSquared / 4;
-		double mineDensity = rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
-		
-//		System.out.println(numPossibleArtilleryLocations + ", " + DataCache.rushDistSquared + ", " + rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length + ", " + mineDensity);
-//		String s = numPossibleArtilleryLocations + ", " + DataCache.rushDistSquared + ", " + rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length + ", " + mineDensity;
-//		rc.setIndicatorString(1, s);
-		
-		if (numPossibleArtilleryLocations >= 3) {
-//			System.out.println("nuke pls");
-			return Strategy.NUKE;
-		} else {
-//			System.out.println("econ");
-			return Strategy.ECON;
-		}
+//		int numPossibleArtilleryLocations = EncampmentJobSystem.getPossibleArtilleryLocations().length;
+//		
+//		rc.setIndicatorString(1, Integer.toString(numPossibleArtilleryLocations));
+//		MapLocation midPoint = findMidPoint();
+//		int rSquared = DataCache.rushDistSquared / 4;
+//		double mineDensity = rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+//		
+////		System.out.println(numPossibleArtilleryLocations + ", " + DataCache.rushDistSquared + ", " + rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length + ", " + mineDensity);
+////		String s = numPossibleArtilleryLocations + ", " + DataCache.rushDistSquared + ", " + rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length + ", " + mineDensity;
+////		rc.setIndicatorString(1, s);
+//		
+//		if (numPossibleArtilleryLocations >= 3) {
+////			System.out.println("nuke pls");
+//			return Strategy.NUKE;
+//		} else {
+////			System.out.println("econ");
+//			return Strategy.ECON;
+//		}
+		return Strategy.ECON;
 	}
 	
 	private MapLocation findMidPoint() {
@@ -72,27 +70,18 @@ public class HQRobot extends BaseRobot {
 			BroadcastSystem.write(strategyChannel, strategy.ordinal()); // broadcast the strategy
 			
 			// Check if our nuke is half done
-			nukeProgress = rc.checkResearchProgress(Upgrade.NUKE);
 			if (!ourNukeHalfDone) {
-				if (nukeProgress >= 200) {
+				if (rc.checkResearchProgress(Upgrade.NUKE) >= 200) {
 					ourNukeHalfDone = true;
 				}
+			}
+			if (ourNukeHalfDone) {
+				// Broadcast this
+				BroadcastSystem.write(ChannelType.OUR_NUKE_HALF_DONE, 1);
 			}
 			// Check if enemy's nuke is half done
 			if (!enemyNukeHalfDone) {
 				enemyNukeHalfDone = rc.senseEnemyNukeHalfDone();
-			}
-			
-			
-			if (ourNukeHalfDone) {
-				if (nukeProgress >= 205 && !enemyNukeHalfDone) {
-					// make soldiers
-					nukePowerThreshold = 100;
-				} else {
-					nukePowerThreshold = 150;
-				}
-				// Broadcast this				
-				BroadcastSystem.write(ChannelType.OUR_NUKE_HALF_DONE, 1);
 			}
 			if (enemyNukeHalfDone) {
 				// If it is half done, broadcast it
@@ -141,7 +130,7 @@ public class HQRobot extends BaseRobot {
 							spawnSoldier();
 						}
 					} else {
-						if (rc.getTeamPower() < nukePowerThreshold ||
+						if (rc.getTeamPower() < 150 ||
 								(DataCache.numNearbyEnemySoldiers == 0 && rc.checkResearchProgress(Upgrade.NUKE) > 385 && rc.getEnergon() > 475)) {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.NUKE);
