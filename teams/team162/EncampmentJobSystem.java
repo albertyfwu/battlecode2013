@@ -49,7 +49,6 @@ public class EncampmentJobSystem {
 	public static int supCount;
 	public static int genCount;
 	
-	public static int rushDistSquared;
 	public static int artCount;
 	
 	public static int hardEncampmentLimit;
@@ -67,7 +66,6 @@ public class EncampmentJobSystem {
 		numEncampmentsNeeded = Constants.INITIAL_NUM_ENCAMPMENTS_NEEDED; 
 		numUnreachableEncampments = 0;
 		unreachableEncampments = new FastLocSet();
-		rushDistSquared = DataCache.ourHQLocation.distanceSquaredTo(DataCache.enemyHQLocation);
 		supCount = 0;
 		genCount = 0;
 		artCount = 0;
@@ -91,6 +89,7 @@ public class EncampmentJobSystem {
 		
 		if (robot.strategy == Strategy.NUKE){ // if nuke strat
 			MapLocation[] possibleEncampments = getPossibleArtilleryLocations();
+			System.out.println("numPossibleEncampments: " + possibleEncampments.length);
 			if (possibleEncampments.length == 0) {
 				numEncampmentsNeeded = 0;
 			} else {			
@@ -588,10 +587,17 @@ public class EncampmentJobSystem {
 	 * @return
 	 */
 	public static MapLocation getArtilleryCenter() {
-		int x, y;
-		x = (DataCache.enemyHQLocation.x+4*DataCache.ourHQLocation.x)/5;
-		y = (DataCache.enemyHQLocation.y+4*DataCache.ourHQLocation.y)/5;
-		return new MapLocation(x,y);
+		int dx = DataCache.enemyHQLocation.x - DataCache.ourHQLocation.x;
+		int dy = DataCache.enemyHQLocation.y - DataCache.ourHQLocation.y;
+		
+		double vectorMag = Math.sqrt(dx*dx + dy*dy);
+		double dxNorm = dx/vectorMag;
+		double dyNorm = dy/vectorMag;
+		
+		int centerx = (int) (DataCache.ourHQLocation.x + 6 * dxNorm);
+		int centery = (int) (DataCache.ourHQLocation.y + 6 * dyNorm);
+		
+		return new MapLocation(centerx, centery);
 	}
 	
 	/**
@@ -601,9 +607,12 @@ public class EncampmentJobSystem {
 	 */
 	public static MapLocation[] getPossibleArtilleryLocations() throws GameActionException {
 		MapLocation artCenter = getArtilleryCenter();
+		
 //		System.out.println("getArtilleryCenter: " + artCenter);
-//		System.out.println("rushDistSquared/16: " + rushDistSquared/16);
-		return rc.senseEncampmentSquares(artCenter, rushDistSquared/16, Team.NEUTRAL);
+//		System.out.println("rushDistSquared/25: " + DataCache.rushDistSquared/25);
+//		int encampmentRadius = (int) (DataCache.rushDistSquared/25 + 6 * Math.sqrt(DataCache.rushDistSquared)/5 + 9);
+		int encampmentRadiusSquared = 72;
+		return rc.senseEncampmentSquares(artCenter, encampmentRadiusSquared, Team.NEUTRAL);
 	}
 
 	/**

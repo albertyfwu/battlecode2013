@@ -12,7 +12,7 @@ public interface Constants {
 	// var = n means channel will cycle every n turns
 	// IMPORTANT: YOU MUST RUN THE MAIN FUNCTION IN BROADCASTSYSTEM.JAVA IF YOU CHANGE THIS CONSTANT
 	// IMPORTANT: ADDITIONALLY, MAKE SURE TO ADJUST MAX_PRECOMPUTED_ROUNDS SO JAVA DOES NOT COMPLAIN
-	public static final int CHANNEL_CYCLE = 13;	
+	public static final int CHANNEL_CYCLE = 17;	
 	
 	// the maximum number of precomputed rounds of channels (if too high, Java will spit out wrong numbers)
 	public static final int MAX_PRECOMPUTED_ROUNDS = 2500;
@@ -64,6 +64,13 @@ public interface Constants {
 	/**
 	 * Mining
 	 */
+	
+	// How far to mine from HQ at the beginning before stopping
+	public static final int MAXIMUM_MINING_DISTANCE_SQUARED_FROM_HQ = 121;
+	
+	// TODO: dynamically adjust this? how close are the encampments?
+	// Width of the mining pattern at beginning
+	public static final int MINING_WIDTH = 4;
 
 	// Radius of the initial mining circle
 	public static final int INITIAL_MINING_RADIUS = 2;

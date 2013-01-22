@@ -22,18 +22,18 @@ public abstract class BaseRobot {
 		EncampmentJobSystem.init(this);
 		
 		// find out what strategy we're using
-		getStrategy();
+//		getStrategy();
 	}
 	
-	public void getStrategy() {
-		Message message = BroadcastSystem.read(ChannelType.STRATEGY);
-		if (message.isValid) {
-			strategy = Strategy.values()[message.body];
-		} else {
-			// TODO: choose a strategy
-			strategy = Strategy.UNKNOWN;
-		}
-	}
+//	public void getStrategy() {
+//		Message message = BroadcastSystem.read(ChannelType.STRATEGY);
+//		if (message.isValid) {
+//			strategy = Strategy.values()[message.body];
+//		} else {
+//			// TODO: choose a strategy
+//			strategy = Strategy.UNKNOWN;
+//		}
+//	}
 	
 	// Actions for a specific robot
 	abstract public void run();
@@ -41,9 +41,9 @@ public abstract class BaseRobot {
 	public void loop() {
 		while (true) {
 			try {
-				if (strategy == Strategy.UNKNOWN) {
-					getStrategy();
-				}
+//				if (strategy == Strategy.UNKNOWN) {
+//					getStrategy();
+//				}
 				run();
 			} catch (Exception e) {
 				// Deal with exception

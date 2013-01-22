@@ -3,6 +3,7 @@ package team162;
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.Team;
 import battlecode.common.Upgrade;
@@ -28,14 +29,38 @@ public class HQRobot extends BaseRobot {
 		EncampmentJobSystem.initializeConstants();
 	}
 	
-	public Strategy decideStrategy() {
-		return Strategy.ECON;
+	public Strategy decideStrategy() throws GameActionException {
+		int numPossibleArtilleryLocations = EncampmentJobSystem.getPossibleArtilleryLocations().length;
+		MapLocation midPoint = findMidPoint();
+		int rSquared = DataCache.rushDistSquared / 4;
+		double mineDensity = rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+		
+//		System.out.println(numPossibleArtilleryLocations + ", " + DataCache.rushDistSquared + ", " + rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length + ", " + mineDensity);
+		String s = numPossibleArtilleryLocations + ", " + DataCache.rushDistSquared + ", " + rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length + ", " + mineDensity;
+		rc.setIndicatorString(1, s);
+		
+		if (numPossibleArtilleryLocations >= 3) {
+//			System.out.println("nuke pls");
+			return Strategy.NUKE;
+		} else {
+//			System.out.println("econ");
+			return Strategy.ECON;
+		}
+	}
+	
+	private MapLocation findMidPoint() {
+		MapLocation enemyLoc = DataCache.enemyHQLocation;
+		MapLocation ourLoc = DataCache.ourHQLocation;
+		int x, y;
+		x = (enemyLoc.x + ourLoc.x) / 2;
+		y = (enemyLoc.y + ourLoc.y) / 2;
+		return new MapLocation(x,y);
 	}
 	
 	@Override
 	public void run() {
 		try {
-//			rc.setIndicatorString(0, Integer.toString(rc.checkResearchProgress(Upgrade.NUKE)));
+			rc.setIndicatorString(0, Integer.toString(rc.checkResearchProgress(Upgrade.NUKE)));
 			
 			DataCache.updateRoundVariables();
 			BroadcastSystem.write(powerChannel, (int) rc.getTeamPower()); // broadcast the team power
@@ -76,7 +101,7 @@ public class HQRobot extends BaseRobot {
 					if (enemyNukeHalfDone && !DataCache.hasDefusion && DataCache.numAlliedSoldiers > 5) {
 						upgrade = true;
 						rc.researchUpgrade(Upgrade.DEFUSION);
-					} else if (rc.getTeamPower() < 100) {
+					} else if (rc.getTeamPower() < 100 && Clock.getRoundNum() > 5) {
 						if (!DataCache.hasDefusion) {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.DEFUSION);
@@ -102,7 +127,8 @@ public class HQRobot extends BaseRobot {
 							spawnSoldier();
 						}
 					} else {
-						if (rc.getTeamPower() < 150 || (DataCache.numNearbyEnemySoldiers == 0 && rc.checkResearchProgress(Upgrade.NUKE) > 380)) {
+						if (rc.getTeamPower() < 150 ||
+								(DataCache.numNearbyEnemySoldiers == 0 && rc.checkResearchProgress(Upgrade.NUKE) > 385 && rc.getEnergon() > 475)) {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.NUKE);
 						}

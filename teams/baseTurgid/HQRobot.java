@@ -39,11 +39,11 @@ public class HQRobot extends BaseRobot {
 		String s = numPossibleArtilleryLocations + ", " + DataCache.rushDistSquared + ", " + rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length + ", " + mineDensity;
 		rc.setIndicatorString(1, s);
 		
-		if (numPossibleArtilleryLocations >= 3 && DataCache.rushDistSquared > 500 && mineDensity > 0.3) {
-			System.out.println("nuke pls");
+		if (numPossibleArtilleryLocations >= 3) {
+//			System.out.println("nuke pls");
 			return Strategy.NUKE;
 		} else {
-			System.out.println("econ");
+//			System.out.println("econ");
 			return Strategy.ECON;
 		}
 	}
@@ -64,7 +64,7 @@ public class HQRobot extends BaseRobot {
 			
 			DataCache.updateRoundVariables();
 			BroadcastSystem.write(powerChannel, (int) rc.getTeamPower()); // broadcast the team power
-			BroadcastSystem.write(strategyChannel, strategy.ordinal()); // broadcast the strategy
+//			BroadcastSystem.write(strategyChannel, strategy.ordinal()); // broadcast the strategy
 			
 			// Check if our nuke is half done
 			if (!ourNukeHalfDone) {

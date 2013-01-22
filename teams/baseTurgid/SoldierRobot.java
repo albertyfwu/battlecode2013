@@ -58,6 +58,29 @@ public class SoldierRobot extends BaseRobot {
 			EncampmentJobSystem.updateJobTaken();
 		}
 		
+		// TODO: this will fuck up if we ever build artillery for non-nuke bots
+		// LEARN THE STRATEGY
+		Message message = BroadcastSystem.read(ChannelType.STRATEGY);
+		if (message.isValid && message.body < Strategy.values().length && message.body >= 0) {
+			strategy = Strategy.values()[message.body];
+		} else {
+			// we couldn't read the strategy channel
+			MapLocation[] alliedEncampmentSquares = rc.senseAlliedEncampmentSquares();
+			if (alliedEncampmentSquares.length == 0) {
+				strategy = Strategy.ECON;
+			} else {
+				Robot robot = (Robot) rc.senseObjectAtLocation(alliedEncampmentSquares[0]);
+				RobotInfo robotInfo = rc.senseRobotInfo(robot);
+				if (robotInfo.type == RobotType.ARTILLERY) {
+					strategy = Strategy.NUKE;
+				} else {
+					strategy = Strategy.ECON;
+				}
+			}
+		}
+		
+		rc.setIndicatorString(2, strategy.toString());
+		
 		initializeMining();
 	}
 	
@@ -130,12 +153,26 @@ public class SoldierRobot extends BaseRobot {
 	}
 	
 	private MapLocation findRallyPoint() {
-		MapLocation enemyLoc = DataCache.enemyHQLocation;
-		MapLocation ourLoc = DataCache.ourHQLocation;
-		int x, y;
-		x = (enemyLoc.x + 3 * ourLoc.x) / 4;
-		y = (enemyLoc.y + 3 * ourLoc.y) / 4;
-		return new MapLocation(x,y);
+		if (strategy == Strategy.NUKE) {
+			int dx = DataCache.enemyHQLocation.x - DataCache.ourHQLocation.x;
+			int dy = DataCache.enemyHQLocation.y - DataCache.ourHQLocation.y;
+			
+			double vectorMag = Math.sqrt(dx*dx + dy*dy);
+			double dxNorm = dx/vectorMag;
+			double dyNorm = dy/vectorMag;
+			
+			int centerx = (int) (DataCache.ourHQLocation.x + 8 * dxNorm);
+			int centery = (int) (DataCache.ourHQLocation.y + 8 * dyNorm);
+			
+			return new MapLocation(centerx, centery);
+		} else {
+			MapLocation enemyLoc = DataCache.enemyHQLocation;
+			MapLocation ourLoc = DataCache.ourHQLocation;
+			int x, y;
+			x = (enemyLoc.x + 3 * ourLoc.x) / 4;
+			y = (enemyLoc.y + 3 * ourLoc.y) / 4;
+			return new MapLocation(x,y);
+		}
 	}
 	
 	public double distanceToLine(MapLocation location) {
