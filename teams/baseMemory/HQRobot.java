@@ -129,7 +129,8 @@ public class HQRobot extends BaseRobot {
 							spawnSoldier();
 						}
 					} else {
-						if ((rc.getTeamPower() < 150 && Clock.getRoundNum() > 10) ||
+//						if ((DataCache.numAlliedRobots >= 9 && Clock.getRoundNum() > 5) ||
+						if ((rc.getTeamPower() < 150 && Clock.getRoundNum() > 5) ||
 								(DataCache.numNearbyEnemySoldiers == 0 && rc.checkResearchProgress(Upgrade.NUKE) > 385 && rc.getEnergon() > 475)) {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.NUKE);

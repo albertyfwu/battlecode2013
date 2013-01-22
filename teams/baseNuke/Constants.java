@@ -17,17 +17,8 @@ public interface Constants {
 	// the maximum number of precomputed rounds of channels (if too high, Java will spit out wrong numbers)
 	public static final int MAX_PRECOMPUTED_ROUNDS = 2500;
 	
+	// used primarily for broadcasting in EncampmentJobSystem (resetting channels)
 	public static final int MAX_MESSAGE = 0xFFFFFF;
-	
-	/**
-	 * Mining Waypoints
-	 */
-	
-	// How far off we should look each time we need to calculate a new waypoint
-	public static final int MINING_OFFSET_RADIUS = 3;
-		
-	// How large of a circle we should be checking each time we calculate a new waypoint
-	public static final int MINING_CHECK_RADIUS_SQUARED = 4;
 	
 	/**
 	 * All Waypoints
@@ -59,9 +50,6 @@ public interface Constants {
 	/**
 	 * Rallying
 	 */
-
-	// How many allied soldiers should we wait for before moving out?
-	public static final int RALLYING_SOLDIER_THRESHOLD = 25;
 	
 	// Within what radius squared should we calculate how many people are in our rally?
 	public static final int RALLYING_RADIUS_SQUARED_CHECK = 63;
@@ -76,6 +64,13 @@ public interface Constants {
 	/**
 	 * Mining
 	 */
+	
+	// How far to mine from HQ at the beginning before stopping
+	public static final int MAXIMUM_MINING_DISTANCE_SQUARED_FROM_HQ = 121;
+	
+	// TODO: dynamically adjust this? how close are the encampments?
+	// Width of the mining pattern at beginning
+	public static final int MINING_WIDTH = 4;
 
 	// Radius of the initial mining circle
 	public static final int INITIAL_MINING_RADIUS = 2;

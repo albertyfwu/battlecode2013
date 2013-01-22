@@ -4,15 +4,15 @@ import battlecode.common.GameConstants;
 
 public enum ChannelType {
 
+	// for strategy
+	STRATEGY,
+	
 	// for encampments
 	ENC1,
 	ENC2,
 	ENC3,
 	ENC4,
 	ENC5,
-	ENC6,
-	ENC7,
-	ENC8,
 	
 	// completion channels
 	COMP1,
@@ -20,9 +20,6 @@ public enum ChannelType {
 	COMP3,
 	COMP4,
 	COMP5,
-	COMP6,
-	COMP7,
-	COMP8,
 	
 	// broadcasting waypoints for clearing wide swath for army
 	WAYPOINTS,
@@ -32,6 +29,8 @@ public enum ChannelType {
 	
 	// checking if enemy nuke is half done
 	ENEMY_NUKE_HALF_DONE,
+	
+	// check if our nuke is half done
 	OUR_NUKE_HALF_DONE;
 	
 	public static final int size = ChannelType.values().length;

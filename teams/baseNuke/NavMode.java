@@ -1,10 +1,9 @@
 package baseNuke;
 
 public enum NavMode {
-	NEUTRAL,
+	REGULAR,
 	SMART,
 	BACKDOOR,
 	GETCLOSER,
-	BFSMODE,
-	MINING;
-	}
+	BFSMODE;
+}

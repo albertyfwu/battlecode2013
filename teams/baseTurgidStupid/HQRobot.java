@@ -39,7 +39,7 @@ public class HQRobot extends BaseRobot {
 		String s = numPossibleArtilleryLocations + ", " + DataCache.rushDistSquared + ", " + rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length + ", " + mineDensity;
 		rc.setIndicatorString(1, s);
 		
-		if (numPossibleArtilleryLocations >= 3 && DataCache.rushDistSquared > 500 && mineDensity > 0.3) {
+		if (numPossibleArtilleryLocations >= 3) {
 			return Strategy.ECON;
 		} else {
 			return Strategy.NUKE;
