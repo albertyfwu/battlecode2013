@@ -1,4 +1,4 @@
-package baseTurgid;
+package baseTurgidStupid;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -40,11 +40,9 @@ public class HQRobot extends BaseRobot {
 		rc.setIndicatorString(1, s);
 		
 		if (numPossibleArtilleryLocations >= 3 && DataCache.rushDistSquared > 500 && mineDensity > 0.3) {
-			System.out.println("nuke pls");
-			return Strategy.NUKE;
-		} else {
-			System.out.println("econ");
 			return Strategy.ECON;
+		} else {
+			return Strategy.NUKE;
 		}
 	}
 	

@@ -1,4 +1,4 @@
-package baseTurgid;
+package baseTurgidStupid;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -143,7 +143,7 @@ public class BroadcastSystem {
 //		}
 		int[] channelNos = new int[Constants.REDUNDANT_CHANNELS];
 		int rangeStart = channelType.ordinal() * ChannelType.range;
-		constant += 1;
+		constant += 3000;
 		for (int i = 0; i < Constants.REDUNDANT_CHANNELS; i++) {
 			int offset = ((Integer.toString(((constant << 4 + 17 * channelType.ordinal()) << 4 + i)).hashCode())+rc.getTeam().ordinal()) % ChannelType.range;
 			// ensure that the offset is nonnegative

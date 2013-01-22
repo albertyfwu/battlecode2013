@@ -1,4 +1,4 @@
-package baseTurgid;
+package baseTurgidStupid;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;

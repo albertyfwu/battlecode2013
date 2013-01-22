@@ -1,4 +1,4 @@
-package baseTurgid;
+package baseTurgidStupid;
 
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
