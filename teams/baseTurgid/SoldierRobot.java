@@ -79,7 +79,7 @@ public class SoldierRobot extends BaseRobot {
 			}
 		}
 		
-		rc.setIndicatorString(2, strategy.toString());
+//		rc.setIndicatorString(2, strategy.toString());
 		
 		initializeMining();
 	}
@@ -504,8 +504,8 @@ public class SoldierRobot extends BaseRobot {
 						// check to see if mines on left or right are untaken
 						MapLocation newLocation1 = rc.getLocation().add(miningDirConstant);
 						MapLocation newLocation2 = rc.getLocation().add(miningDirConstantOpp);
-						rc.setIndicatorString(0, Double.toString(distanceToLine(newLocation1)));
-						rc.setIndicatorString(1, Double.toString(distanceToLine(newLocation2)));
+//						rc.setIndicatorString(0, Double.toString(distanceToLine(newLocation1)));
+//						rc.setIndicatorString(1, Double.toString(distanceToLine(newLocation2)));
 						if (distanceToLine(newLocation1) <= Constants.MINING_WIDTH && rc.senseMine(newLocation1) == null && rc.senseEncampmentSquares(newLocation1, 0, null).length == 0) {
 							NavSystem.goDirectionAndDefuse(miningDirConstant);
 							return;
@@ -691,7 +691,7 @@ public class SoldierRobot extends BaseRobot {
 		int[] closestEnemyInfo = getClosestEnemy(enemiesList);
 		MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
 		
-		if (DataCache.numNearbyAlliedSoldiers > 1.5 * DataCache.numNearbyEnemyRobots) {
+		if (DataCache.numNearbyAlliedSoldiers > 1.5 * DataCache.numNearbyEnemySoldiers) {
 			NavSystem.goToLocation(closestEnemyLocation);
 		} else {
 			microCode();

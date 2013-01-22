@@ -1,4 +1,4 @@
-package team162;
+package baseGreedier;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -129,7 +129,7 @@ public class HQRobot extends BaseRobot {
 							spawnSoldier();
 						}
 					} else {
-						if (rc.getTeamPower() < 150 ||
+						if (rc.getTeamPower() < 160 ||
 								(DataCache.numNearbyEnemySoldiers == 0 && rc.checkResearchProgress(Upgrade.NUKE) > 385 && rc.getEnergon() > 475)) {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.NUKE);

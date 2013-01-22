@@ -1,4 +1,4 @@
-package team162;
+package baseLessGreedy;
 
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;

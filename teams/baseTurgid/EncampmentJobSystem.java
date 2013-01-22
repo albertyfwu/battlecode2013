@@ -473,7 +473,12 @@ public class EncampmentJobSystem {
 			numEncampmentsNeeded = 0;
 		}
 //		System.out.println("Before update: " + Clock.getBytecodeNum());
-		MapLocation[] neutralEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, Team.NEUTRAL);
+		MapLocation[] neutralEncampments;
+		if (robot.strategy == Strategy.NUKE){
+			neutralEncampments = getPossibleArtilleryLocations();
+		} else {
+			neutralEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, Team.NEUTRAL);
+		}
 		if (numEncampmentsNeeded > neutralEncampments.length){
 			numEncampmentsNeeded = neutralEncampments.length;
 		}
@@ -596,6 +601,8 @@ public class EncampmentJobSystem {
 		
 		int centerx = (int) (DataCache.ourHQLocation.x + 6 * dxNorm);
 		int centery = (int) (DataCache.ourHQLocation.y + 6 * dyNorm);
+		
+		rc.setIndicatorString(2, new MapLocation(centerx, centery).toString());
 		
 		return new MapLocation(centerx, centery);
 	}

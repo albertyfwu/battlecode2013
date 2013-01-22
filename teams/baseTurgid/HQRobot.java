@@ -31,13 +31,15 @@ public class HQRobot extends BaseRobot {
 	
 	public Strategy decideStrategy() throws GameActionException {
 		int numPossibleArtilleryLocations = EncampmentJobSystem.getPossibleArtilleryLocations().length;
+		
+		rc.setIndicatorString(1, Integer.toString(numPossibleArtilleryLocations));
 		MapLocation midPoint = findMidPoint();
 		int rSquared = DataCache.rushDistSquared / 4;
 		double mineDensity = rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
 		
 //		System.out.println(numPossibleArtilleryLocations + ", " + DataCache.rushDistSquared + ", " + rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length + ", " + mineDensity);
-		String s = numPossibleArtilleryLocations + ", " + DataCache.rushDistSquared + ", " + rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length + ", " + mineDensity;
-		rc.setIndicatorString(1, s);
+//		String s = numPossibleArtilleryLocations + ", " + DataCache.rushDistSquared + ", " + rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length + ", " + mineDensity;
+//		rc.setIndicatorString(1, s);
 		
 		if (numPossibleArtilleryLocations >= 3) {
 //			System.out.println("nuke pls");
@@ -60,11 +62,11 @@ public class HQRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
-			rc.setIndicatorString(0, Integer.toString(rc.checkResearchProgress(Upgrade.NUKE)));
+//			rc.setIndicatorString(0, Integer.toString(rc.checkResearchProgress(Upgrade.NUKE)));
 			
 			DataCache.updateRoundVariables();
 			BroadcastSystem.write(powerChannel, (int) rc.getTeamPower()); // broadcast the team power
-//			BroadcastSystem.write(strategyChannel, strategy.ordinal()); // broadcast the strategy
+			BroadcastSystem.write(strategyChannel, strategy.ordinal()); // broadcast the strategy
 			
 			// Check if our nuke is half done
 			if (!ourNukeHalfDone) {

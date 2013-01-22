@@ -1,4 +1,4 @@
-package team162;
+package baseLessGreedy;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -691,7 +691,7 @@ public class SoldierRobot extends BaseRobot {
 		int[] closestEnemyInfo = getClosestEnemy(enemiesList);
 		MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
 		
-		if (DataCache.numNearbyAlliedSoldiers > 1.5 * DataCache.numNearbyEnemyRobots) {
+		if (DataCache.numNearbyAlliedSoldiers > 1.5 * DataCache.numNearbyEnemySoldiers) {
 			NavSystem.goToLocation(closestEnemyLocation);
 		} else {
 			microCode();

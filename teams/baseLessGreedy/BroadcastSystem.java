@@ -1,4 +1,4 @@
-package team162;
+package baseLessGreedy;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
