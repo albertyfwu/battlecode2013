@@ -103,7 +103,7 @@ public class HQRobot extends BaseRobot {
 					if (enemyNukeHalfDone && !DataCache.hasDefusion && DataCache.numAlliedSoldiers > 5) {
 						upgrade = true;
 						rc.researchUpgrade(Upgrade.DEFUSION);
-					} else if (rc.getTeamPower() < 100) {
+					} else if (rc.getTeamPower() < 100 && Clock.getRoundNum() > 10) {
 						if (!DataCache.hasDefusion) {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.DEFUSION);
@@ -129,7 +129,7 @@ public class HQRobot extends BaseRobot {
 							spawnSoldier();
 						}
 					} else {
-						if (rc.getTeamPower() < 150 ||
+						if ((rc.getTeamPower() < 150 && Clock.getRoundNum() > 10) ||
 								(DataCache.numNearbyEnemySoldiers == 0 && rc.checkResearchProgress(Upgrade.NUKE) > 385 && rc.getEnergon() > 475)) {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.NUKE);
