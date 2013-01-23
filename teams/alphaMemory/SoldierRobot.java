@@ -137,6 +137,7 @@ public class SoldierRobot extends BaseRobot {
 		miningStartLocation = DataCache.ourHQLocation.add(miningDirConstant, randInt);
 		int newX = miningStartLocation.x;
 		int newY = miningStartLocation.y;
+		rc.setIndicatorString(2, "newX: " + newX + ", newY: " + newY);
 		// make sure the location doesn't fall off the map
 		if (newX < 0) {
 			newX = 0;
@@ -181,9 +182,31 @@ public class SoldierRobot extends BaseRobot {
 		return Math.abs(lineA * x + lineB * y + lineC) / lineDistanceDenom;
 	}
 	
+	public void getNewMiningStartLocation() {
+		MapLocation newLocation = DataCache.ourHQLocation.add(miningDirConstant, (randInt + 1) % offset);
+		int newX = newLocation.x;
+		int newY = newLocation.y;
+		rc.setIndicatorString(2, "newX: " + newX + ", newY: " + newY);
+		// make sure the location doesn't fall off the map
+		if (newX < 0) {
+			newX = 0;
+		} else if (newX >= DataCache.mapWidth) {
+			newX = DataCache.mapWidth - 1;
+		}
+		if (newY < 0) {
+			newY = 0;
+		} else if (newY >= DataCache.mapHeight){
+			newY = DataCache.mapHeight - 1;
+		}
+		miningStartLocation = new MapLocation(newX, newY);
+	}
+	
 	@Override
 	public void run() {
 		try {
+			rc.setIndicatorString(0, soldierState.toString());
+			rc.setIndicatorString(1, miningStartLocation.toString());
+			
 			DataCache.updateRoundVariables();
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
 			
@@ -235,7 +258,7 @@ public class SoldierRobot extends BaseRobot {
 							// TODO: fall through?
 						} else if (distanceSquaredToMiningStartLocation <= 2 && rc.senseEncampmentSquares(miningStartLocation, 0, null).length == 1) {
 							// Choose another miningStartLocation
-							miningStartLocation = DataCache.ourHQLocation.add(miningDirConstant, (randInt + 1) % offset);;
+							getNewMiningStartLocation();
 						} else {
 							Direction dir = rc.getLocation().directionTo(miningStartLocation);
 							NavSystem.goDirectionAndDefuse(dir);
