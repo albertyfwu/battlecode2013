@@ -29,7 +29,7 @@ public class ArtilleryRobot extends BaseRobot {
 	}
 
 	public MapLocation getBestTarget(Robot[] potentialTargets) throws GameActionException {
-		int highestScore = 0;
+		int highestScore = 60;
 		MapLocation bestLocation = null;
 		
 		for (Robot potentialTarget : potentialTargets) {

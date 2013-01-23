@@ -1,4 +1,4 @@
-package baseTurgidStupid;
+package alphaMemory;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -31,18 +31,22 @@ public class HQRobot extends BaseRobot {
 	
 	public Strategy decideStrategy() throws GameActionException {
 		int numPossibleArtilleryLocations = EncampmentJobSystem.getPossibleArtilleryLocations().length;
+		
+		rc.setIndicatorString(1, Integer.toString(numPossibleArtilleryLocations));
 		MapLocation midPoint = findMidPoint();
 		int rSquared = DataCache.rushDistSquared / 4;
 		double mineDensity = rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
 		
 //		System.out.println(numPossibleArtilleryLocations + ", " + DataCache.rushDistSquared + ", " + rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length + ", " + mineDensity);
-		String s = numPossibleArtilleryLocations + ", " + DataCache.rushDistSquared + ", " + rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length + ", " + mineDensity;
-		rc.setIndicatorString(1, s);
+//		String s = numPossibleArtilleryLocations + ", " + DataCache.rushDistSquared + ", " + rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length + ", " + mineDensity;
+//		rc.setIndicatorString(1, s);
 		
 		if (numPossibleArtilleryLocations >= 3) {
-			return Strategy.ECON;
-		} else {
+//			System.out.println("nuke pls");
 			return Strategy.NUKE;
+		} else {
+//			System.out.println("econ");
+			return Strategy.ECON;
 		}
 	}
 	
@@ -58,7 +62,7 @@ public class HQRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
-			rc.setIndicatorString(0, Integer.toString(rc.checkResearchProgress(Upgrade.NUKE)));
+//			rc.setIndicatorString(0, Integer.toString(rc.checkResearchProgress(Upgrade.NUKE)));
 			
 			DataCache.updateRoundVariables();
 			BroadcastSystem.write(powerChannel, (int) rc.getTeamPower()); // broadcast the team power
@@ -125,7 +129,8 @@ public class HQRobot extends BaseRobot {
 							spawnSoldier();
 						}
 					} else {
-						if (rc.getTeamPower() < 150 ||
+//						if ((DataCache.numAlliedRobots >= 9 && Clock.getRoundNum() > 5) ||
+						if ((rc.getTeamPower() < 150 && Clock.getRoundNum() > 5) ||
 								(DataCache.numNearbyEnemySoldiers == 0 && rc.checkResearchProgress(Upgrade.NUKE) > 385 && rc.getEnergon() > 475)) {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.NUKE);

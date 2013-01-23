@@ -1,4 +1,4 @@
-package baseTurgidStupid;
+package alphaMemory;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -79,7 +79,7 @@ public class SoldierRobot extends BaseRobot {
 			}
 		}
 		
-		//
+//		rc.setIndicatorString(2, strategy.toString());
 		
 		initializeMining();
 	}
@@ -154,25 +154,25 @@ public class SoldierRobot extends BaseRobot {
 	
 	private MapLocation findRallyPoint() {
 		if (strategy == Strategy.NUKE) {
-            int dx = DataCache.enemyHQLocation.x - DataCache.ourHQLocation.x;
-            int dy = DataCache.enemyHQLocation.y - DataCache.ourHQLocation.y;
-            
-            double vectorMag = Math.sqrt(dx*dx + dy*dy);
-            double dxNorm = dx/vectorMag;
-            double dyNorm = dy/vectorMag;
-            
-            int centerx = (int) (DataCache.ourHQLocation.x + 8 * dxNorm);
-            int centery = (int) (DataCache.ourHQLocation.y + 8 * dyNorm);
-            
-            return new MapLocation(centerx, centery);
-	    } else {
-	            MapLocation enemyLoc = DataCache.enemyHQLocation;
-	            MapLocation ourLoc = DataCache.ourHQLocation;
-	            int x, y;
-	            x = (enemyLoc.x + 3 * ourLoc.x) / 4;
-	            y = (enemyLoc.y + 3 * ourLoc.y) / 4;
-	            return new MapLocation(x,y);
-	    }
+			int dx = DataCache.enemyHQLocation.x - DataCache.ourHQLocation.x;
+			int dy = DataCache.enemyHQLocation.y - DataCache.ourHQLocation.y;
+			
+			double vectorMag = Math.sqrt(dx*dx + dy*dy);
+			double dxNorm = dx/vectorMag;
+			double dyNorm = dy/vectorMag;
+			
+			int centerx = (int) (DataCache.ourHQLocation.x + 8 * dxNorm);
+			int centery = (int) (DataCache.ourHQLocation.y + 8 * dyNorm);
+			
+			return new MapLocation(centerx, centery);
+		} else {
+			MapLocation enemyLoc = DataCache.enemyHQLocation;
+			MapLocation ourLoc = DataCache.ourHQLocation;
+			int x, y;
+			x = (enemyLoc.x + 3 * ourLoc.x) / 4;
+			y = (enemyLoc.y + 3 * ourLoc.y) / 4;
+			return new MapLocation(x,y);
+		}
 	}
 	
 	public double distanceToLine(MapLocation location) {
@@ -504,8 +504,8 @@ public class SoldierRobot extends BaseRobot {
 						// check to see if mines on left or right are untaken
 						MapLocation newLocation1 = rc.getLocation().add(miningDirConstant);
 						MapLocation newLocation2 = rc.getLocation().add(miningDirConstantOpp);
-						rc.setIndicatorString(0, Double.toString(distanceToLine(newLocation1)));
-						rc.setIndicatorString(1, Double.toString(distanceToLine(newLocation2)));
+//						rc.setIndicatorString(0, Double.toString(distanceToLine(newLocation1)));
+//						rc.setIndicatorString(1, Double.toString(distanceToLine(newLocation2)));
 						if (distanceToLine(newLocation1) <= Constants.MINING_WIDTH && rc.senseMine(newLocation1) == null && rc.senseEncampmentSquares(newLocation1, 0, null).length == 0) {
 							NavSystem.goDirectionAndDefuse(miningDirConstant);
 							return;

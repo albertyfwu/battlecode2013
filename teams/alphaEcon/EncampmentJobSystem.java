@@ -1,4 +1,4 @@
-package baseTurgidStupid;
+package alphaEcon;
 
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
@@ -479,7 +479,6 @@ public class EncampmentJobSystem {
 		} else {
 			neutralEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, Team.NEUTRAL);
 		}
-		
 		if (numEncampmentsNeeded > neutralEncampments.length){
 			numEncampmentsNeeded = neutralEncampments.length;
 		}
@@ -602,6 +601,8 @@ public class EncampmentJobSystem {
 		
 		int centerx = (int) (DataCache.ourHQLocation.x + 6 * dxNorm);
 		int centery = (int) (DataCache.ourHQLocation.y + 6 * dyNorm);
+		
+		rc.setIndicatorString(2, new MapLocation(centerx, centery).toString());
 		
 		return new MapLocation(centerx, centery);
 	}

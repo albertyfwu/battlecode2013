@@ -1,4 +1,4 @@
-package baseGreedier;
+package alphaNuke;
 
 import battlecode.common.GameActionException;
 import battlecode.common.GameConstants;

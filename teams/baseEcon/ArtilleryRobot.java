@@ -28,11 +28,11 @@ public class ArtilleryRobot extends BaseRobot {
 	}
 
 	public MapLocation getBestTarget(Robot[] potentialTargets) throws GameActionException {
-		int highestScore = 0;
+		int highestScore = 60;
 		MapLocation bestLocation = null;
 		
 		for (Robot potentialTarget : potentialTargets) {
-			int currentScore = 40;
+			int currentScore = 60;
 			MapLocation location = rc.senseLocationOf(potentialTarget);
 			Robot[] splashRobots = rc.senseNearbyGameObjects(Robot.class, location, GameConstants.ARTILLERY_SPLASH_RADIUS_SQUARED, null);
 			for (Robot splashRobot : splashRobots) {

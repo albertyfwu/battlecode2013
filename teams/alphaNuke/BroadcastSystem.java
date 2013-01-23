@@ -1,4 +1,4 @@
-package baseTurgidStupid;
+package alphaNuke;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
