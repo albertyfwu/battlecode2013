@@ -203,9 +203,7 @@ public class SoldierRobot extends BaseRobot {
 	
 	@Override
 	public void run() {
-		try {
-			rc.setIndicatorString(0, soldierState.toString());
-			
+		try {			
 			DataCache.updateRoundVariables();
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
 			

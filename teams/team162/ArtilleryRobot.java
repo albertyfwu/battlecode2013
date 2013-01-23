@@ -1,5 +1,6 @@
 package team162;
 
+import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.GameConstants;
 import battlecode.common.MapLocation;
@@ -28,7 +29,10 @@ public class ArtilleryRobot extends BaseRobot {
 	}
 
 	public MapLocation getBestTarget(Robot[] potentialTargets) throws GameActionException {
-		int highestScore = 60;
+		int highestScore = 59;
+		if (Clock.getRoundNum() < 150) {
+			highestScore = 19;
+		}
 		MapLocation bestLocation = null;
 		
 		for (Robot potentialTarget : potentialTargets) {

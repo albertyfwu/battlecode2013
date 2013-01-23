@@ -275,8 +275,18 @@ public class SoldierRobot extends BaseRobot {
 						hqPowerLevel = (int) rc.getTeamPower();
 					}
 					
-					if (DataCache.numEnemyRobots > 0) {
+					if (DataCache.numEnemyRobots > 0 && strategy != Strategy.NUKE) {
 						soldierState = SoldierState.FIGHTING;
+					} else if (strategy == Strategy.NUKE && DataCache.numEnemyRobots > 1) {
+						soldierState = SoldierState.FIGHTING;
+					} else if (strategy == Strategy.NUKE && DataCache.numEnemyRobots == 1) {
+						Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class, 14, rc.getTeam().opponent());
+						if (enemyRobots.length == 1) {
+							RobotInfo rinfo = rc.senseRobotInfo(enemyRobots[0]);
+							NavSystem.goToLocation(rinfo.location);
+						} else {
+							mineCode();
+						}
 					} else if (strategy != Strategy.NUKE && (hqPowerLevel < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel < 100) ) {
 						soldierState = SoldierState.PUSHING;
 					} else {

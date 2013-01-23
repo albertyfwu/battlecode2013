@@ -32,7 +32,7 @@ public class HQRobot extends BaseRobot {
 	public Strategy decideStrategy() throws GameActionException {
 		int numPossibleArtilleryLocations = EncampmentJobSystem.getPossibleArtilleryLocations().length;
 		
-		rc.setIndicatorString(1, Integer.toString(numPossibleArtilleryLocations));
+//		rc.setIndicatorString(1, Integer.toString(numPossibleArtilleryLocations));
 		MapLocation midPoint = findMidPoint();
 		int rSquared = DataCache.rushDistSquared / 4;
 		double mineDensity = rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);

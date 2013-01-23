@@ -602,7 +602,7 @@ public class EncampmentJobSystem {
 		int centerx = (int) (DataCache.ourHQLocation.x + 6 * dxNorm);
 		int centery = (int) (DataCache.ourHQLocation.y + 6 * dyNorm);
 		
-		rc.setIndicatorString(2, new MapLocation(centerx, centery).toString());
+//		rc.setIndicatorString(2, new MapLocation(centerx, centery).toString());
 		
 		return new MapLocation(centerx, centery);
 	}
