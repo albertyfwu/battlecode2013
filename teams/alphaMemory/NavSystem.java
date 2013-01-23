@@ -92,7 +92,7 @@ public class NavSystem {
 		}
 	}
 	
-	public static void goAwayFromHQEscapeMines(MapLocation location) throws GameActionException {
+	public static void goAwayFromLocationEscapeMines(MapLocation location) throws GameActionException {
 		MapLocation currentLocation = rc.getLocation();
 		// Find the closest space that doesn't have mines
 		for (int i = -3; i <= 3; i++) {
@@ -176,9 +176,9 @@ public class NavSystem {
 				if (rc.canMove(lookingAtCurrently) && rc.isActive()) {
 					if (!hasBadMine(rc.getLocation().add(lookingAtCurrently))) {
 						movedYet = true;
-							rc.move(lookingAtCurrently);
+						rc.move(lookingAtCurrently);
+						break lookAround;
 					}
-					break lookAround;
 				}
 				if (!movedYet) { // if the robot still hasn't moved
 					if (rc.senseNearbyGameObjects(Robot.class, 2, rc.getTeam().opponent()).length == 0) {

@@ -137,7 +137,7 @@ public class SoldierRobot extends BaseRobot {
 		miningStartLocation = DataCache.ourHQLocation.add(miningDirConstant, randInt);
 		int newX = miningStartLocation.x;
 		int newY = miningStartLocation.y;
-		rc.setIndicatorString(2, "newX: " + newX + ", newY: " + newY);
+//		rc.setIndicatorString(2, "newX: " + newX + ", newY: " + newY);
 		// make sure the location doesn't fall off the map
 		if (newX < 0) {
 			newX = 0;
@@ -186,7 +186,7 @@ public class SoldierRobot extends BaseRobot {
 		MapLocation newLocation = DataCache.ourHQLocation.add(miningDirConstant, (randInt + 1) % offset);
 		int newX = newLocation.x;
 		int newY = newLocation.y;
-		rc.setIndicatorString(2, "newX: " + newX + ", newY: " + newY);
+//		rc.setIndicatorString(2, "newX: " + newX + ", newY: " + newY);
 		// make sure the location doesn't fall off the map
 		if (newX < 0) {
 			newX = 0;
@@ -205,7 +205,6 @@ public class SoldierRobot extends BaseRobot {
 	public void run() {
 		try {
 			rc.setIndicatorString(0, soldierState.toString());
-			rc.setIndicatorString(1, miningStartLocation.toString());
 			
 			DataCache.updateRoundVariables();
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
@@ -305,7 +304,7 @@ public class SoldierRobot extends BaseRobot {
 						if (NavSystem.safeLocationAwayFromHQMines != null) {
 							NavSystem.goToLocationDontDefuseOrAvoidMines(NavSystem.safeLocationAwayFromHQMines);
 						} else {
-							NavSystem.goAwayFromHQEscapeMines(DataCache.ourHQLocation);
+							NavSystem.goAwayFromLocationEscapeMines(DataCache.ourHQLocation);
 						}
 					} else {
 						// No more mines, so clear out HQ mines
@@ -315,7 +314,7 @@ public class SoldierRobot extends BaseRobot {
 				case CLEAR_OUT_HQ_MINES:
 					// Clear out a path to the HQ
 					Team mineTeam1 = rc.senseMine(rc.getLocation());
-					if (mineTeam1 == null || mineTeam1 == rc.getTeam()) {
+					if (mineTeam1 == null || mineTeam1 == rc.getTeam() && rc.getLocation().distanceSquaredTo(DataCache.ourHQLocation) > 2) {
 						NavSystem.goToLocation(DataCache.ourHQLocation);
 					} else {
 						// We're done
