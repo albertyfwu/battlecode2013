@@ -257,7 +257,7 @@ public class SoldierRobot extends BaseRobot {
 					
 					if (DataCache.numEnemyRobots > 0) {
 						soldierState = SoldierState.FIGHTING;
-					} else if (hqPowerLevel < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel < 100 ) {
+					} else if (strategy != Strategy.NUKE && (hqPowerLevel < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel < 100) ) {
 						soldierState = SoldierState.PUSHING;
 					} else {
 						mineCode();

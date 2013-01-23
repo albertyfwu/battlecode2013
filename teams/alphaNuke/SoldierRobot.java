@@ -183,7 +183,9 @@ public class SoldierRobot extends BaseRobot {
 	
 	@Override
 	public void run() {
-		try {			
+		try {
+			rc.setIndicatorString(0, soldierState.toString());
+			
 			DataCache.updateRoundVariables();
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
 			
@@ -257,7 +259,7 @@ public class SoldierRobot extends BaseRobot {
 					
 					if (DataCache.numEnemyRobots > 0) {
 						soldierState = SoldierState.FIGHTING;
-					} else if (hqPowerLevel < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel < 100 ) {
+					} else if (strategy != Strategy.NUKE && (hqPowerLevel < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel < 100) ) {
 						soldierState = SoldierState.PUSHING;
 					} else {
 						mineCode();
