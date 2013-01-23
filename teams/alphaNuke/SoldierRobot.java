@@ -50,8 +50,6 @@ public class SoldierRobot extends BaseRobot {
 		
 		NavSystem.init(this);
 		
-		rallyPoint = findRallyPoint();
-		
 		ChannelType channel = EncampmentJobSystem.findJob();
 		if (channel != null) {
 			unassigned = false;
@@ -80,6 +78,8 @@ public class SoldierRobot extends BaseRobot {
 		}
 		
 //		rc.setIndicatorString(2, strategy.toString());
+		
+		rallyPoint = findRallyPoint();
 		
 		initializeMining();
 	}
@@ -183,7 +183,7 @@ public class SoldierRobot extends BaseRobot {
 	
 	@Override
 	public void run() {
-		try {
+		try {			
 			DataCache.updateRoundVariables();
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
 			
