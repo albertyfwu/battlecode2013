@@ -41,7 +41,7 @@ public class HQRobot extends BaseRobot {
 ////		String s = numPossibleArtilleryLocations + ", " + DataCache.rushDistSquared + ", " + rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length + ", " + mineDensity;
 ////		rc.setIndicatorString(1, s);
 //		
-//		if (numPossibleArtilleryLocations >= 3) {
+//		if (numPossibleArtilleryLocations >= 4) {
 ////			System.out.println("nuke pls");
 //			return Strategy.NUKE;
 //		} else {

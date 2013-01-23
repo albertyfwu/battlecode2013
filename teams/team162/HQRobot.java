@@ -38,10 +38,10 @@ public class HQRobot extends BaseRobot {
 		double mineDensity = rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
 		
 //		System.out.println(numPossibleArtilleryLocations + ", " + DataCache.rushDistSquared + ", " + rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length + ", " + mineDensity);
-		String s = numPossibleArtilleryLocations + ", " + DataCache.rushDistSquared + ", " + rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length + ", " + mineDensity;
+//		String s = numPossibleArtilleryLocations + ", " + DataCache.rushDistSquared + ", " + rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length + ", " + mineDensity;
 //		rc.setIndicatorString(1, s);
 		
-		if (numPossibleArtilleryLocations >= 3) {
+		if (numPossibleArtilleryLocations >= 4) {
 //			System.out.println("nuke pls");
 			return Strategy.NUKE;
 		} else {
@@ -103,7 +103,7 @@ public class HQRobot extends BaseRobot {
 					if (enemyNukeHalfDone && !DataCache.hasDefusion && DataCache.numAlliedSoldiers > 5) {
 						upgrade = true;
 						rc.researchUpgrade(Upgrade.DEFUSION);
-					} else if (rc.getTeamPower() < 100) {
+					} else if (rc.getTeamPower() < 100 && Clock.getRoundNum() > 10) {
 						if (!DataCache.hasDefusion) {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.DEFUSION);
@@ -129,7 +129,8 @@ public class HQRobot extends BaseRobot {
 							spawnSoldier();
 						}
 					} else {
-						if (rc.getTeamPower() < 150 ||
+//						if ((DataCache.numAlliedRobots >= 9 && Clock.getRoundNum() > 5) ||
+						if ((rc.getTeamPower() < 150 && Clock.getRoundNum() > 5) ||
 								(DataCache.numNearbyEnemySoldiers == 0 && rc.checkResearchProgress(Upgrade.NUKE) > 385 && rc.getEnergon() > 475)) {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.NUKE);

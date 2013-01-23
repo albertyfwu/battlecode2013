@@ -50,8 +50,6 @@ public class SoldierRobot extends BaseRobot {
 		
 		NavSystem.init(this);
 		
-		rallyPoint = findRallyPoint();
-		
 		ChannelType channel = EncampmentJobSystem.findJob();
 		if (channel != null) {
 			unassigned = false;
@@ -80,6 +78,8 @@ public class SoldierRobot extends BaseRobot {
 		}
 		
 //		rc.setIndicatorString(2, strategy.toString());
+		
+		rallyPoint = findRallyPoint();
 		
 		initializeMining();
 	}
@@ -257,7 +257,7 @@ public class SoldierRobot extends BaseRobot {
 					
 					if (DataCache.numEnemyRobots > 0) {
 						soldierState = SoldierState.FIGHTING;
-					} else if (hqPowerLevel < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel < 100 ) {
+					} else if (strategy != Strategy.NUKE && (hqPowerLevel < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel < 100) ) {
 						soldierState = SoldierState.PUSHING;
 					} else {
 						mineCode();
@@ -691,7 +691,7 @@ public class SoldierRobot extends BaseRobot {
 		int[] closestEnemyInfo = getClosestEnemy(enemiesList);
 		MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
 		
-		if (DataCache.numNearbyAlliedSoldiers > 1.5 * DataCache.numNearbyEnemyRobots) {
+		if (DataCache.numNearbyAlliedSoldiers > 1.5 * DataCache.numNearbyEnemySoldiers) {
 			NavSystem.goToLocation(closestEnemyLocation);
 		} else {
 			microCode();
