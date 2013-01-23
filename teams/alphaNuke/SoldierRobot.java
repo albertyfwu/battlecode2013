@@ -204,6 +204,8 @@ public class SoldierRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
+			rc.setIndicatorString(0, soldierState.toString());
+			
 			DataCache.updateRoundVariables();
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
 			
@@ -302,7 +304,7 @@ public class SoldierRobot extends BaseRobot {
 				case CLEAR_OUT_HQ_MINES:
 					// Clear out a path to the HQ
 					Team mineTeam1 = rc.senseMine(rc.getLocation());
-					if (mineTeam1 == null || mineTeam1 == rc.getTeam()) {
+					if (mineTeam1 == null || mineTeam1 == rc.getTeam() && rc.getLocation().distanceSquaredTo(DataCache.ourHQLocation) > 2) {
 						NavSystem.goToLocation(DataCache.ourHQLocation);
 					} else {
 						// We're done
