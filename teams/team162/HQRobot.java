@@ -3,7 +3,6 @@ package team162;
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.Team;
 import battlecode.common.Upgrade;
@@ -33,9 +32,9 @@ public class HQRobot extends BaseRobot {
 		int numPossibleArtilleryLocations = EncampmentJobSystem.getPossibleArtilleryLocations().length;
 		
 //		rc.setIndicatorString(1, Integer.toString(numPossibleArtilleryLocations));
-		MapLocation midPoint = findMidPoint();
-		int rSquared = DataCache.rushDistSquared / 4;
-		double mineDensity = rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+//		MapLocation midPoint = findMidPoint();
+//		int rSquared = DataCache.rushDistSquared / 4;
+//		double mineDensity = rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
 		
 //		System.out.println(numPossibleArtilleryLocations + ", " + DataCache.rushDistSquared + ", " + rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length + ", " + mineDensity);
 //		String s = numPossibleArtilleryLocations + ", " + DataCache.rushDistSquared + ", " + rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length + ", " + mineDensity;
@@ -50,14 +49,14 @@ public class HQRobot extends BaseRobot {
 		}
 	}
 	
-	private MapLocation findMidPoint() {
-		MapLocation enemyLoc = DataCache.enemyHQLocation;
-		MapLocation ourLoc = DataCache.ourHQLocation;
-		int x, y;
-		x = (enemyLoc.x + ourLoc.x) / 2;
-		y = (enemyLoc.y + ourLoc.y) / 2;
-		return new MapLocation(x,y);
-	}
+//	private MapLocation findMidPoint() {
+//		MapLocation enemyLoc = DataCache.enemyHQLocation;
+//		MapLocation ourLoc = DataCache.ourHQLocation;
+//		int x, y;
+//		x = (enemyLoc.x + ourLoc.x) / 2;
+//		y = (enemyLoc.y + ourLoc.y) / 2;
+//		return new MapLocation(x,y);
+//	}
 	
 	@Override
 	public void run() {
