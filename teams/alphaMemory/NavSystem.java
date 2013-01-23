@@ -180,15 +180,14 @@ public class NavSystem {
 						break lookAround;
 					}
 				}
-				if (!movedYet) { // if the robot still hasn't moved
-					if (rc.senseNearbyGameObjects(Robot.class, 2, rc.getTeam().opponent()).length == 0) {
-						// if there are no nearby enemies
-						rangedDefuseMine();
-					}
+			}
+			if (!movedYet) { // if the robot still hasn't moved
+				if (rc.senseNearbyGameObjects(Robot.class, 2, rc.getTeam().opponent()).length == 0) {
+					// if there are no nearby enemies
+					rangedDefuseMine();
 				}
 			}
-		}
-		
+		}		
 	}
 	
 	public static boolean moveOrDefuse(Direction dir) throws GameActionException {

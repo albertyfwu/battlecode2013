@@ -29,9 +29,9 @@ public class ArtilleryRobot extends BaseRobot {
 	}
 
 	public MapLocation getBestTarget(Robot[] potentialTargets) throws GameActionException {
-		int highestScore = 60;
+		int highestScore = 59;
 		if (Clock.getRoundNum() < 150) {
-			highestScore = 20;
+			highestScore = 19;
 		}
 		MapLocation bestLocation = null;
 		
