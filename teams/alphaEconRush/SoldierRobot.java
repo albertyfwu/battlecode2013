@@ -1,4 +1,4 @@
-package alphaMemory;
+package alphaEconRush;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -41,6 +41,10 @@ public class SoldierRobot extends BaseRobot {
 	public Direction miningDirConstantOpp;
 	public MapLocation miningDestination;
 	
+	// still for mining - variables describing the line from our hq to the enemy hq
+	public double lineA, lineB, lineC, lineDistanceDenom;
+	public int x1, y1, x2, y2; // coordinates of our hq and enemy hq
+	
 	public SoldierRobot(RobotController rc) throws GameActionException {
 		super(rc);
 		
@@ -80,7 +84,23 @@ public class SoldierRobot extends BaseRobot {
 		initializeMining();
 	}
 	
-	public void initializeMining() {	
+	public void initializeMining() {
+		x1 = DataCache.ourHQLocation.x;
+		y1 = DataCache.ourHQLocation.y;
+		x2 = DataCache.enemyHQLocation.x;
+		y2 = DataCache.enemyHQLocation.y;
+		
+		if (x2 != x1) {
+			lineA = (double)(y2-y1)/(x2-x1);
+			lineB = -1;
+			lineC = y1 - lineA * x1;
+		} else { // x = x_1 \implies 1 * x + 0 * y - x_1 = 0
+			lineA = 1;
+			lineB = 0;
+			lineC = -x1;
+		}
+		lineDistanceDenom = Math.sqrt(lineA*lineA + lineB*lineB);
+		
 		dirToEnemyHQ = rc.getLocation().directionTo(DataCache.enemyHQLocation);
 		if (Util.randInt() % 2 == 0) {
 			miningDirConstant = dirToEnemyHQ.rotateLeft().rotateLeft();
@@ -156,6 +176,12 @@ public class SoldierRobot extends BaseRobot {
 		}
 	}
 	
+	public double distanceToLine(MapLocation location) {
+		int x = location.x;
+		int y = location.y;
+		return Math.abs(lineA * x + lineB * y + lineC) / lineDistanceDenom;
+	}
+	
 	public void getNewMiningStartLocation() {
 		MapLocation newLocation = DataCache.ourHQLocation.add(miningDirConstant, (randInt + 1) % offset);
 		int newX = newLocation.x;
@@ -182,7 +208,6 @@ public class SoldierRobot extends BaseRobot {
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
 			
 			if (unassigned) {
-				// If this is not an encampment worker
 				// Check if our nuke is half done
 				if (!ourNukeHalfDone) {
 					Message message = BroadcastSystem.read(ChannelType.OUR_NUKE_HALF_DONE);
@@ -201,165 +226,192 @@ public class SoldierRobot extends BaseRobot {
 					soldierState = SoldierState.ALL_IN;
 				}
 				
-				// if we're new
-				if (soldierState == SoldierState.NEW) {
-					// If we're standing on a mine close to our base, we should clear out the mine
-					Team mineTeam = rc.senseMine(rc.getLocation());
-					if (mineTeam != null && mineTeam != rc.getTeam()) {
-						soldierState = SoldierState.ESCAPE_HQ_MINES;
-					} else {
-//						if (strategy == Strategy.NUKE) {
+				if (rc.canMove(dirToEnemyHQ) && rc.isActive()) {
+					rc.move(dirToEnemyHQ);
+				}
+			} else {
+				captureCode();
+			}
+			
+//			if (unassigned) {
+//				// If this is not an encampment worker
+//				// Check if our nuke is half done
+//				if (!ourNukeHalfDone) {
+//					Message message = BroadcastSystem.read(ChannelType.OUR_NUKE_HALF_DONE);
+//					if (message.isValid && message.body == 1) {
+//						ourNukeHalfDone = true;
+//					}
+//				}
+//				// Check if enemy nuke is half done
+//				if (!enemyNukeHalfDone) {
+//					Message message = BroadcastSystem.read(ChannelType.ENEMY_NUKE_HALF_DONE);
+//					if (message.isValid && message.body == 1) {
+//						enemyNukeHalfDone = true;
+//					}
+//				}
+//				if (enemyNukeHalfDone && !ourNukeHalfDone) {
+//					soldierState = SoldierState.ALL_IN;
+//				}
+//				
+//				// if we're new
+//				if (soldierState == SoldierState.NEW) {
+//					// If we're standing on a mine close to our base, we should clear out the mine
+//					Team mineTeam = rc.senseMine(rc.getLocation());
+//					if (mineTeam != null && mineTeam != rc.getTeam()) {
+//						soldierState = SoldierState.ESCAPE_HQ_MINES;
+//					} else {
+////						if (strategy == Strategy.NUKE) {
+////							soldierState = SoldierState.FINDING_START_MINE_POSITIONS;
+////						} else {
+////							soldierState = SoldierState.RALLYING;
+////						}
+//						soldierState = SoldierState.FINDING_START_MINE_POSITIONS;
+//					}
+//				}
+//				
+//				switch (soldierState) {
+//				// FOR THE BEGINNING, WHEN WE FIND THE STARTING MINING LOCATIONS
+//				case FINDING_START_MINE_POSITIONS:
+//					if (DataCache.numEnemyRobots == 0) {
+//						int distanceSquaredToMiningStartLocation = rc.getLocation().distanceSquaredTo(miningStartLocation);
+//						if (distanceSquaredToMiningStartLocation == 0 ||
+//								(distanceSquaredToMiningStartLocation <= 2 && miningStartLocation.equals(DataCache.ourHQLocation))) {
+//							soldierState = SoldierState.MINING;
+//							break;
+//							// TODO: fall through?
+//						} else if (distanceSquaredToMiningStartLocation <= 2 && rc.senseEncampmentSquares(miningStartLocation, 0, null).length == 1) {
+//							// Choose another miningStartLocation
+//							getNewMiningStartLocation();
+//						} else {
+//							Direction dir = rc.getLocation().directionTo(miningStartLocation);
+//							NavSystem.goDirectionAndDefuse(dir);
+//							break;
+//						}
+//					} else {
+//						soldierState = SoldierState.FIGHTING;
+//						break;
+//						// TOOD: fall through?
+//					}
+//				case MINING:
+//					int hqPowerLevel = Integer.MAX_VALUE;
+//					Message message = BroadcastSystem.read(powerChannel);
+//					if (message.isValid) {
+//						hqPowerLevel = message.body;
+//					} else {
+//						hqPowerLevel = (int) rc.getTeamPower();
+//					}
+//					
+//					if (DataCache.numEnemyRobots > 0 && strategy != Strategy.NUKE) {
+//						soldierState = SoldierState.FIGHTING;
+//					} else if (strategy == Strategy.NUKE && DataCache.numEnemyRobots > 1) {
+//						soldierState = SoldierState.FIGHTING;
+//					} else if (strategy == Strategy.NUKE && DataCache.numEnemyRobots == 1) {
+//						Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class, 14, rc.getTeam().opponent());
+//						if (enemyRobots.length == 1) {
+//							RobotInfo rinfo = rc.senseRobotInfo(enemyRobots[0]);
+//							NavSystem.goToLocation(rinfo.location);
+//						} else {
+//							mineCode();
+//						}
+//					} else if (strategy != Strategy.NUKE && (hqPowerLevel < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel < 100) ) {
+//						soldierState = SoldierState.PUSHING;
+//					} else {
+//						mineCode();
+//					}
+//					break;
+//				// FOR ESCAPING MINES IF THEY SURROUND THE HQ
+//				case ESCAPE_HQ_MINES:
+//					// We need to run away from the mines surrounding our base
+//					Team mineTeam = rc.senseMine(rc.getLocation());
+//					if (mineTeam != null && mineTeam != rc.getTeam()) {
+//						// We need to run away from the mines surrounding our base
+//						if (NavSystem.safeLocationAwayFromHQMines != null) {
+//							NavSystem.goToLocationDontDefuseOrAvoidMines(NavSystem.safeLocationAwayFromHQMines);
+//						} else {
+//							NavSystem.goAwayFromLocationEscapeMines(DataCache.ourHQLocation);
+//						}
+//					} else {
+//						// No more mines, so clear out HQ mines
+//						soldierState = SoldierState.CLEAR_OUT_HQ_MINES;
+//					}
+//					break;
+//				case CLEAR_OUT_HQ_MINES:
+//					// Clear out a path to the HQ
+//					Team mineTeam1 = rc.senseMine(rc.getLocation());
+//					if (mineTeam1 == null || mineTeam1 == rc.getTeam() && rc.getLocation().distanceSquaredTo(DataCache.ourHQLocation) > 2) {
+//						NavSystem.goToLocation(DataCache.ourHQLocation);
+//					} else {
+//						// We're done
+//						if (strategy == Strategy.NUKE) { 
 //							soldierState = SoldierState.FINDING_START_MINE_POSITIONS;
 //						} else {
 //							soldierState = SoldierState.RALLYING;
 //						}
-						soldierState = SoldierState.FINDING_START_MINE_POSITIONS;
-					}
-				}
-				
-				switch (soldierState) {
-				// FOR THE BEGINNING, WHEN WE FIND THE STARTING MINING LOCATIONS
-				case FINDING_START_MINE_POSITIONS:
-					if (DataCache.numEnemyRobots == 0) {
-						int distanceSquaredToMiningStartLocation = rc.getLocation().distanceSquaredTo(miningStartLocation);
-						if (distanceSquaredToMiningStartLocation == 0 ||
-								(distanceSquaredToMiningStartLocation <= 2 && miningStartLocation.equals(DataCache.ourHQLocation))) {
-							soldierState = SoldierState.MINING;
-							break;
-							// TODO: fall through?
-						} else if (distanceSquaredToMiningStartLocation <= 2 && rc.senseEncampmentSquares(miningStartLocation, 0, null).length == 1) {
-							// Choose another miningStartLocation
-							getNewMiningStartLocation();
-						} else {
-							Direction dir = rc.getLocation().directionTo(miningStartLocation);
-							NavSystem.goDirectionAndDefuse(dir);
-							break;
-						}
-					} else {
-						soldierState = SoldierState.FIGHTING;
-						break;
-						// TOOD: fall through?
-					}
-				case MINING:
-					int hqPowerLevel = Integer.MAX_VALUE;
-					Message message = BroadcastSystem.read(powerChannel);
-					if (message.isValid) {
-						hqPowerLevel = message.body;
-					} else {
-						hqPowerLevel = (int) rc.getTeamPower();
-					}
-					
-					if (DataCache.numEnemyRobots > 0 && strategy != Strategy.NUKE) {
-						soldierState = SoldierState.FIGHTING;
-					} else if (strategy == Strategy.NUKE && DataCache.numEnemyRobots > 1) {
-						soldierState = SoldierState.FIGHTING;
-					} else if (strategy == Strategy.NUKE && DataCache.numEnemyRobots == 1) {
-						Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class, 14, rc.getTeam().opponent());
-						if (enemyRobots.length == 1) {
-							RobotInfo rinfo = rc.senseRobotInfo(enemyRobots[0]);
-							NavSystem.goToLocation(rinfo.location);
-						} else {
-							mineCode();
-						}
-					} else if (strategy != Strategy.NUKE && (hqPowerLevel < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel < 100) ) {
-						soldierState = SoldierState.PUSHING;
-					} else {
-						mineCode();
-					}
-					break;
-				// FOR ESCAPING MINES IF THEY SURROUND THE HQ
-				case ESCAPE_HQ_MINES:
-					// We need to run away from the mines surrounding our base
-					Team mineTeam = rc.senseMine(rc.getLocation());
-					if (mineTeam != null && mineTeam != rc.getTeam()) {
-						// We need to run away from the mines surrounding our base
-						if (NavSystem.safeLocationAwayFromHQMines != null) {
-							NavSystem.goToLocationDontDefuseOrAvoidMines(NavSystem.safeLocationAwayFromHQMines);
-						} else {
-							NavSystem.goAwayFromLocationEscapeMines(DataCache.ourHQLocation);
-						}
-					} else {
-						// No more mines, so clear out HQ mines
-						soldierState = SoldierState.CLEAR_OUT_HQ_MINES;
-					}
-					break;
-				case CLEAR_OUT_HQ_MINES:
-					// Clear out a path to the HQ
-					Team mineTeam1 = rc.senseMine(rc.getLocation());
-					if (mineTeam1 == null || mineTeam1 == rc.getTeam() && rc.getLocation().distanceSquaredTo(DataCache.ourHQLocation) > 2) {
-						NavSystem.goToLocation(DataCache.ourHQLocation);
-					} else {
-						// We're done
-						if (strategy == Strategy.NUKE) { 
-							soldierState = SoldierState.FINDING_START_MINE_POSITIONS;
-						} else {
-							soldierState = SoldierState.RALLYING;
-						}
-					}
-					break;
-				case ALL_IN:
-					if (DataCache.numEnemyRobots > 0) {
-						aggressiveMicroCode();
-					} else{
-						pushCodeGetCloser();
-					}
-					break;
-				case PUSHING: 
-					if (DataCache.numEnemyRobots > 0) {
-						soldierState = SoldierState.FIGHTING;
-					} else {
-						pushCodeSmart();
-					}
-				case FIGHTING:
-					if (DataCache.numEnemyRobots == 0) {
-						if (DataCache.numAlliedSoldiers < Constants.FIGHTING_NOT_ENOUGH_ALLIED_SOLDIERS) {
-							soldierState = SoldierState.RALLYING;
-						} else {
-							soldierState = SoldierState.PUSHING;
-						}
-					} else {
-						// Otherwise, just keep fighting
-						if (strategy == Strategy.NUKE) {
-							defendMicro();
-						} else {
-							microCode();
-						}
-					}
-					break;
-				case RALLYING:
-					int hqPowerLevel2 = Integer.MAX_VALUE;
-					Message message2 = BroadcastSystem.read(powerChannel);
-					if (message2.isValid) {
-						hqPowerLevel2 = message2.body;
-					} else {
-						hqPowerLevel2 = (int) rc.getTeamPower();
-					}
-
-					// If there are enemies nearby, trigger FIGHTING SoldierState
-					if (DataCache.numEnemyRobots > 0) {
-						soldierState = SoldierState.FIGHTING;
-					} else if (hqPowerLevel2 < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel2 < 100) {
-						soldierState = SoldierState.PUSHING;
-					} else {
-						boolean layedMine = false;
-						if (rc.senseMine(currentLocation) == null) {
-							if (rc.isActive() && Util.Random() < 0.1) {
-								rc.layMine();
-								layedMine = true;
-							}
-						}
-						if (!layedMine) {
-							NavSystem.goToLocation(rallyPoint);
-						}
-					}
-					break;
-				default:
-					break;
-				}
-			} else {
-				// This soldier has an encampment job, so it should go do that job
-				captureCode();
-			}
+//					}
+//					break;
+//				case ALL_IN:
+//					if (DataCache.numEnemyRobots > 0) {
+//						aggressiveMicroCode();
+//					} else{
+//						pushCodeGetCloser();
+//					}
+//					break;
+//				case PUSHING: 
+//					if (DataCache.numEnemyRobots > 0) {
+//						soldierState = SoldierState.FIGHTING;
+//					} else {
+//						pushCodeSmart();
+//					}
+//				case FIGHTING:
+//					if (DataCache.numEnemyRobots == 0) {
+//						if (DataCache.numAlliedSoldiers < Constants.FIGHTING_NOT_ENOUGH_ALLIED_SOLDIERS) {
+//							soldierState = SoldierState.RALLYING;
+//						} else {
+//							soldierState = SoldierState.PUSHING;
+//						}
+//					} else {
+//						// Otherwise, just keep fighting
+//						if (strategy == Strategy.NUKE) {
+//							defendMicro();
+//						} else {
+//							microCode();
+//						}
+//					}
+//					break;
+//				case RALLYING:
+//					int hqPowerLevel2 = Integer.MAX_VALUE;
+//					Message message2 = BroadcastSystem.read(powerChannel);
+//					if (message2.isValid) {
+//						hqPowerLevel2 = message2.body;
+//					} else {
+//						hqPowerLevel2 = (int) rc.getTeamPower();
+//					}
+//
+//					// If there are enemies nearby, trigger FIGHTING SoldierState
+//					if (DataCache.numEnemyRobots > 0) {
+//						soldierState = SoldierState.FIGHTING;
+//					} else if (hqPowerLevel2 < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel2 < 100) {
+//						soldierState = SoldierState.PUSHING;
+//					} else {
+//						boolean layedMine = false;
+//						if (rc.senseMine(currentLocation) == null) {
+//							if (rc.isActive() && Util.Random() < 0.1) {
+//								rc.layMine();
+//								layedMine = true;
+//							}
+//						}
+//						if (!layedMine) {
+//							NavSystem.goToLocation(rallyPoint);
+//						}
+//					}
+//					break;
+//				default:
+//					break;
+//				}
+//			} else {
+//				// This soldier has an encampment job, so it should go do that job
+//				captureCode();
+//			}
 		} catch (Exception e) {
 			System.out.println("caught exception before it killed us:");
 			System.out.println(rc.getRobot().getID());

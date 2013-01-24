@@ -1,4 +1,4 @@
-package alphaMemory;
+package alphaNukeFaster;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -41,6 +41,10 @@ public class SoldierRobot extends BaseRobot {
 	public Direction miningDirConstantOpp;
 	public MapLocation miningDestination;
 	
+	// still for mining - variables describing the line from our hq to the enemy hq
+	public double lineA, lineB, lineC, lineDistanceDenom;
+	public int x1, y1, x2, y2; // coordinates of our hq and enemy hq
+	
 	public SoldierRobot(RobotController rc) throws GameActionException {
 		super(rc);
 		
@@ -80,7 +84,23 @@ public class SoldierRobot extends BaseRobot {
 		initializeMining();
 	}
 	
-	public void initializeMining() {	
+	public void initializeMining() {
+		x1 = DataCache.ourHQLocation.x;
+		y1 = DataCache.ourHQLocation.y;
+		x2 = DataCache.enemyHQLocation.x;
+		y2 = DataCache.enemyHQLocation.y;
+		
+		if (x2 != x1) {
+			lineA = (double)(y2-y1)/(x2-x1);
+			lineB = -1;
+			lineC = y1 - lineA * x1;
+		} else { // x = x_1 \implies 1 * x + 0 * y - x_1 = 0
+			lineA = 1;
+			lineB = 0;
+			lineC = -x1;
+		}
+		lineDistanceDenom = Math.sqrt(lineA*lineA + lineB*lineB);
+		
 		dirToEnemyHQ = rc.getLocation().directionTo(DataCache.enemyHQLocation);
 		if (Util.randInt() % 2 == 0) {
 			miningDirConstant = dirToEnemyHQ.rotateLeft().rotateLeft();
@@ -156,6 +176,12 @@ public class SoldierRobot extends BaseRobot {
 		}
 	}
 	
+	public double distanceToLine(MapLocation location) {
+		int x = location.x;
+		int y = location.y;
+		return Math.abs(lineA * x + lineB * y + lineC) / lineDistanceDenom;
+	}
+	
 	public void getNewMiningStartLocation() {
 		MapLocation newLocation = DataCache.ourHQLocation.add(miningDirConstant, (randInt + 1) % offset);
 		int newX = newLocation.x;
@@ -177,7 +203,7 @@ public class SoldierRobot extends BaseRobot {
 	
 	@Override
 	public void run() {
-		try {
+		try {			
 			DataCache.updateRoundVariables();
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
 			
