@@ -1,4 +1,4 @@
-package team162;
+package alphaRush;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;

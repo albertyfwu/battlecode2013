@@ -1,4 +1,4 @@
-package team162;
+package alphaRush;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -730,7 +730,7 @@ public class SoldierRobot extends BaseRobot {
 						NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
 					}
 				} else {
-					if (enemy23[2] - our23[2] > 3) {
+					if (enemy23[2] - our23[2] > 0.5) {
 						NavSystem.goToLocationAvoidMines(closestEnemyLocation);
 					} else {
 						NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
@@ -822,7 +822,7 @@ public class SoldierRobot extends BaseRobot {
 		int[] closestEnemyInfo = getClosestEnemy(enemiesList);
 		MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
 		
-		if (DataCache.numNearbyAlliedSoldiers > 0) {
+		if (DataCache.numNearbyAlliedSoldiers > 2 * DataCache.numNearbyAlliedSoldiers) {
 			NavSystem.goToLocation(closestEnemyLocation);
 		} else {
 			rushMicroCode();
