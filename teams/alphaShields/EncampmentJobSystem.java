@@ -1,4 +1,4 @@
-package alphaMemory;
+package alphaShields;
 
 import java.util.Arrays;
 
@@ -17,6 +17,9 @@ public class EncampmentJobSystem {
 	public static BaseRobot robot;
 	public static RobotController rc;
 	public static MapLocation goalLoc;
+	
+	public static boolean seenArtillery = false;
+	public static boolean haveShields = false;
 	
 	public static ChannelType[] encampmentJobChannelList = 
 		{ChannelType.ENC1,
@@ -71,11 +74,12 @@ public class EncampmentJobSystem {
 		supCount = 0;
 		genCount = 0;
 		artCount = 0;
-		if (robot.strategy == Strategy.NUKE) {
-			hardEncampmentLimit = 3;
-		} else {
-			hardEncampmentLimit = Integer.MAX_VALUE;
-		}
+//		if (robot.strategy == Strategy.NUKE) {
+//			hardEncampmentLimit = 3;
+//		} else {
+//			hardEncampmentLimit = Integer.MAX_VALUE;
+//		}
+		hardEncampmentLimit = Integer.MAX_VALUE;
 		
 		MapLocation[] allEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, Team.NEUTRAL);
 		
@@ -124,7 +128,7 @@ public class EncampmentJobSystem {
 			} else {
 				numEncampmentsNeeded = 3;
 			}
-
+			
 			MapLocation[] closestEncampments = getClosestMapLocations(DataCache.ourHQLocation, allEncampments, numEncampmentsNeeded);
 
 			for (int i = numEncampmentsNeeded; --i >= 0; ) {
@@ -187,6 +191,8 @@ public class EncampmentJobSystem {
 		case ARTILLERY:
 			robotTypeInt = 2;
 			break;
+		case SHIELDS:
+			robotTypeInt = 3;
 		default:
 			break;	
 		}
@@ -574,6 +580,23 @@ public class EncampmentJobSystem {
 	
 	
 	public static int getRobotTypeToBuild() {
+		// check to see if we've seen artillery
+		
+		if (!seenArtillery) {
+			Message seenArtilleryMessage = BroadcastSystem.read(ChannelType.ARTILLERY_SEEN);
+			if (seenArtilleryMessage.isValid) {
+				int body = seenArtilleryMessage.body;
+				if (body == 1) {
+					// we've seen an artillery, so we should start making shields
+					seenArtillery = true;
+				}
+			}
+		}
+
+		if (seenArtillery && !haveShields) {
+			return 3;
+		}
+					
 		if (robot.strategy == Strategy.NUKE) {
 			return 2; // artillery
 		} else {
@@ -586,7 +609,6 @@ public class EncampmentJobSystem {
 				return 0; // supplier
 			}
 		}
-		
 	}
 	
 	/**
@@ -694,8 +716,31 @@ public class EncampmentJobSystem {
 			return RobotType.SUPPLIER;
 		} else if (robotTypeInt == 1) {
 			return RobotType.GENERATOR;
-		} else { // 2
+		} else if (robotTypeInt == 2) {
 			return RobotType.ARTILLERY;
+		} else { // 3
+			return RobotType.SHIELDS;
+		}
+	}
+
+	public static void checkForShields() {
+		Message message = null;
+		if (Clock.getRoundNum() % Constants.CHANNEL_CYCLE == 0) {
+			message = BroadcastSystem.readLastCycle(ChannelType.SHIELDS_PING);
+		} else {
+			message = BroadcastSystem.read(ChannelType.SHIELDS_PING);
+		}
+		if (message.isValid) {
+			int body = message.body;
+			if (Clock.getRoundNum() - body >= 2) {
+				// we haven't heard from our shields encampment, so we need to build another shields encampment
+				haveShields = false;
+			} else {
+				haveShields = true;
+			}
+		} else {
+			// never got it
+//			haveShields = false;
 		}
 	}
 	

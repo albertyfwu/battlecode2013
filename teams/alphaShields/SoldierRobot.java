@@ -1,8 +1,9 @@
-package alphaMemory;
+package alphaShields;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
+import battlecode.common.GameObject;
 import battlecode.common.MapLocation;
 import battlecode.common.Robot;
 import battlecode.common.RobotController;
@@ -178,8 +179,13 @@ public class SoldierRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
+			rc.setIndicatorString(2, soldierState.toString());
+			
 			DataCache.updateRoundVariables();
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
+			
+			EncampmentJobSystem.checkForShields();
+			
 			
 			if (unassigned) {
 				// If this is not an encampment worker
@@ -197,8 +203,10 @@ public class SoldierRobot extends BaseRobot {
 						enemyNukeHalfDone = true;
 					}
 				}
-				if (enemyNukeHalfDone && !ourNukeHalfDone) {
-					soldierState = SoldierState.ALL_IN;
+				if (enemyNukeHalfDone && !ourNukeHalfDone && soldierState != SoldierState.ALL_IN) {
+					if (EncampmentJobSystem.haveShields) {
+						soldierState = SoldierState.CHARGE_SHIELDS;
+					}
 				}
 				
 				// if we're new
@@ -220,26 +228,28 @@ public class SoldierRobot extends BaseRobot {
 				switch (soldierState) {
 				// FOR THE BEGINNING, WHEN WE FIND THE STARTING MINING LOCATIONS
 				case FINDING_START_MINE_POSITIONS:
-					if (DataCache.numEnemyRobots == 0) {
-						int distanceSquaredToMiningStartLocation = rc.getLocation().distanceSquaredTo(miningStartLocation);
-						if (distanceSquaredToMiningStartLocation == 0 ||
-								(distanceSquaredToMiningStartLocation <= 2 && miningStartLocation.equals(DataCache.ourHQLocation))) {
-							soldierState = SoldierState.MINING;
-							break;
-							// TODO: fall through?
-						} else if (distanceSquaredToMiningStartLocation <= 2 && rc.senseEncampmentSquares(miningStartLocation, 0, null).length == 1) {
-							// Choose another miningStartLocation
-							getNewMiningStartLocation();
-						} else {
-							Direction dir = rc.getLocation().directionTo(miningStartLocation);
-							NavSystem.goDirectionAndDefuse(dir);
-							break;
-						}
-					} else {
-						soldierState = SoldierState.FIGHTING;
-						break;
-						// TOOD: fall through?
-					}
+//					if (DataCache.numEnemyRobots == 0) {
+//						int distanceSquaredToMiningStartLocation = rc.getLocation().distanceSquaredTo(miningStartLocation);
+//						if (distanceSquaredToMiningStartLocation == 0 ||
+//								(distanceSquaredToMiningStartLocation <= 2 && miningStartLocation.equals(DataCache.ourHQLocation))) {
+//							soldierState = SoldierState.MINING;
+//							break;
+//							// TODO: fall through?
+//						} else if (distanceSquaredToMiningStartLocation <= 2 && rc.senseEncampmentSquares(miningStartLocation, 0, null).length == 1) {
+//							// Choose another miningStartLocation
+//							getNewMiningStartLocation();
+//						} else {
+//							Direction dir = rc.getLocation().directionTo(miningStartLocation);
+//							NavSystem.goDirectionAndDefuse(dir);
+//							break;
+//						}
+//					} else {
+//						soldierState = SoldierState.FIGHTING;
+//						break;
+//						// TOOD: fall through?
+//					}
+					soldierState = SoldierState.PUSHING;
+					break;
 				case MINING:
 					int hqPowerLevel = Integer.MAX_VALUE;
 					Message message = BroadcastSystem.read(powerChannel);
@@ -297,19 +307,31 @@ public class SoldierRobot extends BaseRobot {
 						}
 					}
 					break;
+				case CHARGE_SHIELDS:
+					shieldsCode();
+					break;
 				case ALL_IN:
 					if (DataCache.numEnemyRobots > 0) {
 						aggressiveMicroCode();
-					} else{
+					} else {
 						pushCodeGetCloser();
 					}
 					break;
 				case PUSHING: 
 					if (DataCache.numEnemyRobots > 0) {
-						soldierState = SoldierState.FIGHTING;
+						if (rc.getShields() > 120) {
+							soldierState = SoldierState.FIGHTING;
+						} else {
+							if (EncampmentJobSystem.haveShields) {
+								soldierState = SoldierState.CHARGE_SHIELDS;
+							} else {
+								soldierState = SoldierState.FIGHTING;
+							}
+						}
 					} else {
 						pushCodeSmart();
 					}
+					break;
 				case FIGHTING:
 					if (DataCache.numEnemyRobots == 0) {
 						if (DataCache.numAlliedSoldiers < Constants.FIGHTING_NOT_ENOUGH_ALLIED_SOLDIERS) {
@@ -360,10 +382,59 @@ public class SoldierRobot extends BaseRobot {
 				// This soldier has an encampment job, so it should go do that job
 				captureCode();
 			}
+			
+			reportArtillerySighting();
 		} catch (Exception e) {
 			System.out.println("caught exception before it killed us:");
 			System.out.println(rc.getRobot().getID());
 			e.printStackTrace();
+		}
+	}
+	
+	public void reportArtillerySighting() throws GameActionException {
+//		MapLocation[] nearbyEncampmentSquares = rc.senseEncampmentSquares(currentLocation, 14, rc.getTeam().opponent());
+		Robot[] robots = rc.senseNearbyGameObjects(Robot.class, 14, rc.getTeam().opponent());
+		for (Robot robot : robots) {
+			RobotInfo robotInfo = rc.senseRobotInfo(robot);
+			if (robotInfo.type == RobotType.ARTILLERY) {
+				BroadcastSystem.write(ChannelType.ARTILLERY_SEEN, 1);
+			}
+		}
+	}
+	
+	public void shieldsCode() throws GameActionException {
+		if (rc.getShields() > 120) {
+			soldierState = SoldierState.ALL_IN;
+		} else {
+			// we should try to get shields
+			Message message1 = BroadcastSystem.read(ChannelType.SHIELDS);
+			if (message1.isValid) {
+				int body = message1.body;
+				int emptySpaces = body >> 16;
+//				rc.setIndicatorString(0, Integer.toString(emptySpaces));
+				if (emptySpaces == 0) {
+					// don't block the people at the shields location
+					NavSystem.goToLocation(rallyPoint);
+				} else {
+					int x = (body >> 8) & 0xFF;
+					int y = body & 0xFF;
+					MapLocation shieldsLocation = new MapLocation(x, y);
+//					rc.setIndicatorString(1, shieldsLocation.toString());
+					int distanceSquaredToShields = currentLocation.distanceSquaredTo(shieldsLocation);
+					if (distanceSquaredToShields > 8) {
+						NavSystem.goToLocation(shieldsLocation);
+					} else if (distanceSquaredToShields > 2) {
+						// pick an empty space next to the encampment
+						for (int i = 8; --i >= 0; ) {
+							// check to see if it's empty
+							MapLocation iterLocation = shieldsLocation.add(DataCache.directionArray[i]);
+							if (rc.senseObjectAtLocation(iterLocation) == null) {
+								NavSystem.goToLocation(iterLocation);
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 	

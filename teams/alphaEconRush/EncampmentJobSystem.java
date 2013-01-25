@@ -1,6 +1,4 @@
-package alphaMemory;
-
-import java.util.Arrays;
+package alphaEconRush;
 
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
@@ -71,11 +69,12 @@ public class EncampmentJobSystem {
 		supCount = 0;
 		genCount = 0;
 		artCount = 0;
-		if (robot.strategy == Strategy.NUKE) {
-			hardEncampmentLimit = 3;
-		} else {
-			hardEncampmentLimit = Integer.MAX_VALUE;
-		}
+//		if (robot.strategy == Strategy.NUKE) {
+//			hardEncampmentLimit = 3;
+//		} else {
+//			hardEncampmentLimit = Integer.MAX_VALUE;
+//		}
+		hardEncampmentLimit = 1;
 		
 		MapLocation[] allEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, Team.NEUTRAL);
 		
@@ -604,6 +603,8 @@ public class EncampmentJobSystem {
 		int centerx = (int) (DataCache.ourHQLocation.x + 6 * dxNorm);
 		int centery = (int) (DataCache.ourHQLocation.y + 6 * dyNorm);
 		
+//		rc.setIndicatorString(2, new MapLocation(centerx, centery).toString());
+		
 		return new MapLocation(centerx, centery);
 	}
 	
@@ -615,21 +616,11 @@ public class EncampmentJobSystem {
 	public static MapLocation[] getPossibleArtilleryLocations() throws GameActionException {
 		MapLocation artCenter = getArtilleryCenter();
 		
-		int encampmentRadiusSquared = 72;		
-		
-		MapLocation[] rawLocations = rc.senseEncampmentSquares(artCenter, encampmentRadiusSquared, Team.NEUTRAL);
-		// Shouldn't be too far from base
-		MapLocation[] locations = new MapLocation[rawLocations.length];
-		int count = 0;
-		for (int i = rawLocations.length; --i >= 0; ) {
-			MapLocation rawLocation = rawLocations[i];
-			if (rawLocation.distanceSquaredTo(DataCache.ourHQLocation) <= 128) {
-				// Close enough to hq, so keep it
-				locations[count++] = rawLocation;
-			}
-		}
-		
-		return Arrays.copyOfRange(locations, 0, count);
+//		System.out.println("getArtilleryCenter: " + artCenter);
+//		System.out.println("rushDistSquared/25: " + DataCache.rushDistSquared/25);
+//		int encampmentRadius = (int) (DataCache.rushDistSquared/25 + 6 * Math.sqrt(DataCache.rushDistSquared)/5 + 9);
+		int encampmentRadiusSquared = 72;
+		return rc.senseEncampmentSquares(artCenter, encampmentRadiusSquared, Team.NEUTRAL);
 	}
 
 	/**
