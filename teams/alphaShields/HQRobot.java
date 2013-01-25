@@ -48,7 +48,11 @@ public class HQRobot extends BaseRobot {
 		for (MapLocation location : possibleArtilleryLocations) {
 			averageDistanceSquared += location.distanceSquaredTo(DataCache.ourHQLocation);
 		}
-		averageDistanceSquared /= numPossibleArtilleryLocations;
+		if (numPossibleArtilleryLocations == 0) {
+			averageDistanceSquared = Integer.MAX_VALUE;
+		} else {
+			averageDistanceSquared /= numPossibleArtilleryLocations;
+		}
 		
 		// mine density - is this the best measure? what about getting the line
 		// between the two HQs and counting mines that lie within a certain constant

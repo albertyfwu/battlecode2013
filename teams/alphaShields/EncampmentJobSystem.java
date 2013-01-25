@@ -71,11 +71,13 @@ public class EncampmentJobSystem {
 		supCount = 0;
 		genCount = 0;
 		artCount = 0;
-		if (robot.strategy == Strategy.NUKE) {
-			hardEncampmentLimit = 3;
-		} else {
-			hardEncampmentLimit = Integer.MAX_VALUE;
-		}
+//		if (robot.strategy == Strategy.NUKE) {
+//			hardEncampmentLimit = 3;
+//		} else {
+//			hardEncampmentLimit = Integer.MAX_VALUE;
+//		}
+		// make shields right now
+		hardEncampmentLimit = 1;
 		
 		MapLocation[] allEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, Team.NEUTRAL);
 		
@@ -125,6 +127,9 @@ public class EncampmentJobSystem {
 				numEncampmentsNeeded = 3;
 			}
 
+			// TODO: remove this line
+			numEncampmentsNeeded = 2;
+			
 			MapLocation[] closestEncampments = getClosestMapLocations(DataCache.ourHQLocation, allEncampments, numEncampmentsNeeded);
 
 			for (int i = numEncampmentsNeeded; --i >= 0; ) {
@@ -187,6 +192,8 @@ public class EncampmentJobSystem {
 		case ARTILLERY:
 			robotTypeInt = 2;
 			break;
+		case SHIELDS:
+			robotTypeInt = 3;
 		default:
 			break;	
 		}
@@ -574,19 +581,19 @@ public class EncampmentJobSystem {
 	
 	
 	public static int getRobotTypeToBuild() {
-		if (robot.strategy == Strategy.NUKE) {
-			return 2; // artillery
-		} else {
-			if (supCount == 0 && genCount == 0) {
-				return 0; // supplier
-			}
-			if (((double) supCount)/(supCount + genCount) > 0.8) {
-				return 1; // generator
-			} else {
-				return 0; // supplier
-			}
-		}
-		
+//		if (robot.strategy == Strategy.NUKE) {
+//			return 2; // artillery
+//		} else {
+//			if (supCount == 0 && genCount == 0) {
+//				return 0; // supplier
+//			}
+//			if (((double) supCount)/(supCount + genCount) > 0.8) {
+//				return 1; // generator
+//			} else {
+//				return 0; // supplier
+//			}
+//		}
+		return 3;
 	}
 	
 	/**
@@ -694,8 +701,10 @@ public class EncampmentJobSystem {
 			return RobotType.SUPPLIER;
 		} else if (robotTypeInt == 1) {
 			return RobotType.GENERATOR;
-		} else { // 2
+		} else if (robotTypeInt == 2) {
 			return RobotType.ARTILLERY;
+		} else { // 3
+			return RobotType.SHIELDS;
 		}
 	}
 	

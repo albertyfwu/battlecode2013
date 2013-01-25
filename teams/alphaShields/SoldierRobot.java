@@ -178,6 +178,8 @@ public class SoldierRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
+			rc.setIndicatorString(2, soldierState.toString());
+			
 			DataCache.updateRoundVariables();
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
 			
@@ -197,8 +199,8 @@ public class SoldierRobot extends BaseRobot {
 						enemyNukeHalfDone = true;
 					}
 				}
-				if (enemyNukeHalfDone && !ourNukeHalfDone) {
-					soldierState = SoldierState.ALL_IN;
+				if (enemyNukeHalfDone && !ourNukeHalfDone && soldierState != SoldierState.ALL_IN) {
+					soldierState = SoldierState.CHARGE_SHIELDS;
 				}
 				
 				// if we're new
@@ -297,10 +299,13 @@ public class SoldierRobot extends BaseRobot {
 						}
 					}
 					break;
+				case CHARGE_SHIELDS:
+					shieldsCode();
+					break;
 				case ALL_IN:
 					if (DataCache.numEnemyRobots > 0) {
 						aggressiveMicroCode();
-					} else{
+					} else {
 						pushCodeGetCloser();
 					}
 					break;
@@ -364,6 +369,42 @@ public class SoldierRobot extends BaseRobot {
 			System.out.println("caught exception before it killed us:");
 			System.out.println(rc.getRobot().getID());
 			e.printStackTrace();
+		}
+	}
+	
+	public void shieldsCode() throws GameActionException {
+		if (rc.getShields() > 120) {
+			soldierState = SoldierState.ALL_IN;
+		} else {
+			// we should try to get shields
+			Message message1 = BroadcastSystem.read(ChannelType.SHIELDS);
+			if (message1.isValid) {
+				int body = message1.body;
+				int emptySpaces = body >> 16;
+				rc.setIndicatorString(0, Integer.toString(emptySpaces));
+				if (emptySpaces == 0) {
+					// don't block the people at the shields location
+					NavSystem.goToLocation(rallyPoint);
+				} else {
+					int x = (body >> 8) & 0xFF;
+					int y = body & 0xFF;
+					MapLocation shieldsLocation = new MapLocation(x, y);
+					rc.setIndicatorString(1, shieldsLocation.toString());
+					int distanceSquaredToShields = currentLocation.distanceSquaredTo(shieldsLocation);
+					if (distanceSquaredToShields > 8) {
+						NavSystem.goToLocation(shieldsLocation);
+					} else if (distanceSquaredToShields > 2) {
+						// pick an empty space next to the encampment
+						for (int i = 8; --i >= 0; ) {
+							// check to see if it's empty
+							MapLocation iterLocation = shieldsLocation.add(DataCache.directionArray[i]);
+							if (rc.senseObjectAtLocation(iterLocation) == null) {
+								NavSystem.goToLocation(iterLocation);
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 	
