@@ -7,6 +7,12 @@ public enum ChannelType {
 	// broadcast shields location
 	SHIELDS,
 	
+	// for shields to ping back to the HQ
+	SHIELDS_PING,
+	
+	// channel for reporting artillery sighting
+	ARTILLERY_SEEN,
+	
 	// for strategy
 	STRATEGY,
 	

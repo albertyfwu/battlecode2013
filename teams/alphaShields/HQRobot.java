@@ -62,54 +62,7 @@ public class HQRobot extends BaseRobot {
 		int rSquared = DataCache.rushDistSquared / 4;
 		double mineDensity = rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
 		
-		if (DataCache.rushDistSquared <= 900) {
-			// If the two bases are relatively close
-			if (mineDensity < 0.3) {
-				// There aren't that many mines between the bases
-				if (numPossibleArtilleryLocations >= 4 && averageDistanceSquared <= 72) {
-					// Artillery are pretty close to base
-					strategy = Strategy.RUSH;
-				} else {
-					// Artillery are kind of far from base
-					strategy = Strategy.RUSH;
-				}
-			} else {
-				// There are plenty of mines between the bases
-				if (numPossibleArtilleryLocations >= 4 && averageDistanceSquared <= 72) {
-					// Artillery are pretty close to base
-					// We should nuke, even though it'll be pretty hard to punish the other team
-					strategy = Strategy.NUKE;
-					// TODO: set greediness factor
-				} else {
-					// Artillery are kind of far from base; not many encampment locations
-					strategy = Strategy.ECON;
-				}
-			}
-		} else {
-			// If the two bases are relatively far
-			if (mineDensity < 0.3) {
-				// There aren't that many mines between the bases
-				if (numPossibleArtilleryLocations >= 4 && averageDistanceSquared <= 72) {
-					// Artillery are pretty close to base
-					strategy = Strategy.NUKE;
-					// TODO: set greediness factor
-				} else {
-					// Artillery are kind of far from base
-					strategy = Strategy.ECON;
-				}
-			} else {
-				// There are plenty of mines between the bases
-				if (numPossibleArtilleryLocations >= 4 && averageDistanceSquared <= 72) {
-					// Artillery are pretty close to base
-					strategy = Strategy.NUKE;
-					// TODO: set greediness factor
-					// TODO: GREEDINESS FACTOR IS EXTREMELY IMPORTANT FOR THIS OPTION
-				} else {
-					// Artillery are kind of far from base
-					strategy = Strategy.ECON;
-				}
-			}
-		}
+		strategy = Strategy.ECON;
 	}
 	
 	private MapLocation findMidPoint() {

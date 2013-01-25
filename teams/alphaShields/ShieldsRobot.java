@@ -1,5 +1,6 @@
 package alphaShields;
 
+import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
@@ -31,6 +32,9 @@ public class ShieldsRobot extends BaseRobot {
 			}
 			
 			BroadcastSystem.write(ChannelType.SHIELDS, (emptySpaces << 16) + coordinates);
+			
+			// Ping back to the broadcast channel
+			BroadcastSystem.write(ChannelType.SHIELDS_PING, Clock.getRoundNum());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
