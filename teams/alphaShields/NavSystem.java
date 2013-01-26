@@ -190,7 +190,11 @@ public class NavSystem {
 	public static boolean moveOrDefuse(Direction dir) throws GameActionException {
 		if (rc.isActive()) {
 			if (rc.canMove(dir)) {
-				if (!hasBadMine(rc.getLocation().add(dir))) {
+				Team bombTeam = rc.senseMine(rc.getLocation().add(dir));
+				if (rc.getShields() > 50 && bombTeam == rc.getTeam().opponent()) {
+					rc.move(dir);
+					return true;
+				} else if (bombTeam == null || bombTeam == rc.getTeam()) {
 					rc.move(dir);
 					return true;
 				} else {

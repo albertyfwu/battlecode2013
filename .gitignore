@@ -17,3 +17,4 @@ bin/*
 .metadata/*
 submission.jar
 battlecode*.tmp
+match.rms

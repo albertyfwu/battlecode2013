@@ -6,7 +6,6 @@ wins = {}
 
 p = subprocess.Popen(['ant', 'file'], shell=True, stdout=subprocess.PIPE)
 for line in iter(p.stdout.readline, ''):
-    # print line
     # check if somebody won
     m = re.search("([A-Za-z0-9]+) \([A|B]\) wins", line)
     if m:

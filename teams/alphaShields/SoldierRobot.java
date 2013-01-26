@@ -242,8 +242,9 @@ public class SoldierRobot extends BaseRobot {
 						enemyNukeHalfDone = true;
 					}
 				}
-				if (enemyNukeHalfDone && !ourNukeHalfDone) {
-					soldierState = SoldierState.ALL_IN;
+				if (enemyNukeHalfDone && !ourNukeHalfDone && soldierState != SoldierState.ALL_IN) {
+//					soldierState = SoldierState.ALL_IN;
+					soldierState = SoldierState.CHARGE_SHIELDS;
 				}
 				
 				switch (soldierState) {
@@ -310,31 +311,36 @@ public class SoldierRobot extends BaseRobot {
 	}
 
 	public void rallyingCode() throws GameActionException {
-		int hqPowerLevel2 = Integer.MAX_VALUE;
-		Message message2 = BroadcastSystem.read(powerChannel);
-		if (message2.isValid) {
-			hqPowerLevel2 = message2.body;
+		if (enemyNukeHalfDone && !ourNukeHalfDone) {
+			nextSoldierState = SoldierState.ALL_IN;
+			allInCode();
 		} else {
-			hqPowerLevel2 = (int) rc.getTeamPower();
-		}
-
-		// If there are enemies nearby, trigger FIGHTING SoldierState
-		if (DataCache.numEnemyRobots > 0) {
-			nextSoldierState = SoldierState.FIGHTING;
-			fightingCode();
-		} else if (hqPowerLevel2 < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel2 < 100) {
-			nextSoldierState = SoldierState.PUSHING;
-			pushingCode();
-		} else {
-			boolean layedMine = false;
-			if (rc.senseMine(currentLocation) == null) {
-				if (rc.isActive() && Util.Random() < 0.1) {
-					rc.layMine();
-					layedMine = true;
-				}
+			int hqPowerLevel2 = Integer.MAX_VALUE;
+			Message message2 = BroadcastSystem.read(powerChannel);
+			if (message2.isValid) {
+				hqPowerLevel2 = message2.body;
+			} else {
+				hqPowerLevel2 = (int) rc.getTeamPower();
 			}
-			if (!layedMine) {
-				NavSystem.goToLocation(rallyPoint);
+	
+			// If there are enemies nearby, trigger FIGHTING SoldierState
+			if (DataCache.numEnemyRobots > 0) {
+				nextSoldierState = SoldierState.FIGHTING;
+				fightingCode();
+			} else if (hqPowerLevel2 < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel2 < 100) {
+				nextSoldierState = SoldierState.PUSHING;
+				pushingCode();
+			} else {
+				boolean layedMine = false;
+				if (rc.senseMine(currentLocation) == null) {
+					if (rc.isActive() && Util.Random() < 0.1) {
+						rc.layMine();
+						layedMine = true;
+					}
+				}
+				if (!layedMine) {
+					NavSystem.goToLocation(rallyPoint);
+				}
 			}
 		}
 	}
@@ -419,11 +425,15 @@ public class SoldierRobot extends BaseRobot {
 		}
 		
 		if (DataCache.numEnemyRobots > 0 && strategy != Strategy.NUKE) {
-			nextSoldierState = SoldierState.FIGHTING;
-			fightingCode();
+//			nextSoldierState = SoldierState.FIGHTING;
+//			fightingCode();
+			nextSoldierState = SoldierState.CHARGE_SHIELDS;
+			chargeShieldsCode();
 		} else if (strategy == Strategy.NUKE && DataCache.numEnemyRobots > 1) {
-			nextSoldierState = SoldierState.FIGHTING;
-			fightingCode();
+//			nextSoldierState = SoldierState.FIGHTING;
+//			fightingCode();
+			nextSoldierState = SoldierState.CHARGE_SHIELDS;
+			chargeShieldsCode();
 		} else if (strategy == Strategy.NUKE && DataCache.numEnemyRobots == 1) {
 			Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class, 14, rc.getTeam().opponent());
 			if (enemyRobots.length == 1) {
@@ -433,26 +443,31 @@ public class SoldierRobot extends BaseRobot {
 				miningSubroutine();
 			}
 		} else if (strategy != Strategy.NUKE && (hqPowerLevel < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel < 100) ) {
-			nextSoldierState = SoldierState.PUSHING;
-			pushingCode();
+//			nextSoldierState = SoldierState.PUSHING;
+//			pushingCode();
+			nextSoldierState = SoldierState.CHARGE_SHIELDS;
+			chargeShieldsCode();
 		} else {
 			miningSubroutine();
 		}
 	}
 
 	private void chargeShieldsCode() throws GameActionException {
-		// either charge up shields next to the shields encampment, or wait at another location until there is space					
-		if (rc.canSenseSquare(EncampmentJobSystem.shieldsLoc)) {
+		// either charge up shields next to the shields encampment, or wait at another location until there is space
+		MapLocation shieldLocation = EncampmentJobSystem.getShieldLocation();
+		// TODO: make the queue location somewhere else
+		MapLocation shieldQueueLocation = shieldLocation;
+		if (shieldLocation != null && rc.canSenseSquare(shieldLocation)) {
 			// looks like something exists at the location...
-			GameObject object = rc.senseObjectAtLocation(EncampmentJobSystem.shieldsLoc);
+			GameObject object = rc.senseObjectAtLocation(shieldLocation);
 			if (object != null && rc.senseRobotInfo((Robot) object).type == RobotType.SHIELDS) {
 				// find an empty space next to the shields encampment
-				int distanceSquaredToShields = rc.getLocation().distanceSquaredTo(EncampmentJobSystem.shieldsLoc);
+				int distanceSquaredToShields = rc.getLocation().distanceSquaredTo(shieldLocation);
 				if (distanceSquaredToShields > 2) {
 					// not charging yet
 					for (int i = 8; --i >= 0; ) {
 						// Check to see if it's empty
-						MapLocation iterLocation = EncampmentJobSystem.shieldsLoc.add(DataCache.directionArray[i]);
+						MapLocation iterLocation = shieldLocation.add(DataCache.directionArray[i]);
 						if (rc.senseObjectAtLocation(iterLocation) == null) {
 							// Oh, there's an empty space! let's go to it
 							NavSystem.goToLocation(iterLocation);
@@ -460,17 +475,22 @@ public class SoldierRobot extends BaseRobot {
 						}
 					}
 					// we found the shields encampment, but there are no empty spaces, so wait at the queue location
-					NavSystem.goToLocation(EncampmentJobSystem.shieldsQueueLoc);
+//					NavSystem.goToLocation(EncampmentJobSystem.shieldsQueueLoc);
+					NavSystem.goToLocation(shieldQueueLocation);
 				} else {
 					// already charging
-					mineDensity = rc.senseMineLocations(findMidPoint(), rSquared, Team.NEUTRAL).length / (3.0 * rSquared);		
-					shieldsCutoff = (int) (DataCache.rushDist + 10 * (mineDensity * DataCache.rushDist) + 100);
+					mineDensity = rc.senseMineLocations(findMidPoint(), rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+					shieldsCutoff = (int) (DataCache.rushDist + 10 * (mineDensity * DataCache.rushDist));
+//					rc.setIndicatorString(1, "cutoff: " + Integer.toString(shieldsCutoff));
 					if (rc.getShields() > shieldsCutoff) {
 						// leave
 						nextSoldierState = SoldierState.RALLYING;
 						rallyingCode();
 					}
 				}
+			} else {
+				nextSoldierState = SoldierState.RALLYING;
+				rallyingCode();
 			}
 		} else {
 			nextSoldierState = SoldierState.RALLYING;
@@ -842,7 +862,8 @@ public class SoldierRobot extends BaseRobot {
 		MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
 		
 		if (DataCache.numNearbyAlliedSoldiers > 1.5 * DataCache.numNearbyEnemySoldiers) {
-			NavSystem.goToLocation(closestEnemyLocation);
+//			NavSystem.goToLocation(closestEnemyLocation);
+			pushCodeGetCloser();
 		} else {
 			microCode();
 		}
@@ -873,8 +894,12 @@ public class SoldierRobot extends BaseRobot {
 	 * @throws GameActionException
 	 */
 	public void pushCodeGetCloser() throws GameActionException {
-		if (NavSystem.navMode != NavMode.GETCLOSER || NavSystem.destination != DataCache.enemyHQLocation) {
-			NavSystem.setupGetCloser(DataCache.enemyHQLocation);
+		pushCodeGetCloser(DataCache.enemyHQLocation);
+	}
+	
+	public void pushCodeGetCloser(MapLocation destination) throws GameActionException {
+		if (NavSystem.navMode != NavMode.GETCLOSER || NavSystem.destination != destination) {
+			NavSystem.setupGetCloser(destination);
 		}
 		if (rc.isActive()) {
 			NavSystem.moveCloserFavorNoMines();
@@ -912,9 +937,6 @@ public class SoldierRobot extends BaseRobot {
 					soldierState = SoldierState.FIGHTING;
 				}
 				
-				if (rc.getRobot().getID() == 366) {
-					System.out.println("navmode: " + NavSystem.navMode);
-				}
 				if (NavSystem.navMode == NavMode.BFSMODE) {
 					NavSystem.tryBFSNextTurn();
 				} else if (NavSystem.navMode == NavMode.GETCLOSER){
