@@ -1,18 +1,24 @@
 package team162;
 
+import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 
-public class ShieldsRobot extends BaseRobot {
+public class ShieldsRobot extends EncampmentRobot {
 
-	public ShieldsRobot(RobotController rc) {
+	public ShieldsRobot(RobotController rc) throws GameActionException {
 		super(rc);
 		// TODO Auto-generated constructor stub
 	}
 
 	@Override
-	public void run() {
+	public void runMain() {
 		// TODO Auto-generated method stub
 
+	}
+	
+	@Override
+	public void sendCompletionMessage() {
+		EncampmentJobSystem.postShieldCompletionMessage(rc.getLocation());
 	}
 
 }

@@ -221,7 +221,7 @@ public class SoldierRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
-			rc.setIndicatorString(0, soldierState.toString());
+//			rc.setIndicatorString(0, soldierState.toString());
 			
 			DataCache.updateRoundVariables();
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
@@ -769,10 +769,13 @@ public class SoldierRobot extends BaseRobot {
 //						rc.setIndicatorString(0, "forward3");
 					} else {
 //						rc.setIndicatorString(0, "stay3");
+						NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
 					}
 				} else {
 					if (enemy23[2] - our23[2] > 3) {
 						NavSystem.goToLocationAvoidMines(closestEnemyLocation);
+					} else {
+						NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
 					}
 					// otherwise, stay
 				}

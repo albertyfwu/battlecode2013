@@ -13,12 +13,14 @@ public class HQRobot extends BaseRobot {
 	public ChannelType powerChannel = ChannelType.HQPOWERLEVEL;
 	public ChannelType strategyChannel = ChannelType.STRATEGY;
 	
+	public boolean artillerySeen = false;
+	
 	public boolean allInMode = false;
 	public boolean ourNukeHalfDone = false;
 
 	public HQRobot(RobotController rc) throws GameActionException {
 		super(rc);
-		strategy = decideStrategy();
+		decideStrategy();
 		
 //		if (rc.getTeam() == Team.A) {
 //			strategy = Strategy.ECON;
@@ -29,27 +31,40 @@ public class HQRobot extends BaseRobot {
 		EncampmentJobSystem.initializeConstants();
 	}
 	
-	public Strategy decideStrategy() throws GameActionException {
-//		int numPossibleArtilleryLocations = EncampmentJobSystem.getPossibleArtilleryLocations().length;
-//		
-//		rc.setIndicatorString(1, Integer.toString(numPossibleArtilleryLocations));
-//		MapLocation midPoint = findMidPoint();
-//		int rSquared = DataCache.rushDistSquared / 4;
-//		double mineDensity = rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
-//		
-////		System.out.println(numPossibleArtilleryLocations + ", " + DataCache.rushDistSquared + ", " + rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length + ", " + mineDensity);
-////		String s = numPossibleArtilleryLocations + ", " + DataCache.rushDistSquared + ", " + rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length + ", " + mineDensity;
-////		rc.setIndicatorString(1, s);
-//		
-//		if (numPossibleArtilleryLocations >= 4) {
-////			System.out.println("nuke pls");
-//			return Strategy.NUKE;
-//		} else {
-////			System.out.println("econ");
-//			return Strategy.ECON;
-//		}
+	/**
+	 * Sets the name strategy (along with other variables) that is best suited for the given map.
+	 * 
+	 * Important considerations:
+	 * 1. rush distance
+	 * 2. mine density
+	 * 3. how many encampment squares are close to the base, and in what formation are they?
+	 * 
+	 * @throws GameActionException
+	 */
+	public void decideStrategy() throws GameActionException {
+		// possible locations for building artillery if we're going to do nuke strategy
+		MapLocation[] possibleArtilleryLocations = EncampmentJobSystem.getPossibleArtilleryLocations();
+		int numPossibleArtilleryLocations = possibleArtilleryLocations.length;
+		// How close are they?
+		int averageDistanceSquared = 0;
+		for (MapLocation location : possibleArtilleryLocations) {
+			averageDistanceSquared += location.distanceSquaredTo(DataCache.ourHQLocation);
+		}
+		if (numPossibleArtilleryLocations == 0) {
+			averageDistanceSquared = Integer.MAX_VALUE;
+		} else {
+			averageDistanceSquared /= numPossibleArtilleryLocations;
+		}
 		
-		return Strategy.RUSH;
+		// mine density - is this the best measure? what about getting the line
+		// between the two HQs and counting mines that lie within a certain constant
+		// of the line? i guess the second option would be incredibly expensive...
+		// maybe we could just query senseMineLocations two or four times? to approximate a line?
+		MapLocation midPoint = findMidPoint();
+		int rSquared = DataCache.rushDistSquared / 4;
+		double mineDensity = rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+		
+		strategy = Strategy.ECON;
 	}
 	
 	private MapLocation findMidPoint() {
@@ -65,7 +80,10 @@ public class HQRobot extends BaseRobot {
 	public void run() {
 		try {
 //			rc.setIndicatorString(0, Integer.toString(rc.checkResearchProgress(Upgrade.NUKE)));
-			
+//			if (Clock.getRoundNum() > 50) {
+//				BroadcastSystem.write(ChannelType.ARTILLERY_SEEN, Constants.TRUE);
+//			}
+
 			DataCache.updateRoundVariables();
 			BroadcastSystem.write(powerChannel, (int) rc.getTeamPower()); // broadcast the team power
 			BroadcastSystem.write(strategyChannel, strategy.ordinal()); // broadcast the strategy
@@ -92,6 +110,34 @@ public class HQRobot extends BaseRobot {
 				BroadcastSystem.write(ChannelType.ENEMY_NUKE_HALF_DONE, 1);
 			}
 			
+			if (artillerySeen == false) {
+				Message message;
+				if (Clock.getRoundNum() % Constants.CHANNEL_CYCLE == 0 && Clock.getRoundNum() > 0) {
+					message = BroadcastSystem.readLastCycle(ChannelType.ARTILLERY_SEEN);
+				} else {
+					message = BroadcastSystem.read(ChannelType.ARTILLERY_SEEN);
+				}
+				if (message.isValid && message.body == Constants.TRUE) {
+					artillerySeen = true;
+					EncampmentJobSystem.setShieldLocation();
+					if (EncampmentJobSystem.shieldsLoc != null) {
+						EncampmentJobSystem.postShieldLocation();
+					}
+					System.out.println("artilleryseen");
+				}
+			} else if (EncampmentJobSystem.shieldsLoc != null) {
+				if (!rc.canSenseSquare(EncampmentJobSystem.shieldsLoc) || !(rc.senseEncampmentSquares(EncampmentJobSystem.shieldsLoc, 0, rc.getTeam()).length > 0)) {
+					// post shield encampment job
+					EncampmentJobSystem.updateShieldJob();
+				}
+				if (Clock.getRoundNum() % Constants.CHANNEL_CYCLE == 0 && Clock.getRoundNum() > 0) {
+					EncampmentJobSystem.checkShieldCompletionOnCycle();
+					EncampmentJobSystem.postShieldLocation(); // to make sure the the shield location isn't lost
+				} else {
+					EncampmentJobSystem.checkShieldCompletion();
+				}
+			}
+			
 			// to handle broadcasting between channel cycles
 			if (Clock.getRoundNum() % Constants.CHANNEL_CYCLE == 0 && Clock.getRoundNum() > 0) {
                 EncampmentJobSystem.updateJobsOnCycle();
@@ -100,7 +146,7 @@ public class HQRobot extends BaseRobot {
 	        }
 			
 			if (rc.isActive()) {
-				if (strategy == Strategy.ECON) {
+				if (strategy == Strategy.ECON || strategy == Strategy.RUSH) {
 					boolean upgrade = false;
 					if (enemyNukeHalfDone && !DataCache.hasDefusion && DataCache.numAlliedSoldiers > 5) {
 						upgrade = true;
@@ -116,15 +162,6 @@ public class HQRobot extends BaseRobot {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.NUKE);
 						}
-					}
-					if (!upgrade) {
-						spawnSoldier();
-					}
-				} else if (strategy == Strategy.RUSH) {
-					boolean upgrade = false;
-					if (rc.getTeamPower() < 4 && Clock.getRoundNum() > 10) {
-						upgrade = true;
-						rc.researchUpgrade(Upgrade.NUKE);
 					}
 					if (!upgrade) {
 						spawnSoldier();

@@ -1,17 +1,16 @@
 package team162;
 
+import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 
 public class SupplierRobot extends EncampmentRobot {
 
-	public SupplierRobot(RobotController rc) {
+	public SupplierRobot(RobotController rc) throws GameActionException {
 		super(rc);
-		sendCompletionMessage();
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override
-	public void run() {
+	public void runMain() {
 
 	}
 

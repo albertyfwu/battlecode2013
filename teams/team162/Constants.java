@@ -5,6 +5,9 @@ public interface Constants {
 	/**
 	 * Broadcasting
 	 */
+	// for channels that are used for flagging (like ChannelType.ARTILLERY_SEEN)
+	public static final int TRUE = 263;
+	
 	// number of redundant channels we use for communication
 	public static final int REDUNDANT_CHANNELS = 2;
 	

@@ -170,22 +170,19 @@ public class NavSystem {
 	public static void goDirectionAvoidMines(Direction dir) throws GameActionException {
 		if (rc.isActive()) {
 			Direction lookingAtCurrently = dir;
-			boolean movedYet = false;
-			lookAround: for (int d : directionOffsets) {
+			for (int d : directionOffsets) {
 				lookingAtCurrently = Direction.values()[(dir.ordinal() + d + 8) % 8];
 				if (rc.canMove(lookingAtCurrently) && rc.isActive()) {
 					if (!hasBadMine(rc.getLocation().add(lookingAtCurrently))) {
-						movedYet = true;
 						rc.move(lookingAtCurrently);
-						break lookAround;
+						return;
 					}
 				}
 			}
-			if (!movedYet) { // if the robot still hasn't moved
-				if (rc.senseNearbyGameObjects(Robot.class, 2, rc.getTeam().opponent()).length == 0) {
-					// if there are no nearby enemies
-					rangedDefuseMine();
-				}
+			// if the robot still hasn't moved
+			if (rc.senseNearbyGameObjects(Robot.class, 2, rc.getTeam().opponent()).length == 0) {
+				// if there are no nearby enemies
+				rangedDefuseMine();
 			}
 		}		
 	}
@@ -193,7 +190,11 @@ public class NavSystem {
 	public static boolean moveOrDefuse(Direction dir) throws GameActionException {
 		if (rc.isActive()) {
 			if (rc.canMove(dir)) {
-				if (!hasBadMine(rc.getLocation().add(dir))) {
+				Team bombTeam = rc.senseMine(rc.getLocation().add(dir));
+				if (rc.getShields() > 50 && bombTeam == rc.getTeam().opponent()) {
+					rc.move(dir);
+					return true;
+				} else if (bombTeam == null || bombTeam == rc.getTeam()) {
 					rc.move(dir);
 					return true;
 				} else {

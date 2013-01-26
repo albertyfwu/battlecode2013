@@ -1,15 +1,16 @@
 package team162;
 
+import battlecode.common.GameActionException;
 import battlecode.common.RobotController;
 
-public class MedbayRobot extends BaseRobot {
+public class MedbayRobot extends EncampmentRobot {
 
-	public MedbayRobot(RobotController rc) {
+	public MedbayRobot(RobotController rc) throws GameActionException {
 		super(rc);
 	}
 
 	@Override
-	public void run() {
+	public void runMain() {
 
 	}
 
