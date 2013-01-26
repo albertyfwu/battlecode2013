@@ -267,6 +267,19 @@ public class SoldierRobot extends BaseRobot {
 						break;
 						// TOOD: fall through?
 					}
+					break;
+				case CHARGE_SHIELDS:
+					// either charge up shields next to the shields encampment, or wait at another location until there is space					
+					if (rc.canSenseSquare(EncampmentJobSystem.shieldsLoc)) {
+						// looks like something exists at the location...
+						GameObject object = rc.senseObjectAtLocation(EncampmentJobSystem.shieldsLoc);
+						if (object != null && rc.senseRobotInfo((Robot) object).type == RobotType.SHIELDS) {
+							shieldsCode();
+						}
+					} else {
+						soldierState = SoldierState.RALLYING;
+					}
+					break;
 				case MINING:
 					int hqPowerLevel = Integer.MAX_VALUE;
 					Message message = BroadcastSystem.read(powerChannel);
@@ -416,32 +429,18 @@ public class SoldierRobot extends BaseRobot {
 	 * @throws GameActionException
 	 */
 	public void shieldsCode() throws GameActionException {
-		// Find out if the shields encampment:
-		// 1. exists
-		// 2. is alive
-		if (rc.canSenseSquare(EncampmentJobSystem.shieldsLoc)) {
-			// looks like something exists at the location...
-			GameObject object = rc.senseObjectAtLocation(EncampmentJobSystem.shieldsLoc);
-			if (object != null && rc.senseRobotInfo((Robot) object).type == RobotType.SHIELDS) {
-				// ...and that object is our shields encampment!
-				// find an empty space next to the shields encampment
-				for (int i = 8; --i >= 0; ) {
-					// Check to see if it's empty
-					MapLocation iterLocation = EncampmentJobSystem.shieldsLoc.add(DataCache.directionArray[i]);
-					if (rc.senseObjectAtLocation(iterLocation) == null) {
-						// Oh, there's an empty space! let's go to it
-						NavSystem.goToLocation(iterLocation);
-						return;
-					}
-				}
-				// we found the shields encampment, but there are no empty spaces, so wait at the queue location
-				NavSystem.goToLocation(EncampmentJobSystem.shieldsQueueLoc);
+		// find an empty space next to the shields encampment
+		for (int i = 8; --i >= 0; ) {
+			// Check to see if it's empty
+			MapLocation iterLocation = EncampmentJobSystem.shieldsLoc.add(DataCache.directionArray[i]);
+			if (rc.senseObjectAtLocation(iterLocation) == null) {
+				// Oh, there's an empty space! let's go to it
+				NavSystem.goToLocation(iterLocation);
 				return;
 			}
-		} else {
-			// the shields doesn't even exist...
-			// TODO: should we have even called shieldsCode() in that situation?
 		}
+		// we found the shields encampment, but there are no empty spaces, so wait at the queue location
+		NavSystem.goToLocation(EncampmentJobSystem.shieldsQueueLoc);
 	}
 	
 	private void defendMicro() throws GameActionException {
