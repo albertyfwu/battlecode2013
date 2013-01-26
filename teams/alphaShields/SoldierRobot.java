@@ -46,6 +46,10 @@ public class SoldierRobot extends BaseRobot {
 	public double lineA, lineB, lineC, lineDistanceDenom;
 	public int x1, y1, x2, y2; // coordinates of our hq and enemy hq
 	
+	public int rSquared;
+	public double mineDensity; // density of mines
+	public int shieldsCutoff; // the cutoff for the number of shields to get before leaving the shields encampment
+	
 	public SoldierRobot(RobotController rc) throws GameActionException {
 		super(rc);
 		
@@ -82,7 +86,18 @@ public class SoldierRobot extends BaseRobot {
 		
 		rallyPoint = findRallyPoint();
 		
+		rSquared = DataCache.rushDistSquared / 4;
+		
 		initializeMining();
+	}
+	
+	private MapLocation findMidPoint() {
+		MapLocation enemyLoc = DataCache.enemyHQLocation;
+		MapLocation ourLoc = DataCache.ourHQLocation;
+		int x, y;
+		x = (enemyLoc.x + ourLoc.x) / 2;
+		y = (enemyLoc.y + ourLoc.y) / 2;
+		return new MapLocation(x,y);
 	}
 	
 	public void initializeMining() {
@@ -278,6 +293,7 @@ public class SoldierRobot extends BaseRobot {
 						}
 					} else {
 						soldierState = SoldierState.RALLYING;
+						// TODO: replace above line with the expected behavior change when we're done charging
 					}
 					break;
 				case MINING:
@@ -430,17 +446,29 @@ public class SoldierRobot extends BaseRobot {
 	 */
 	public void shieldsCode() throws GameActionException {
 		// find an empty space next to the shields encampment
-		for (int i = 8; --i >= 0; ) {
-			// Check to see if it's empty
-			MapLocation iterLocation = EncampmentJobSystem.shieldsLoc.add(DataCache.directionArray[i]);
-			if (rc.senseObjectAtLocation(iterLocation) == null) {
-				// Oh, there's an empty space! let's go to it
-				NavSystem.goToLocation(iterLocation);
-				return;
+		int distanceSquaredToShields = rc.getLocation().distanceSquaredTo(EncampmentJobSystem.shieldsLoc);
+		if (distanceSquaredToShields > 2) {
+			// not charging yet
+			for (int i = 8; --i >= 0; ) {
+				// Check to see if it's empty
+				MapLocation iterLocation = EncampmentJobSystem.shieldsLoc.add(DataCache.directionArray[i]);
+				if (rc.senseObjectAtLocation(iterLocation) == null) {
+					// Oh, there's an empty space! let's go to it
+					NavSystem.goToLocation(iterLocation);
+					return;
+				}
+			}
+			// we found the shields encampment, but there are no empty spaces, so wait at the queue location
+			NavSystem.goToLocation(EncampmentJobSystem.shieldsQueueLoc);
+		} else {
+			// already charging
+			mineDensity = rc.senseMineLocations(findMidPoint(), rSquared, Team.NEUTRAL).length / (3.0 * rSquared);		
+			shieldsCutoff = (int) (DataCache.rushDist + 10 * (mineDensity * DataCache.rushDist) + 100);
+			if (rc.getShields() > shieldsCutoff) {
+				// leave
+				soldierState = SoldierState.RALLYING;
 			}
 		}
-		// we found the shields encampment, but there are no empty spaces, so wait at the queue location
-		NavSystem.goToLocation(EncampmentJobSystem.shieldsQueueLoc);
 	}
 	
 	private void defendMicro() throws GameActionException {

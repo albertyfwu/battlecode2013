@@ -17,6 +17,7 @@ public class DataCache {
 	public static MapLocation ourHQLocation;
 	public static MapLocation enemyHQLocation;
 	public static int rushDistSquared;
+	public static int rushDist;
 	
 	public static Direction[] directionArray = Direction.values();
 	
@@ -54,6 +55,7 @@ public class DataCache {
 		ourHQLocation = rc.senseHQLocation();
 		enemyHQLocation = rc.senseEnemyHQLocation();
 		rushDistSquared = ourHQLocation.distanceSquaredTo(enemyHQLocation);
+		rushDist = (int) Math.sqrt(rushDistSquared);
 		
 		mapWidth = rc.getMapWidth();
 		mapHeight = rc.getMapHeight();
