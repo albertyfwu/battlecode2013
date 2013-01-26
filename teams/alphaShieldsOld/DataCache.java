@@ -37,6 +37,7 @@ public class DataCache {
 	// Enemy robots
 	public static int numEnemyRobots;
 	
+	public static Robot[] nearbyEnemyRobots;
 	public static int numNearbyEnemyRobots;
 	public static int numNearbyEnemySoldiers;
 	
@@ -69,7 +70,7 @@ public class DataCache {
 		numNearbyAlliedEncampments = rc.senseEncampmentSquares(rc.getLocation(), 14, rc.getTeam()).length;
 		numNearbyAlliedSoldiers = numNearbyAlliedRobots - numNearbyAlliedEncampments;
 		
-		Robot[] nearbyEnemyRobots = rc.senseNearbyGameObjects(Robot.class, 25, rc.getTeam().opponent());
+		nearbyEnemyRobots = rc.senseNearbyGameObjects(Robot.class, 25, rc.getTeam().opponent());
 		
 		numNearbyEnemySoldiers = 0;
 		for (int i = nearbyEnemyRobots.length; --i >= 0; ) {

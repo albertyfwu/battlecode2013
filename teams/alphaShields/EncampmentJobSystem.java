@@ -16,6 +16,9 @@ public class EncampmentJobSystem {
 	public static RobotController rc;
 	public static MapLocation goalLoc;
 	
+	public static MapLocation shieldsLoc; // location of the shields encampment
+	public static MapLocation shieldsQueueLoc; // location of where to wait to charge up for shields
+	
 	public static ChannelType[] encampmentJobChannelList = 
 		{ChannelType.ENC1,
 		 ChannelType.ENC2,

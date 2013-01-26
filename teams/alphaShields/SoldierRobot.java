@@ -3,6 +3,7 @@ package alphaShields;
 import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
+import battlecode.common.GameObject;
 import battlecode.common.MapLocation;
 import battlecode.common.Robot;
 import battlecode.common.RobotController;
@@ -386,10 +387,56 @@ public class SoldierRobot extends BaseRobot {
 				// This soldier has an encampment job, so it should go do that job
 				captureCode();
 			}
+			
+			reportArtillerySighting();
 		} catch (Exception e) {
 			System.out.println("caught exception before it killed us:");
 			System.out.println(rc.getRobot().getID());
 			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Method that writes to a channel to inform others that an artillery has been seen.
+	 * Primarily used by HQ to know to build a shields encampment.
+	 * @throws GameActionException
+	 */
+	public void reportArtillerySighting() throws GameActionException {
+		Robot[] nearbyEnemyRobots = rc.senseNearbyGameObjects(Robot.class, 14, rc.getTeam().opponent());
+		for (Robot robot : nearbyEnemyRobots) {
+			RobotInfo robotInfo = rc.senseRobotInfo(robot);
+			if (robotInfo.type == RobotType.ARTILLERY) {
+				BroadcastSystem.write(ChannelType.ARTILLERY_SEEN, Constants.TRUE);
+			}
+		}
+	}
+	
+	/**
+	 * Code to be run by soldier when it needs to get shields.
+	 * @throws GameActionException
+	 */
+	public void shieldsCode() throws GameActionException {
+		// Find out if the shields encampment:
+		// 1. exists
+		// 2. is alive
+		if (rc.canSenseSquare(EncampmentJobSystem.shieldsLoc)) {
+			GameObject object = rc.senseObjectAtLocation(EncampmentJobSystem.shieldsLoc);
+			if (object != null && rc.senseRobotInfo((Robot) object).type == RobotType.SHIELDS) {
+				// our shields encampment is alive!
+				// find an empty space
+				for (int i = 8; --i >= 0; ) {
+					// Check to see if it's empty
+					MapLocation iterLocation = EncampmentJobSystem.shieldsLoc.add(DataCache.directionArray[i]);
+					if (rc.senseObjectAtLocation(iterLocation) == null) {
+						// Oh, there's an empty space! let's go to it
+						NavSystem.goToLocation(iterLocation);
+						return;
+					}
+				}
+			}
+		} else {
+			// the shields doesn't even exist...
+			// TODO: should we have even called shieldsCode() in that situation?
 		}
 	}
 	
