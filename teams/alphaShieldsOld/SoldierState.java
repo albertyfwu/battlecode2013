@@ -1,4 +1,4 @@
-package alphaRushShields;
+package alphaShieldsOld;
 
 public enum SoldierState {
 	NEW,
@@ -11,5 +11,6 @@ public enum SoldierState {
 	CLEAR_OUT_HQ_MINES,
 	PUSHING,
 	FINDING_START_MINE_POSITIONS,
-	MINING;
+	MINING,
+	CHARGE_SHIELDS;
 }

@@ -18,7 +18,7 @@ public class HQRobot extends BaseRobot {
 
 	public HQRobot(RobotController rc) throws GameActionException {
 		super(rc);
-		decideStrategy();
+		strategy = decideStrategy();
 		
 //		if (rc.getTeam() == Team.A) {
 //			strategy = Strategy.ECON;
@@ -29,40 +29,26 @@ public class HQRobot extends BaseRobot {
 		EncampmentJobSystem.initializeConstants();
 	}
 	
-	/**
-	 * Sets the name strategy (along with other variables) that is best suited for the given map.
-	 * 
-	 * Important considerations:
-	 * 1. rush distance
-	 * 2. mine density
-	 * 3. how many encampment squares are close to the base, and in what formation are they?
-	 * 
-	 * @throws GameActionException
-	 */
-	public void decideStrategy() throws GameActionException {
-		// possible locations for building artillery if we're going to do nuke strategy
-		MapLocation[] possibleArtilleryLocations = EncampmentJobSystem.getPossibleArtilleryLocations();
-		int numPossibleArtilleryLocations = possibleArtilleryLocations.length;
-		// How close are they?
-		int averageDistanceSquared = 0;
-		for (MapLocation location : possibleArtilleryLocations) {
-			averageDistanceSquared += location.distanceSquaredTo(DataCache.ourHQLocation);
-		}
-		if (numPossibleArtilleryLocations == 0) {
-			averageDistanceSquared = Integer.MAX_VALUE;
-		} else {
-			averageDistanceSquared /= numPossibleArtilleryLocations;
-		}
+	public Strategy decideStrategy() throws GameActionException {
+		int numPossibleArtilleryLocations = EncampmentJobSystem.getPossibleArtilleryLocations().length;
 		
-		// mine density - is this the best measure? what about getting the line
-		// between the two HQs and counting mines that lie within a certain constant
-		// of the line? i guess the second option would be incredibly expensive...
-		// maybe we could just query senseMineLocations two or four times? to approximate a line?
-		MapLocation midPoint = findMidPoint();
-		int rSquared = DataCache.rushDistSquared / 4;
-		double mineDensity = rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
-		
-		strategy = Strategy.ECON;
+		rc.setIndicatorString(1, Integer.toString(numPossibleArtilleryLocations));
+//		MapLocation midPoint = findMidPoint();
+//		int rSquared = DataCache.rushDistSquared / 4;
+//		double mineDensity = rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+//		
+////		System.out.println(numPossibleArtilleryLocations + ", " + DataCache.rushDistSquared + ", " + rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length + ", " + mineDensity);
+////		String s = numPossibleArtilleryLocations + ", " + DataCache.rushDistSquared + ", " + rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length + ", " + mineDensity;
+////		rc.setIndicatorString(1, s);
+//		
+//		if (numPossibleArtilleryLocations >= 4) {
+////			System.out.println("nuke pls");
+//			return Strategy.NUKE;
+//		} else {
+////			System.out.println("econ");
+//			return Strategy.ECON;
+//		}
+		return Strategy.ECON;
 	}
 	
 	private MapLocation findMidPoint() {
