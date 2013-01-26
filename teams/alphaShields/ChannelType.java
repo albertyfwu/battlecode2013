@@ -19,6 +19,7 @@ public enum ChannelType {
 	ENC3,
 	ENC4,
 	ENC5,
+	ENCSHIELD,
 	
 	// completion channels
 	COMP1,
@@ -26,6 +27,7 @@ public enum ChannelType {
 	COMP3,
 	COMP4,
 	COMP5,
+	COMPSHIELD,
 	
 	// broadcasting waypoints for clearing wide swath for army
 	WAYPOINTS,
@@ -37,7 +39,10 @@ public enum ChannelType {
 	ENEMY_NUKE_HALF_DONE,
 	
 	// check if our nuke is half done
-	OUR_NUKE_HALF_DONE;
+	OUR_NUKE_HALF_DONE,
+	
+	//shield location
+	SHIELD_LOCATION;
 	
 	public static final int size = ChannelType.values().length;
 	public static final int range = GameConstants.BROADCAST_MAX_CHANNELS / size;

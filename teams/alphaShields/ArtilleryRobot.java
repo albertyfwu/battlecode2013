@@ -9,7 +9,7 @@ import battlecode.common.RobotController;
 
 public class ArtilleryRobot extends EncampmentRobot {
 	
-	public ArtilleryRobot(RobotController rc) {
+	public ArtilleryRobot(RobotController rc) throws GameActionException {
 		super(rc);
 	}
 

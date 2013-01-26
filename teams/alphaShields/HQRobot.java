@@ -13,6 +13,8 @@ public class HQRobot extends BaseRobot {
 	public ChannelType powerChannel = ChannelType.HQPOWERLEVEL;
 	public ChannelType strategyChannel = ChannelType.STRATEGY;
 	
+	public boolean artillerySeen = false;
+	
 	public boolean allInMode = false;
 	public boolean ourNukeHalfDone = false;
 
@@ -78,7 +80,10 @@ public class HQRobot extends BaseRobot {
 	public void run() {
 		try {
 //			rc.setIndicatorString(0, Integer.toString(rc.checkResearchProgress(Upgrade.NUKE)));
-			
+			if (Clock.getRoundNum() > 50) {
+				BroadcastSystem.write(ChannelType.ARTILLERY_SEEN, Constants.TRUE);
+			}
+
 			DataCache.updateRoundVariables();
 			BroadcastSystem.write(powerChannel, (int) rc.getTeamPower()); // broadcast the team power
 			BroadcastSystem.write(strategyChannel, strategy.ordinal()); // broadcast the strategy
@@ -103,6 +108,21 @@ public class HQRobot extends BaseRobot {
 					allInMode = true;
 				}
 				BroadcastSystem.write(ChannelType.ENEMY_NUKE_HALF_DONE, 1);
+			}
+			
+			if (artillerySeen == false) {
+				Message message = BroadcastSystem.read(ChannelType.ARTILLERY_SEEN);
+				if (message.isValid && message.body == Constants.TRUE) {
+					artillerySeen = true;
+					EncampmentJobSystem.setShieldLocation();
+					EncampmentJobSystem.postShieldJob();
+				}
+			} else {
+				if (!rc.canSenseSquare(EncampmentJobSystem.shieldsLoc) || !(rc.senseEncampmentSquares(EncampmentJobSystem.shieldsLoc, 0, rc.getTeam()).length > 0)) {
+					// post shield encampment job
+					EncampmentJobSystem.updateShieldJob();
+				}
+				EncampmentJobSystem.checkShieldCompletion();
 			}
 			
 			// to handle broadcasting between channel cycles
