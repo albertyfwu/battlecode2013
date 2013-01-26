@@ -246,19 +246,10 @@ public class SoldierRobot extends BaseRobot {
 					soldierState = SoldierState.ALL_IN;
 				}
 				
-				// if we're new
-				if (soldierState == SoldierState.NEW) {
-					// If we're standing on a mine close to our base, we should clear out the mine
-					Team mineTeam = rc.senseMine(rc.getLocation());
-					if (mineTeam != null && mineTeam != rc.getTeam()) {
-						soldierState = SoldierState.ESCAPE_HQ_MINES;
-					} else {
-						soldierState = SoldierState.FINDING_START_MINE_POSITIONS;
-					}
-				}
-				
 				switch (soldierState) {
-				// FOR THE BEGINNING, WHEN WE FIND THE STARTING MINING LOCATIONS
+				case NEW:
+					newCode();
+					break;
 				case FINDING_START_MINE_POSITIONS:
 					findingStartMinePositionsCode();
 					break;
@@ -298,6 +289,7 @@ public class SoldierRobot extends BaseRobot {
 			reportArtillerySighting();
 			if (nextSoldierState != null) {
 				soldierState = nextSoldierState;
+				nextSoldierState = null; // clear the state for the next call of run() to use
 			}
 		} catch (Exception e) {
 			System.out.println("caught exception before it killed us:");
@@ -306,6 +298,18 @@ public class SoldierRobot extends BaseRobot {
 		}
 	}	
 	
+	public void newCode() throws GameActionException {
+		// If we're standing on a mine close to our base, we should clear out the mine
+		Team mineTeam = rc.senseMine(rc.getLocation());
+		if (mineTeam != null && mineTeam != rc.getTeam()) {
+			nextSoldierState = SoldierState.ESCAPE_HQ_MINES;
+			escapeHQMinesCode();
+		} else {
+			nextSoldierState = SoldierState.FINDING_START_MINE_POSITIONS;
+			findingStartMinePositionsCode();
+		}
+	}
+
 	public void rallyingCode() throws GameActionException {
 		int hqPowerLevel2 = Integer.MAX_VALUE;
 		Message message2 = BroadcastSystem.read(powerChannel);
@@ -481,7 +485,7 @@ public class SoldierRobot extends BaseRobot {
 			if (distanceSquaredToMiningStartLocation == 0 ||
 					(distanceSquaredToMiningStartLocation <= 2 && miningStartLocation.equals(DataCache.ourHQLocation))) {
 				nextSoldierState = SoldierState.MINING;
-				miningSubroutine();
+				miningCode();
 			} else if (distanceSquaredToMiningStartLocation <= 2 && rc.senseEncampmentSquares(miningStartLocation, 0, null).length == 1) {
 				// Choose another miningStartLocation
 				getNewMiningStartLocation();
