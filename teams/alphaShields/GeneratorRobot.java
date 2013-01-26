@@ -9,7 +9,7 @@ public class GeneratorRobot extends EncampmentRobot {
 	}
 
 	@Override
-	public void run() {
+	public void runMain() {
 		
 	}
 

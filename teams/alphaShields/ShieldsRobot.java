@@ -2,7 +2,7 @@ package alphaShields;
 
 import battlecode.common.RobotController;
 
-public class ShieldsRobot extends BaseRobot {
+public class ShieldsRobot extends EncampmentRobot {
 
 	public ShieldsRobot(RobotController rc) {
 		super(rc);
@@ -10,7 +10,7 @@ public class ShieldsRobot extends BaseRobot {
 	}
 
 	@Override
-	public void run() {
+	public void runMain() {
 		// TODO Auto-generated method stub
 
 	}

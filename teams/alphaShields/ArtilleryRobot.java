@@ -7,14 +7,14 @@ import battlecode.common.MapLocation;
 import battlecode.common.Robot;
 import battlecode.common.RobotController;
 
-public class ArtilleryRobot extends BaseRobot {
+public class ArtilleryRobot extends EncampmentRobot {
 	
 	public ArtilleryRobot(RobotController rc) {
 		super(rc);
 	}
 
 	@Override
-	public void run() {
+	public void runMain() {
 		try {
 			if (rc.isActive()) {
 				Robot[] potentialTargets = rc.senseNearbyGameObjects(Robot.class, rc.getLocation(), 63, rc.getTeam().opponent());

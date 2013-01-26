@@ -10,6 +10,9 @@ public enum ChannelType {
 	// for reporting artillery seen
 	ARTILLERY_SEEN,
 	
+	// channel for telling a designated encampment to commit suicide
+	ENCAMPMENT_SUICIDE,
+	
 	// for encampments
 	ENC1,
 	ENC2,
