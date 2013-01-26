@@ -259,7 +259,6 @@ public class SoldierRobot extends BaseRobot {
 				case MINING:
 					miningCode();
 					break;
-				// FOR ESCAPING MINES IF THEY SURROUND THE HQ
 				case ESCAPE_HQ_MINES:
 					escapeHQMinesCode();
 					break;
