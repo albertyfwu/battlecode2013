@@ -90,7 +90,7 @@ public class EncampmentJobSystem {
 		
 		for (int i = nearbyEncampments.length; --i >= 0; ) {
 			MapLocation encLoc = nearbyEncampments[i];
-			if (encLoc.x == DataCache.ourHQLocation.x){ 
+			if (encLoc.x == DataCache.ourHQLocation.x){
 				unreachableEncampments.add(encLoc);
 				numUnreachableEncampments++;
 			}
@@ -162,6 +162,7 @@ public class EncampmentJobSystem {
 	public static void postShieldJob() {
 		postJobWithoutIncrementing(shieldChannel, shieldsLoc, 3);
 		shieldJobOustanding = true;
+//		System.out.println("shield job posted");
 	}
 	
 	/**
@@ -171,8 +172,10 @@ public class EncampmentJobSystem {
 	public static MapLocation readShieldLocation() {
 		Message msg = BroadcastSystem.read(ChannelType.SHIELD_LOCATION);
 		if (msg.isValid && msg.body != Constants.MAX_MESSAGE) {
+			System.out.println("msgbody: " + msg.body);
 			return parseShieldLocation(msg.body);
 		}
+		
 		return null;
 	}
 	
@@ -182,6 +185,7 @@ public class EncampmentJobSystem {
 	 */
 	public static void postShieldLocation() {
 		int msg = createShieldLocMessage(shieldsLoc);
+		System.out.println("shieldLoc:" + shieldsLoc);
 		BroadcastSystem.write(ChannelType.SHIELD_LOCATION, msg);
 	}
 	/**
@@ -251,6 +255,8 @@ public class EncampmentJobSystem {
 		int isTaken;
 		
 		if (message.isValid && message.body != maxMessage) {
+			
+			System.out.println("msgbody: " + message.body);
 			onOrOff = parseOnOrOff(message.body);
 			isTaken = parseTaken(message.body);
 			if (onOrOff == 1 && isTaken == 0) { //if job is on and untaken
@@ -260,17 +266,20 @@ public class EncampmentJobSystem {
 					if (robotOnSquare == null || !robotOnSquare.getTeam().equals(rc.getTeam())) {
 						assignedRobotType = parseRobotType(message.body);
 						assignedChannel = channel;
+						rc.setIndicatorString(1, goalLoc.toString());
 						return channel;
 					}
 				} else {
 					assignedRobotType = parseRobotType(message.body);
 					assignedChannel = channel;
+					rc.setIndicatorString(1, goalLoc.toString());
 					return channel;
 				}
 			} else if (onOrOff == 1) {
 				int postedRoundNum = parseRoundNum(message.body);
 				if ((16+currentRoundNum - postedRoundNum)%16 >= 4) { // it hasn't been written on for 5 turns
 					goalLoc = parseLocation(message.body);
+
 //					System.out.println("posted: " + postedRoundNum);
 //					System.out.println("current: " + currentRoundNum % 16);
 //
@@ -279,17 +288,21 @@ public class EncampmentJobSystem {
 						if (robotOnSquare == null || !robotOnSquare.getTeam().equals(rc.getTeam())) {
 							assignedRobotType = parseRobotType(message.body);
 							assignedChannel = channel;
+							rc.setIndicatorString(1, goalLoc.toString());
 							return channel;
 						}
 					} else {
 						assignedRobotType = parseRobotType(message.body);
 						assignedChannel = channel;
+						rc.setIndicatorString(1, goalLoc.toString());
 						return channel;
 					}
 				}
 			}
 			
 		}
+		
+		rc.setIndicatorString(1, "not shield");
 		
 		for (int i = encampmentJobChannelList.length; --i >= 0; ) {
 			channel = encampmentJobChannelList[i];
@@ -372,16 +385,26 @@ public class EncampmentJobSystem {
 	}
 	
 	public static void postUnreachableMessage(MapLocation goalLoc) {
-		forloop: for (int i = encampmentCompletionChannelList.length; --i >= 0; ) {
-			ChannelType channel = encampmentCompletionChannelList[i];
-			Message message = BroadcastSystem.read(channel);
+		if (assignedRobotType == RobotType.SHIELDS) {
+			Message message = BroadcastSystem.read(shieldCompChannel);
 			if (message.isUnwritten || (message.isValid && message.body == maxMessage)){
 				int newmsg = (1 << 16) + (goalLoc.x << 8) + goalLoc.y;
-//				System.out.println("unreachable msg: " + newmsg);
-				BroadcastSystem.write(channel, newmsg);
-				break forloop; 
+				System.out.println("unreachable msg: " + newmsg);
+				BroadcastSystem.write(shieldCompChannel, newmsg);
+			}
+		} else {
+			forloop: for (int i = encampmentCompletionChannelList.length; --i >= 0; ) {
+				ChannelType channel = encampmentCompletionChannelList[i];
+				Message message = BroadcastSystem.read(channel);
+				if (message.isUnwritten || (message.isValid && message.body == maxMessage)){
+					int newmsg = (1 << 16) + (goalLoc.x << 8) + goalLoc.y;
+//					System.out.println("unreachable msg: " + newmsg);
+					BroadcastSystem.write(channel, newmsg);
+					break forloop; 
+				}
 			}
 		}
+		
 	}
 	
 	/**
@@ -393,23 +416,36 @@ public class EncampmentJobSystem {
 		BroadcastSystem.writeMaxMessage(channel);
 	}
 	
+	/**
+	 * HQ uses this to see if the shield job has been completed (or is unreachable)
+	 * if unreachable, it finds a new shieldlocation and posts the location
+	 * 
+	 * @return
+	 * @throws GameActionException
+	 */
 	public static EncampmentJobMessageType checkShieldCompletion() throws GameActionException {
-		Message message = BroadcastSystem.read(shieldChannel);
+		Message message = BroadcastSystem.read(shieldCompChannel);
 		if (message.isValid && message.body != maxMessage) {
+			System.out.println("shieldCompChannel: " + message.body);
 			int locY = message.body & 0xFF;
 			int locX = (message.body >> 8) & 0xFF;
 			int unreachableBit = message.body >> 16;
-				postCleanUp(shieldChannel); // cleanup
-				if (unreachableBit == 1) { // if unreachable
-					unreachableEncampments.add(new MapLocation(locY, locX));
-					numUnreachableEncampments++;
-					// update shieldLocation
-					shieldsLoc = EncampmentJobSystem.getShieldLocation();
-					return EncampmentJobMessageType.FAILURE;
-				} else { // it's a completion message
-					shieldJobOustanding = false;
-					return EncampmentJobMessageType.COMPLETION;
-				}
+			postCleanUp(shieldCompChannel); // cleanup
+			if (unreachableBit == 1) { // if unreachable
+				unreachableEncampments.add(new MapLocation(locX, locY));
+				numUnreachableEncampments++;
+				// update shieldLocation and broadcast it
+				setShieldLocation();
+				postShieldLocation();
+				shieldJobOustanding = false;
+				System.out.println("failure: " + new MapLocation(locX, locY));
+				return EncampmentJobMessageType.FAILURE;
+				
+			} else { // it's a completion message
+				shieldJobOustanding = false;
+				System.out.println("completion");
+				return EncampmentJobMessageType.COMPLETION;
+			}
 		}
 		return EncampmentJobMessageType.EMPTY;
 	}
@@ -435,6 +471,40 @@ public class EncampmentJobSystem {
 				numUnreachableEncampments++;
 				return EncampmentJobMessageType.FAILURE;
 			} else { // it's a completion message
+				return EncampmentJobMessageType.COMPLETION;
+			}
+		}
+		return EncampmentJobMessageType.EMPTY;
+	}
+	
+	/**
+	 * HQ uses this to see if the shield job has been completed (or is unreachable)
+	 * if unreachable, it finds a new shieldlocation and posts the location
+	 * 
+	 * @return
+	 * @throws GameActionException
+	 */
+	public static EncampmentJobMessageType checkShieldCompletionOnCycle() throws GameActionException {
+		Message message = BroadcastSystem.readLastCycle(shieldCompChannel);
+		if (message.isValid && message.body != maxMessage) {
+			System.out.println("shieldCompChannel: " + message.body);
+			int locY = message.body & 0xFF;
+			int locX = (message.body >> 8) & 0xFF;
+			int unreachableBit = message.body >> 16;
+			postCleanUp(shieldCompChannel); // cleanup
+			if (unreachableBit == 1) { // if unreachable
+				unreachableEncampments.add(new MapLocation(locX, locY));
+				numUnreachableEncampments++;
+				// update shieldLocation and broadcast it
+				setShieldLocation();
+				postShieldLocation();
+				shieldJobOustanding = false;
+				System.out.println("failure: " + new MapLocation(locX, locY));
+				return EncampmentJobMessageType.FAILURE;
+				
+			} else { // it's a completion message
+				shieldJobOustanding = false;
+				System.out.println("completion");
 				return EncampmentJobMessageType.COMPLETION;
 			}
 		}
@@ -738,6 +808,7 @@ public class EncampmentJobSystem {
 	}
 	
 	public static void setShieldLocation() throws GameActionException {
+		System.out.println("setshield");
 		shieldsLoc = getShieldLocation();
 	}
 	
@@ -747,7 +818,7 @@ public class EncampmentJobSystem {
 	 * @throws GameActionException
 	 */
 	public static MapLocation getShieldLocation() throws GameActionException {
-		MapLocation[] possibleShieldLocations = rc.senseEncampmentSquares(DataCache.ourHQLocation, 4 * DataCache.rushDistSquared/25, null); 
+		MapLocation[] possibleShieldLocations = rc.senseEncampmentSquares(DataCache.ourHQLocation, DataCache.rushDistSquared/4, null); 
 		int x1 = DataCache.ourHQLocation.x;
 		int y1 = DataCache.ourHQLocation.y;
 		int x2 = DataCache.enemyHQLocation.x;
@@ -775,6 +846,7 @@ public class EncampmentJobSystem {
 			if (!unreachableEncampments.contains(shieldLoc) && shieldLoc.distanceSquaredTo(DataCache.enemyHQLocation) <= DataCache.rushDistSquared/2) {
 				distanceToLine = Math.abs(lineA * shieldLoc.x + lineB * shieldLoc.y + lineC) / lineDistanceDenom;
 				if (distanceToLine < 10) {
+					System.out.println("new loc: " + shieldLoc);
 					rc.setIndicatorString(0, shieldLoc.toString());
 					return shieldLoc;
 				}
@@ -782,14 +854,18 @@ public class EncampmentJobSystem {
 		}
 		
 		for (MapLocation shieldLoc : possibleShieldLocations) {
+			
 			if (!unreachableEncampments.contains(shieldLoc) && shieldLoc.distanceSquaredTo(DataCache.enemyHQLocation) <= DataCache.rushDistSquared) {
 				distanceToLine = Math.abs(lineA * shieldLoc.x + lineB * shieldLoc.y + lineC) / lineDistanceDenom;
 				if (distanceToLine < 10) {
+					System.out.println("new loc2: " + shieldLoc);
 					rc.setIndicatorString(0, shieldLoc.toString());
 					return shieldLoc;
 				}
 			}
 		}
+		
+		rc.setIndicatorString(0, "null");
 		
 		return null;
 		

@@ -906,9 +906,14 @@ public class SoldierRobot extends BaseRobot {
 					rc.captureEncampment(EncampmentJobSystem.assignedRobotType);
 				}
 			} else {
+				
 				if (rc.senseNearbyGameObjects(Robot.class, 14, rc.getTeam().opponent()).length > 0) {
 					unassigned = true;
 					soldierState = SoldierState.FIGHTING;
+				}
+				
+				if (rc.getRobot().getID() == 366) {
+					System.out.println("navmode: " + NavSystem.navMode);
 				}
 				if (NavSystem.navMode == NavMode.BFSMODE) {
 					NavSystem.tryBFSNextTurn();

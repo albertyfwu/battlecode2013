@@ -80,9 +80,9 @@ public class HQRobot extends BaseRobot {
 	public void run() {
 		try {
 //			rc.setIndicatorString(0, Integer.toString(rc.checkResearchProgress(Upgrade.NUKE)));
-			if (Clock.getRoundNum() > 50) {
-				BroadcastSystem.write(ChannelType.ARTILLERY_SEEN, Constants.TRUE);
-			}
+//			if (Clock.getRoundNum() > 50) {
+//				BroadcastSystem.write(ChannelType.ARTILLERY_SEEN, Constants.TRUE);
+//			}
 
 			DataCache.updateRoundVariables();
 			BroadcastSystem.write(powerChannel, (int) rc.getTeamPower()); // broadcast the team power
@@ -111,18 +111,31 @@ public class HQRobot extends BaseRobot {
 			}
 			
 			if (artillerySeen == false) {
-				Message message = BroadcastSystem.read(ChannelType.ARTILLERY_SEEN);
+				Message message;
+				if (Clock.getRoundNum() % Constants.CHANNEL_CYCLE == 0 && Clock.getRoundNum() > 0) {
+					message = BroadcastSystem.readLastCycle(ChannelType.ARTILLERY_SEEN);
+				} else {
+					message = BroadcastSystem.read(ChannelType.ARTILLERY_SEEN);
+				}
 				if (message.isValid && message.body == Constants.TRUE) {
 					artillerySeen = true;
 					EncampmentJobSystem.setShieldLocation();
-					EncampmentJobSystem.postShieldJob();
+					if (EncampmentJobSystem.shieldsLoc != null) {
+						EncampmentJobSystem.postShieldLocation();
+					}
+					System.out.println("artilleryseen");
 				}
-			} else {
+			} else if (EncampmentJobSystem.shieldsLoc != null) {
 				if (!rc.canSenseSquare(EncampmentJobSystem.shieldsLoc) || !(rc.senseEncampmentSquares(EncampmentJobSystem.shieldsLoc, 0, rc.getTeam()).length > 0)) {
 					// post shield encampment job
 					EncampmentJobSystem.updateShieldJob();
 				}
-				EncampmentJobSystem.checkShieldCompletion();
+				if (Clock.getRoundNum() % Constants.CHANNEL_CYCLE == 0 && Clock.getRoundNum() > 0) {
+					EncampmentJobSystem.checkShieldCompletionOnCycle();
+					EncampmentJobSystem.postShieldLocation(); // to make sure the the shield location isn't lost
+				} else {
+					EncampmentJobSystem.checkShieldCompletion();
+				}
 			}
 			
 			// to handle broadcasting between channel cycles
