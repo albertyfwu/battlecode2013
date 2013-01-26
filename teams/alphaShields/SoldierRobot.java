@@ -420,10 +420,11 @@ public class SoldierRobot extends BaseRobot {
 		// 1. exists
 		// 2. is alive
 		if (rc.canSenseSquare(EncampmentJobSystem.shieldsLoc)) {
+			// looks like something exists at the location...
 			GameObject object = rc.senseObjectAtLocation(EncampmentJobSystem.shieldsLoc);
 			if (object != null && rc.senseRobotInfo((Robot) object).type == RobotType.SHIELDS) {
-				// our shields encampment is alive!
-				// find an empty space
+				// ...and that object is our shields encampment!
+				// find an empty space next to the shields encampment
 				for (int i = 8; --i >= 0; ) {
 					// Check to see if it's empty
 					MapLocation iterLocation = EncampmentJobSystem.shieldsLoc.add(DataCache.directionArray[i]);
@@ -433,6 +434,9 @@ public class SoldierRobot extends BaseRobot {
 						return;
 					}
 				}
+				// we found the shields encampment, but there are no empty spaces, so wait at the queue location
+				NavSystem.goToLocation(EncampmentJobSystem.shieldsQueueLoc);
+				return;
 			}
 		} else {
 			// the shields doesn't even exist...
