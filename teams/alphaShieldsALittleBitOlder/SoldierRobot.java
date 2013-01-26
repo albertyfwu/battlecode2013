@@ -1,4 +1,4 @@
-package alphaShields;
+package alphaShieldsALittleBitOlder;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -16,7 +16,6 @@ public class SoldierRobot extends BaseRobot {
 	
 	// When soldier is born, its state is NEW (might have to walk out of mines that are completely surrounding the base)
 	public SoldierState soldierState = SoldierState.NEW;
-	public SoldierState nextSoldierState;
 	
 	// For mining
 //	private MapLocation miningCenter;
@@ -246,36 +245,174 @@ public class SoldierRobot extends BaseRobot {
 					soldierState = SoldierState.ALL_IN;
 				}
 				
+				// if we're new
+				if (soldierState == SoldierState.NEW) {
+					// If we're standing on a mine close to our base, we should clear out the mine
+					Team mineTeam = rc.senseMine(rc.getLocation());
+					if (mineTeam != null && mineTeam != rc.getTeam()) {
+						soldierState = SoldierState.ESCAPE_HQ_MINES;
+					} else {
+//						if (strategy == Strategy.NUKE) {
+//							soldierState = SoldierState.FINDING_START_MINE_POSITIONS;
+//						} else {
+//							soldierState = SoldierState.RALLYING;
+//						}
+						soldierState = SoldierState.FINDING_START_MINE_POSITIONS;
+					}
+				}
+				
 				switch (soldierState) {
-				case NEW:
-					newCode();
-					break;
+				// FOR THE BEGINNING, WHEN WE FIND THE STARTING MINING LOCATIONS
 				case FINDING_START_MINE_POSITIONS:
-					findingStartMinePositionsCode();
+					if (DataCache.numEnemyRobots == 0) {
+						int distanceSquaredToMiningStartLocation = rc.getLocation().distanceSquaredTo(miningStartLocation);
+						if (distanceSquaredToMiningStartLocation == 0 ||
+								(distanceSquaredToMiningStartLocation <= 2 && miningStartLocation.equals(DataCache.ourHQLocation))) {
+							soldierState = SoldierState.MINING;
+							break;
+							// TODO: fall through?
+						} else if (distanceSquaredToMiningStartLocation <= 2 && rc.senseEncampmentSquares(miningStartLocation, 0, null).length == 1) {
+							// Choose another miningStartLocation
+							getNewMiningStartLocation();
+						} else {
+							Direction dir = rc.getLocation().directionTo(miningStartLocation);
+							NavSystem.goDirectionAndDefuse(dir);
+							break;
+						}
+					} else {
+						soldierState = SoldierState.FIGHTING;
+						break;
+						// TOOD: fall through?
+					}
 					break;
 				case CHARGE_SHIELDS:
-					chargeShieldsCode();
+					// either charge up shields next to the shields encampment, or wait at another location until there is space					
+					if (rc.canSenseSquare(EncampmentJobSystem.shieldsLoc)) {
+						// looks like something exists at the location...
+						GameObject object = rc.senseObjectAtLocation(EncampmentJobSystem.shieldsLoc);
+						if (object != null && rc.senseRobotInfo((Robot) object).type == RobotType.SHIELDS) {
+							shieldsCode();
+						}
+					} else {
+						soldierState = SoldierState.RALLYING;
+						// TODO: replace above line with the expected behavior change when we're done charging
+					}
 					break;
 				case MINING:
-					miningCode();
+					int hqPowerLevel = Integer.MAX_VALUE;
+					Message message = BroadcastSystem.read(powerChannel);
+					if (message.isValid) {
+						hqPowerLevel = message.body;
+					} else {
+						hqPowerLevel = (int) rc.getTeamPower();
+					}
+					
+					if (DataCache.numEnemyRobots > 0 && strategy != Strategy.NUKE) {
+						soldierState = SoldierState.FIGHTING;
+					} else if (strategy == Strategy.NUKE && DataCache.numEnemyRobots > 1) {
+						soldierState = SoldierState.FIGHTING;
+					} else if (strategy == Strategy.NUKE && DataCache.numEnemyRobots == 1) {
+						Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class, 14, rc.getTeam().opponent());
+						if (enemyRobots.length == 1) {
+							RobotInfo rinfo = rc.senseRobotInfo(enemyRobots[0]);
+							NavSystem.goToLocation(rinfo.location);
+						} else {
+							mineCode();
+						}
+					} else if (strategy != Strategy.NUKE && (hqPowerLevel < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel < 100) ) {
+						soldierState = SoldierState.PUSHING;
+					} else {
+						mineCode();
+					}
 					break;
+				// FOR ESCAPING MINES IF THEY SURROUND THE HQ
 				case ESCAPE_HQ_MINES:
-					escapeHQMinesCode();
-					break;
+					// We need to run away from the mines surrounding our base
+					Team mineTeam = rc.senseMine(rc.getLocation());
+					if (mineTeam != null && mineTeam != rc.getTeam()) {
+						// We need to run away from the mines surrounding our base
+						if (NavSystem.safeLocationAwayFromHQMines != null) {
+							NavSystem.goToLocationDontDefuseOrAvoidMines(NavSystem.safeLocationAwayFromHQMines);
+						} else {
+							NavSystem.goAwayFromLocationEscapeMines(DataCache.ourHQLocation);
+						}
+						break;
+					} else {
+						// No more mines, so clear out HQ mines
+						soldierState = SoldierState.CLEAR_OUT_HQ_MINES;
+						// intentional fall through
+					}
 				case CLEAR_OUT_HQ_MINES:
-					clearOutHQMinesCode();
+					// Clear out a path to the HQ
+					Team mineTeam1 = rc.senseMine(rc.getLocation());
+					if (mineTeam1 == null || mineTeam1 == rc.getTeam() && rc.getLocation().distanceSquaredTo(DataCache.ourHQLocation) > 2) {
+						NavSystem.goToLocation(DataCache.ourHQLocation);
+					} else {
+						// We're done
+						if (strategy == Strategy.NUKE) { 
+							soldierState = SoldierState.FINDING_START_MINE_POSITIONS;
+						} else {
+							soldierState = SoldierState.RALLYING;
+						}
+					}
 					break;
 				case ALL_IN:
-					allInCode();
+					if (DataCache.numEnemyRobots > 0) {
+						aggressiveMicroCode();
+					} else{
+						pushCodeGetCloser();
+					}
 					break;
 				case PUSHING: 
-					pushingCode();
-					break;
+					if (DataCache.numEnemyRobots > 0) {
+						soldierState = SoldierState.FIGHTING;
+						// intentional fall-through
+					} else {
+						pushCodeSmart();
+						break;
+					}
 				case FIGHTING:
-					fightingCode();
+					if (DataCache.numEnemyRobots == 0) {
+						if (DataCache.numAlliedSoldiers < Constants.FIGHTING_NOT_ENOUGH_ALLIED_SOLDIERS) {
+							soldierState = SoldierState.RALLYING;
+						} else {
+							soldierState = SoldierState.PUSHING;
+						}
+					} else {
+						// Otherwise, just keep fighting
+						if (strategy == Strategy.NUKE) {
+							defendMicro();
+						} else {
+							microCode();
+						}
+					}
 					break;
 				case RALLYING:
-					rallyingCode();
+					int hqPowerLevel2 = Integer.MAX_VALUE;
+					Message message2 = BroadcastSystem.read(powerChannel);
+					if (message2.isValid) {
+						hqPowerLevel2 = message2.body;
+					} else {
+						hqPowerLevel2 = (int) rc.getTeamPower();
+					}
+
+					// If there are enemies nearby, trigger FIGHTING SoldierState
+					if (DataCache.numEnemyRobots > 0) {
+						soldierState = SoldierState.FIGHTING;
+					} else if (hqPowerLevel2 < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel2 < 100) {
+						soldierState = SoldierState.PUSHING;
+					} else {
+						boolean layedMine = false;
+						if (rc.senseMine(currentLocation) == null) {
+							if (rc.isActive() && Util.Random() < 0.1) {
+								rc.layMine();
+								layedMine = true;
+							}
+						}
+						if (!layedMine) {
+							NavSystem.goToLocation(rallyPoint);
+						}
+					}
 					break;
 				default:
 					break;
@@ -286,218 +423,13 @@ public class SoldierRobot extends BaseRobot {
 			}
 			
 			reportArtillerySighting();
-			if (nextSoldierState != null) {
-				soldierState = nextSoldierState;
-				nextSoldierState = null; // clear the state for the next call of run() to use
-			}
 		} catch (Exception e) {
 			System.out.println("caught exception before it killed us:");
 			System.out.println(rc.getRobot().getID());
 			e.printStackTrace();
 		}
-	}	
+	}
 	
-	public void newCode() throws GameActionException {
-		// If we're standing on a mine close to our base, we should clear out the mine
-		Team mineTeam = rc.senseMine(rc.getLocation());
-		if (mineTeam != null && mineTeam != rc.getTeam()) {
-			nextSoldierState = SoldierState.ESCAPE_HQ_MINES;
-			escapeHQMinesCode();
-		} else {
-			nextSoldierState = SoldierState.FINDING_START_MINE_POSITIONS;
-			findingStartMinePositionsCode();
-		}
-	}
-
-	public void rallyingCode() throws GameActionException {
-		int hqPowerLevel2 = Integer.MAX_VALUE;
-		Message message2 = BroadcastSystem.read(powerChannel);
-		if (message2.isValid) {
-			hqPowerLevel2 = message2.body;
-		} else {
-			hqPowerLevel2 = (int) rc.getTeamPower();
-		}
-
-		// If there are enemies nearby, trigger FIGHTING SoldierState
-		if (DataCache.numEnemyRobots > 0) {
-			nextSoldierState = SoldierState.FIGHTING;
-			fightingCode();
-		} else if (hqPowerLevel2 < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel2 < 100) {
-			nextSoldierState = SoldierState.PUSHING;
-			pushingCode();
-		} else {
-			boolean layedMine = false;
-			if (rc.senseMine(currentLocation) == null) {
-				if (rc.isActive() && Util.Random() < 0.1) {
-					rc.layMine();
-					layedMine = true;
-				}
-			}
-			if (!layedMine) {
-				NavSystem.goToLocation(rallyPoint);
-			}
-		}
-	}
-
-	public void fightingCode() throws GameActionException {
-		if (DataCache.numEnemyRobots == 0) {
-			if (DataCache.numAlliedSoldiers < Constants.FIGHTING_NOT_ENOUGH_ALLIED_SOLDIERS) {
-				nextSoldierState = SoldierState.RALLYING;
-				rallyingCode();
-			} else {
-				nextSoldierState = SoldierState.PUSHING;
-				pushingCode();
-			}
-		} else {
-			// Otherwise, just keep fighting
-			if (strategy == Strategy.NUKE) {
-				defendMicro();
-			} else {
-				microCode();
-			}
-		}
-	}
-
-	public void pushingCode() throws GameActionException {
-		if (DataCache.numEnemyRobots > 0) {
-			nextSoldierState = SoldierState.FIGHTING;
-			fightingCode();
-		} else {
-			pushCodeSmart();
-		}
-	}
-
-	public void allInCode() throws GameActionException {
-		if (DataCache.numEnemyRobots > 0) {
-			aggressiveMicroCode();
-		} else{
-			pushCodeGetCloser();
-		}
-	}
-
-	public void clearOutHQMinesCode() throws GameActionException {
-		// Clear out a path to the HQ
-		Team mineTeam1 = rc.senseMine(rc.getLocation());
-		if (mineTeam1 == null || mineTeam1 == rc.getTeam() && rc.getLocation().distanceSquaredTo(DataCache.ourHQLocation) > 2) {
-			NavSystem.goToLocation(DataCache.ourHQLocation);
-		} else {
-			// We're done
-			if (strategy == Strategy.NUKE) { 
-				nextSoldierState = SoldierState.FINDING_START_MINE_POSITIONS;
-				findingStartMinePositionsCode();
-			} else {
-				nextSoldierState = SoldierState.RALLYING;
-				rallyingCode();
-			}
-		}
-	}
-
-	public void escapeHQMinesCode() throws GameActionException {
-		// We need to run away from the mines surrounding our base
-		Team mineTeam = rc.senseMine(rc.getLocation());
-		if (mineTeam != null && mineTeam != rc.getTeam()) {
-			// We need to run away from the mines surrounding our base
-			if (NavSystem.safeLocationAwayFromHQMines != null) {
-				NavSystem.goToLocationDontDefuseOrAvoidMines(NavSystem.safeLocationAwayFromHQMines);
-			} else {
-				NavSystem.goAwayFromLocationEscapeMines(DataCache.ourHQLocation);
-			}
-		} else {
-			// No more mines, so clear out HQ mines
-			nextSoldierState = SoldierState.CLEAR_OUT_HQ_MINES;
-			clearOutHQMinesCode();
-		}
-	}
-
-	public void miningCode() throws GameActionException {
-		int hqPowerLevel = Integer.MAX_VALUE;
-		Message message = BroadcastSystem.read(powerChannel);
-		if (message.isValid) {
-			hqPowerLevel = message.body;
-		} else {
-			hqPowerLevel = (int) rc.getTeamPower();
-		}
-		
-		if (DataCache.numEnemyRobots > 0 && strategy != Strategy.NUKE) {
-			nextSoldierState = SoldierState.FIGHTING;
-			fightingCode();
-		} else if (strategy == Strategy.NUKE && DataCache.numEnemyRobots > 1) {
-			nextSoldierState = SoldierState.FIGHTING;
-			fightingCode();
-		} else if (strategy == Strategy.NUKE && DataCache.numEnemyRobots == 1) {
-			Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class, 14, rc.getTeam().opponent());
-			if (enemyRobots.length == 1) {
-				RobotInfo rinfo = rc.senseRobotInfo(enemyRobots[0]);
-				NavSystem.goToLocation(rinfo.location);
-			} else {
-				miningSubroutine();
-			}
-		} else if (strategy != Strategy.NUKE && (hqPowerLevel < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel < 100) ) {
-			nextSoldierState = SoldierState.PUSHING;
-			pushingCode();
-		} else {
-			miningSubroutine();
-		}
-	}
-
-	private void chargeShieldsCode() throws GameActionException {
-		// either charge up shields next to the shields encampment, or wait at another location until there is space					
-		if (rc.canSenseSquare(EncampmentJobSystem.shieldsLoc)) {
-			// looks like something exists at the location...
-			GameObject object = rc.senseObjectAtLocation(EncampmentJobSystem.shieldsLoc);
-			if (object != null && rc.senseRobotInfo((Robot) object).type == RobotType.SHIELDS) {
-				// find an empty space next to the shields encampment
-				int distanceSquaredToShields = rc.getLocation().distanceSquaredTo(EncampmentJobSystem.shieldsLoc);
-				if (distanceSquaredToShields > 2) {
-					// not charging yet
-					for (int i = 8; --i >= 0; ) {
-						// Check to see if it's empty
-						MapLocation iterLocation = EncampmentJobSystem.shieldsLoc.add(DataCache.directionArray[i]);
-						if (rc.senseObjectAtLocation(iterLocation) == null) {
-							// Oh, there's an empty space! let's go to it
-							NavSystem.goToLocation(iterLocation);
-							return;
-						}
-					}
-					// we found the shields encampment, but there are no empty spaces, so wait at the queue location
-					NavSystem.goToLocation(EncampmentJobSystem.shieldsQueueLoc);
-				} else {
-					// already charging
-					mineDensity = rc.senseMineLocations(findMidPoint(), rSquared, Team.NEUTRAL).length / (3.0 * rSquared);		
-					shieldsCutoff = (int) (DataCache.rushDist + 10 * (mineDensity * DataCache.rushDist) + 100);
-					if (rc.getShields() > shieldsCutoff) {
-						// leave
-						nextSoldierState = SoldierState.RALLYING;
-						rallyingCode();
-					}
-				}
-			}
-		} else {
-			nextSoldierState = SoldierState.RALLYING;
-			rallyingCode();
-		}
-	}
-
-	public void findingStartMinePositionsCode() throws GameActionException {
-		if (DataCache.numEnemyRobots == 0) {
-			int distanceSquaredToMiningStartLocation = rc.getLocation().distanceSquaredTo(miningStartLocation);
-			if (distanceSquaredToMiningStartLocation == 0 ||
-					(distanceSquaredToMiningStartLocation <= 2 && miningStartLocation.equals(DataCache.ourHQLocation))) {
-				nextSoldierState = SoldierState.MINING;
-				miningCode();
-			} else if (distanceSquaredToMiningStartLocation <= 2 && rc.senseEncampmentSquares(miningStartLocation, 0, null).length == 1) {
-				// Choose another miningStartLocation
-				getNewMiningStartLocation();
-			} else {
-				Direction dir = rc.getLocation().directionTo(miningStartLocation);
-				NavSystem.goDirectionAndDefuse(dir);
-			}
-		} else {
-			nextSoldierState = SoldierState.FIGHTING;
-			fightingCode();
-		}
-	}
-
 	/**
 	 * Method that writes to a channel to inform others that an artillery has been seen.
 	 * Primarily used by HQ to know to build a shields encampment.
@@ -509,6 +441,37 @@ public class SoldierRobot extends BaseRobot {
 			RobotInfo robotInfo = rc.senseRobotInfo(robot);
 			if (robotInfo.type == RobotType.ARTILLERY) {
 				BroadcastSystem.write(ChannelType.ARTILLERY_SEEN, Constants.TRUE);
+			}
+		}
+	}
+	
+	/**
+	 * Code to be run by soldier when it needs to get shields.
+	 * @throws GameActionException
+	 */
+	public void shieldsCode() throws GameActionException {
+		// find an empty space next to the shields encampment
+		int distanceSquaredToShields = rc.getLocation().distanceSquaredTo(EncampmentJobSystem.shieldsLoc);
+		if (distanceSquaredToShields > 2) {
+			// not charging yet
+			for (int i = 8; --i >= 0; ) {
+				// Check to see if it's empty
+				MapLocation iterLocation = EncampmentJobSystem.shieldsLoc.add(DataCache.directionArray[i]);
+				if (rc.senseObjectAtLocation(iterLocation) == null) {
+					// Oh, there's an empty space! let's go to it
+					NavSystem.goToLocation(iterLocation);
+					return;
+				}
+			}
+			// we found the shields encampment, but there are no empty spaces, so wait at the queue location
+			NavSystem.goToLocation(EncampmentJobSystem.shieldsQueueLoc);
+		} else {
+			// already charging
+			mineDensity = rc.senseMineLocations(findMidPoint(), rSquared, Team.NEUTRAL).length / (3.0 * rSquared);		
+			shieldsCutoff = (int) (DataCache.rushDist + 10 * (mineDensity * DataCache.rushDist) + 100);
+			if (rc.getShields() > shieldsCutoff) {
+				// leave
+				soldierState = SoldierState.RALLYING;
 			}
 		}
 	}
@@ -611,7 +574,7 @@ public class SoldierRobot extends BaseRobot {
 		return surrounded;
 	}
 	
-	public void miningSubroutine() throws GameActionException {
+	public void mineCode() throws GameActionException {
 		if (DataCache.numEnemyRobots == 0 && rc.getLocation().distanceSquaredTo(DataCache.ourHQLocation) <= Constants.MAXIMUM_MINING_DISTANCE_SQUARED_FROM_HQ) {
 			// Do mining
 			if (rc.hasUpgrade(Upgrade.PICKAXE)) {
