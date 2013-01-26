@@ -220,6 +220,8 @@ public class SoldierRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
+			rc.setIndicatorString(0, soldierState.toString());
+			
 			DataCache.updateRoundVariables();
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
 			
@@ -363,8 +365,10 @@ public class SoldierRobot extends BaseRobot {
 				case PUSHING: 
 					if (DataCache.numEnemyRobots > 0) {
 						soldierState = SoldierState.FIGHTING;
+						// intentional fall-through
 					} else {
 						pushCodeSmart();
+						break;
 					}
 				case FIGHTING:
 					if (DataCache.numEnemyRobots == 0) {
