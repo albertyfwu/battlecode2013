@@ -663,15 +663,9 @@ public class SoldierRobot extends BaseRobot {
 //			Robot[] enemiesInOneDist = rc.senseNearbyGameObjects(Robot.class, 2, rc.getTeam().opponent());
 			// stay
 //			rc.setIndicatorString(0, "stay1");
-		} else if (enemyDistSquared == 16 || enemyDistSquared > 18){ // if no enemies in one, two, or three dist
-//			rc.setIndicatorString(0, "no enemies in 1,2,3 dist");
-//			rc.setIndicatorString(1, Integer.toString(DataCache.numNearbyEnemySoldiers));
-			if (DataCache.numNearbyEnemySoldiers == 0 || DataCache.numNearbyAlliedSoldiers >= 3 * DataCache.numNearbyEnemySoldiers) { 
-				// if no enemies in 5-dist or we outnumber them 5 to 1
-				NavSystem.goToLocation(closestEnemyLocation);
-			} else {
-				NavSystem.goToLocationAvoidMines(closestEnemyLocation);
-			}
+		} else if (DataCache.numNearbyEnemySoldiers == 0 || DataCache.numNearbyAlliedSoldiers >= 3 * DataCache.numNearbyEnemySoldiers){ // if no enemies in one, two, or three dist
+//			// if no enemies in 3-dist or we outnumber them 5 to 1
+			NavSystem.goToLocation(closestEnemyLocation);
 		} else { // enemies in two or three dist
 			double[] our23 = getEnemies2Or3StepsAway();
 			double[] enemy23 = getEnemies2Or3StepsAwaySquare(closestEnemyLocation, rc.getTeam().opponent());
@@ -730,7 +724,7 @@ public class SoldierRobot extends BaseRobot {
 						NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
 					}
 				} else {
-					if (enemy23[2] - our23[2] > 0.5) {
+					if (enemy23[2] - our23[2] > 3) {
 						NavSystem.goToLocationAvoidMines(closestEnemyLocation);
 					} else {
 						NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
