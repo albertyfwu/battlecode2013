@@ -84,7 +84,7 @@ public interface Constants {
 	/**
 	 * Encampments
 	 */
-	public static final int INITIAL_NUM_ENCAMPMENTS_NEEDED = 1;
+	public static final int INITIAL_NUM_ENCAMPMENTS_NEEDED = 3;
 	
 	/**
 	 * IMPORTANT: clean up time must exceed the number of turns it takes HQ to execute
