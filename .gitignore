@@ -16,3 +16,4 @@ version.txt
 bin/*
 .metadata/*
 submission.jar
+battlecode*.tmp
