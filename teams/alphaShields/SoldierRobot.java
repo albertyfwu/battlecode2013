@@ -336,11 +336,12 @@ public class SoldierRobot extends BaseRobot {
 						} else {
 							NavSystem.goAwayFromLocationEscapeMines(DataCache.ourHQLocation);
 						}
+						break;
 					} else {
 						// No more mines, so clear out HQ mines
 						soldierState = SoldierState.CLEAR_OUT_HQ_MINES;
+						// intentional fall through
 					}
-					break;
 				case CLEAR_OUT_HQ_MINES:
 					// Clear out a path to the HQ
 					Team mineTeam1 = rc.senseMine(rc.getLocation());
