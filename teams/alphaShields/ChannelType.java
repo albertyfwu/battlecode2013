@@ -7,6 +7,9 @@ public enum ChannelType {
 	// for strategy
 	STRATEGY,
 	
+	// for reporting artillery seen
+	ARTILLERY_SEEN,
+	
 	// for encampments
 	ENC1,
 	ENC2,
