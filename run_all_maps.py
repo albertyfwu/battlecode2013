@@ -17,6 +17,7 @@ for line in iter(p.stdout.readline, ''):
             wins[winner] += 1
         else:
             wins[winner] = 1
+        print wins
 
 print ''
 print '----------'

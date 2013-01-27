@@ -119,8 +119,9 @@ public class HQRobot extends BaseRobot {
 				} else {
 					message = BroadcastSystem.read(ChannelType.ARTILLERY_SEEN);
 				}
-				if (message.isValid && message.body == Constants.TRUE) {
+				if ((message.isValid && message.body == Constants.TRUE) || enemyNukeHalfDone) {
 					artillerySeen = true;
+					BroadcastSystem.write(ChannelType.ARTILLERY_SEEN, Constants.TRUE); // write artillery seen
 					EncampmentJobSystem.setShieldLocation();
 					if (EncampmentJobSystem.shieldsLoc != null) {
 						EncampmentJobSystem.postShieldLocation();

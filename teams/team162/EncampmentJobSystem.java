@@ -123,12 +123,8 @@ public class EncampmentJobSystem {
 			int numReachableEncampments = allEncampments.length - numUnreachableEncampments;
 			if (numReachableEncampments == 0) {
 				numEncampmentsNeeded = 0;
-			} else if (numReachableEncampments < 10) {
-				numEncampmentsNeeded = 1;
-			} else if (numReachableEncampments < 30) {
-				numEncampmentsNeeded = 2;
 			} else {
-				numEncampmentsNeeded = 3;
+				numEncampmentsNeeded = 1;
 			}
 
 			MapLocation[] closestEncampments = getClosestMapLocations(DataCache.ourHQLocation, allEncampments, numEncampmentsNeeded);
@@ -699,9 +695,7 @@ public class EncampmentJobSystem {
 //		System.out.println("numUnreachableEncampments: " + numUnreachableEncampments);
 		
 		
-		if (DataCache.numAlliedEncampments >= hardEncampmentLimit) {
-			numEncampmentsNeeded = 0;
-		}
+		
 //		System.out.println("Before update: " + Clock.getBytecodeNum());
 		MapLocation[] neutralEncampments;
 		if (robot.strategy == Strategy.NUKE){
@@ -709,8 +703,26 @@ public class EncampmentJobSystem {
 		} else {
 			neutralEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, Team.NEUTRAL);
 		}
+		
+		if (Clock.getRoundNum() > 200) {
+			int numReachableEncampments = neutralEncampments.length - numUnreachableEncampments;
+			if (numReachableEncampments == 0) {
+				numEncampmentsNeeded = 0;
+			} else if (numReachableEncampments < 10) {
+				numEncampmentsNeeded = 1;
+			} else if (numReachableEncampments < 30) {
+				numEncampmentsNeeded = 2;
+			} else {
+				numEncampmentsNeeded = 3;
+			}
+		}
+		
 		if (numEncampmentsNeeded > neutralEncampments.length){
 			numEncampmentsNeeded = neutralEncampments.length;
+		}
+		
+		if (DataCache.numAlliedEncampments >= hardEncampmentLimit || robot.enemyNukeHalfDone == true) {
+			numEncampmentsNeeded = 0;
 		}
 		
 		if (numEncampmentsNeeded != 0) {
@@ -807,7 +819,7 @@ public class EncampmentJobSystem {
 		if (robot.strategy == Strategy.NUKE) {
 			return 2; // artillery
 		} else {
-			if (supCount == 0 && genCount == 0) {
+			if (supCount < 4 && genCount == 0) {
 				return 0; // supplier
 			}
 			if (((double) supCount)/(supCount + genCount) > 0.8) {
