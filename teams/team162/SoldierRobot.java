@@ -53,6 +53,7 @@ public class SoldierRobot extends BaseRobot {
 	public int shieldsCutoff; // the cutoff for the number of shields to get before leaving the shields encampment
 	
 	public MapLocation shieldLocation;
+	public MapLocation shieldQueueLocation;
 	
 	public SoldierRobot(RobotController rc) throws GameActionException {
 		super(rc);
@@ -549,6 +550,20 @@ public class SoldierRobot extends BaseRobot {
 			// looks like something exists at the location...
 			GameObject object = rc.senseObjectAtLocation(shieldLocation);
 			if (object != null && rc.senseRobotInfo((Robot) object).type == RobotType.SHIELDS) {
+				// set the shieldQueueLocation						
+				int dx = DataCache.enemyHQLocation.x - DataCache.ourHQLocation.x;
+				int dy = DataCache.enemyHQLocation.y - DataCache.ourHQLocation.y;
+				
+				double vectorMag = Math.sqrt(dx*dx + dy*dy);
+				double dxNorm = dx/vectorMag;
+				double dyNorm = dy/vectorMag;
+				
+				int centerx = (int) (shieldLocation.x - 10 * dxNorm);
+				int centery = (int) (shieldLocation.y - 10 * dyNorm);
+				
+				shieldQueueLocation = new MapLocation(centerx, centery);
+				rallyPoint = shieldQueueLocation;
+						
 				return true;
 			}
 		}
@@ -561,7 +576,7 @@ public class SoldierRobot extends BaseRobot {
 			pushingCode();
 		} else {
 			// either charge up shields next to the shields encampment, or wait at another location until there is space		
-			MapLocation shieldQueueLocation = rallyPoint;
+//			MapLocation shieldQueueLocation = rallyPoint;
 			// find an empty space next to the shields encampment
 			int distanceSquaredToShields = rc.getLocation().distanceSquaredTo(shieldLocation);
 			if (distanceSquaredToShields > 2) {
