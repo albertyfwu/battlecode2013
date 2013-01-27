@@ -305,8 +305,10 @@ public class SoldierRobot extends BaseRobot {
 			nextSoldierState = SoldierState.ESCAPE_HQ_MINES;
 			escapeHQMinesCode();
 		} else {
-			nextSoldierState = SoldierState.FINDING_START_MINE_POSITIONS;
-			findingStartMinePositionsCode();
+//			nextSoldierState = SoldierState.FINDING_START_MINE_POSITIONS;
+//			findingStartMinePositionsCode();
+			nextSoldierState = SoldierState.PUSHING;
+			pushingCode();
 		}
 	}
 
@@ -480,7 +482,7 @@ public class SoldierRobot extends BaseRobot {
 				} else {
 					// already charging
 					mineDensity = rc.senseMineLocations(findMidPoint(), rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
-					shieldsCutoff = (int) (DataCache.rushDist + 10 * (mineDensity * DataCache.rushDist));
+					shieldsCutoff = (int) (DataCache.rushDist + 5 * (mineDensity * DataCache.rushDist)) + 50;
 //					rc.setIndicatorString(1, "cutoff: " + Integer.toString(shieldsCutoff));
 					if (rc.getShields() > shieldsCutoff) {
 						// leave

@@ -69,7 +69,8 @@ public class NavSystem {
 		if (robot.strategy == Strategy.NUKE) {
 			swarmC = 0;
 		} else {
-			swarmC = 1.5;
+//			swarmC = 1.5;
+			swarmC = 0;
 		}
 	}
 	
