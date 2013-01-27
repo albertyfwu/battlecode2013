@@ -32,6 +32,7 @@ public class SoldierRobot extends BaseRobot {
 	public MapLocation rallyPoint; 
 	
 	public ChannelType powerChannel = ChannelType.HQPOWERLEVEL;
+	public ChannelType genCountChannel = ChannelType.GEN_COUNT;
 	
 	// for mining for nuke bots
 	public Direction dirToEnemyHQ;	
@@ -317,19 +318,26 @@ public class SoldierRobot extends BaseRobot {
 			nextSoldierState = SoldierState.ALL_IN;
 			allInCode();
 		} else {
-			int hqPowerLevel2 = Integer.MAX_VALUE;
-			Message message2 = BroadcastSystem.read(powerChannel);
-			if (message2.isValid) {
-				hqPowerLevel2 = message2.body;
-			} else {
-				hqPowerLevel2 = (int) rc.getTeamPower();
+//			int hqPowerLevel2 = Integer.MAX_VALUE;
+//			Message message2 = BroadcastSystem.read(powerChannel);
+//			if (message2.isValid) {
+//				hqPowerLevel2 = message2.body;
+//			} else {
+//				hqPowerLevel2 = (int) rc.getTeamPower();
+//			}
+			
+			int genCount = Integer.MAX_VALUE;
+			Message message = BroadcastSystem.read(genCountChannel);
+			if (message.isValid){
+				genCount = message.body;
 			}
 	
 			// If there are enemies nearby, trigger FIGHTING SoldierState
 			if (DataCache.numEnemyRobots > 0) {
 				nextSoldierState = SoldierState.FIGHTING;
 				fightingCode();
-			} else if (hqPowerLevel2 < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel2 < 100) {
+//			} else if (hqPowerLevel2 < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel2 < 100) {
+			} else if (DataCache.numAlliedSoldiers >= (40 + 10 * genCount)) {
 				nextSoldierState = SoldierState.PUSHING;
 				pushingCode();
 			} else {
@@ -377,8 +385,9 @@ public class SoldierRobot extends BaseRobot {
 
 	public void allInCode() throws GameActionException {
 		if (DataCache.numEnemyRobots > 0) {
-			aggressiveMicroCode();
-		} else{
+//			aggressiveMicroCode();
+			microCode();
+		} else {
 			pushCodeGetCloser();
 		}
 	}
@@ -868,7 +877,7 @@ public class SoldierRobot extends BaseRobot {
 		
 		if (DataCache.numNearbyAlliedSoldiers > 1.5 * DataCache.numNearbyEnemySoldiers) {
 //			NavSystem.goToLocation(closestEnemyLocation);
-			pushCodeGetCloser();
+			pushCodeGetCloser(closestEnemyLocation);
 		} else {
 			microCode();
 		}

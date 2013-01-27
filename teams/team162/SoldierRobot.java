@@ -32,6 +32,7 @@ public class SoldierRobot extends BaseRobot {
 	public MapLocation rallyPoint; 
 	
 	public ChannelType powerChannel = ChannelType.HQPOWERLEVEL;
+	public ChannelType genCountChannel = ChannelType.GEN_COUNT;
 	
 	// for mining for nuke bots
 	public Direction dirToEnemyHQ;	
@@ -221,7 +222,7 @@ public class SoldierRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
-//			rc.setIndicatorString(0, soldierState.toString());
+			rc.setIndicatorString(0, soldierState.toString());
 			
 			DataCache.updateRoundVariables();
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
@@ -307,8 +308,10 @@ public class SoldierRobot extends BaseRobot {
 		} else {
 //			nextSoldierState = SoldierState.FINDING_START_MINE_POSITIONS;
 //			findingStartMinePositionsCode();
-			nextSoldierState = SoldierState.PUSHING;
-			pushingCode();
+//			nextSoldierState = SoldierState.PUSHING;
+//			pushingCode();
+			nextSoldierState = SoldierState.CHARGE_SHIELDS;
+			chargeShieldsCode();
 		}
 	}
 
@@ -317,19 +320,26 @@ public class SoldierRobot extends BaseRobot {
 			nextSoldierState = SoldierState.ALL_IN;
 			allInCode();
 		} else {
-			int hqPowerLevel2 = Integer.MAX_VALUE;
-			Message message2 = BroadcastSystem.read(powerChannel);
-			if (message2.isValid) {
-				hqPowerLevel2 = message2.body;
-			} else {
-				hqPowerLevel2 = (int) rc.getTeamPower();
+//			int hqPowerLevel2 = Integer.MAX_VALUE;
+//			Message message2 = BroadcastSystem.read(powerChannel);
+//			if (message2.isValid) {
+//				hqPowerLevel2 = message2.body;
+//			} else {
+//				hqPowerLevel2 = (int) rc.getTeamPower();
+//			}
+			
+			int genCount = Integer.MAX_VALUE;
+			Message message = BroadcastSystem.read(genCountChannel);
+			if (message.isValid){
+				genCount = message.body;
 			}
 	
 			// If there are enemies nearby, trigger FIGHTING SoldierState
 			if (DataCache.numEnemyRobots > 0) {
 				nextSoldierState = SoldierState.FIGHTING;
 				fightingCode();
-			} else if (hqPowerLevel2 < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel2 < 100) {
+//			} else if (hqPowerLevel2 < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel2 < 100) {
+			} else if (DataCache.numAlliedSoldiers >= (40 + 10 * genCount)) {
 				nextSoldierState = SoldierState.PUSHING;
 				pushingCode();
 			} else {
@@ -377,8 +387,9 @@ public class SoldierRobot extends BaseRobot {
 
 	public void allInCode() throws GameActionException {
 		if (DataCache.numEnemyRobots > 0) {
-			aggressiveMicroCode();
-		} else{
+//			aggressiveMicroCode();
+			microCode();
+		} else {
 			pushCodeGetCloser();
 		}
 	}
@@ -456,7 +467,8 @@ public class SoldierRobot extends BaseRobot {
 
 	private void chargeShieldsCode() throws GameActionException {
 		// either charge up shields next to the shields encampment, or wait at another location until there is space
-		MapLocation shieldLocation = EncampmentJobSystem.getShieldLocation();
+		MapLocation shieldLocation = EncampmentJobSystem.readShieldLocation();
+//		rc.setIndicatorString(2, shieldLocation.toString());
 		// TODO: make the queue location somewhere else
 		MapLocation shieldQueueLocation = shieldLocation;
 		if (shieldLocation != null && rc.canSenseSquare(shieldLocation)) {
@@ -491,12 +503,16 @@ public class SoldierRobot extends BaseRobot {
 					}
 				}
 			} else {
-				nextSoldierState = SoldierState.RALLYING;
-				rallyingCode();
+//				nextSoldierState = SoldierState.RALLYING;
+//				rallyingCode();
+				nextSoldierState = SoldierState.PUSHING;
+				pushingCode();
 			}
 		} else {
-			nextSoldierState = SoldierState.RALLYING;
-			rallyingCode();
+//			nextSoldierState = SoldierState.RALLYING;
+//			rallyingCode();
+			nextSoldierState = SoldierState.PUSHING;
+			pushingCode();
 		}
 	}
 
@@ -868,7 +884,7 @@ public class SoldierRobot extends BaseRobot {
 		
 		if (DataCache.numNearbyAlliedSoldiers > 1.5 * DataCache.numNearbyEnemySoldiers) {
 //			NavSystem.goToLocation(closestEnemyLocation);
-			pushCodeGetCloser();
+			pushCodeGetCloser(closestEnemyLocation);
 		} else {
 			microCode();
 		}

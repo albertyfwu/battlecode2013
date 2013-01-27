@@ -12,6 +12,7 @@ public class HQRobot extends BaseRobot {
 	
 	public ChannelType powerChannel = ChannelType.HQPOWERLEVEL;
 	public ChannelType strategyChannel = ChannelType.STRATEGY;
+	public ChannelType genCountChannel = ChannelType.GEN_COUNT;
 	
 	public boolean artillerySeen = false;
 	
@@ -87,6 +88,7 @@ public class HQRobot extends BaseRobot {
 			DataCache.updateRoundVariables();
 			BroadcastSystem.write(powerChannel, (int) rc.getTeamPower()); // broadcast the team power
 			BroadcastSystem.write(strategyChannel, strategy.ordinal()); // broadcast the strategy
+			BroadcastSystem.write(genCountChannel, EncampmentJobSystem.genCount); // broadcast the number of generators we've built
 			
 			// Check if our nuke is half done
 			if (!ourNukeHalfDone) {

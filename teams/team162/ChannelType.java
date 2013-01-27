@@ -7,6 +7,9 @@ public enum ChannelType {
 	// for strategy
 	STRATEGY,
 	
+	// for generator count
+	GEN_COUNT,
+	
 	// for reporting artillery seen
 	ARTILLERY_SEEN,
 	
