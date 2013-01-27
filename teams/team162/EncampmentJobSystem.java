@@ -77,7 +77,7 @@ public class EncampmentJobSystem {
 		if (robot.strategy == Strategy.NUKE) {
 			hardEncampmentLimit = 3;
 		} else {
-			hardEncampmentLimit = Integer.MAX_VALUE;
+			hardEncampmentLimit = 2;
 		}
 		
 		
@@ -588,14 +588,14 @@ public class EncampmentJobSystem {
 				if (parseOnOrOff(msgLastCycle.body) == 1 && parseTaken(msgLastCycle.body) == 0) {
 //					System.out.println("hello!!!!!");
 //					System.out.println("channel: " + channel.toString());
-					int robotTypeToBuild = getRobotTypeToBuild();
+					int robotTypeToBuild = parseRobotTypeInt(msgLastCycle.body);
 					postJobWithoutIncrementing(channel, parseLocation(msgLastCycle.body), robotTypeToBuild);
 				} else if (parseOnOrOff(msgLastCycle.body) == 1 && parseTaken(msgLastCycle.body) == 1) {
 					int postedRoundNum = parseRoundNum(msgLastCycle.body);
 					if ((16+Clock.getRoundNum() - postedRoundNum)%16 >= 4) { // it hasn't been written on for 5 turns
 //						System.out.println("hello!!!!!");
 //						System.out.println("channel: " + channel.toString());
-						int robotTypeToBuild = getRobotTypeToBuild();
+						int robotTypeToBuild = parseRobotTypeInt(msgLastCycle.body);
 						postJobWithoutIncrementing(channel, parseLocation(msgLastCycle.body), robotTypeToBuild);
 					}
 				}
@@ -657,6 +657,7 @@ public class EncampmentJobSystem {
 					if (channelIndex == -1) { // if not already used, use it and post job
 						channelList[i] = channel;
 						int robotTypeToBuild = getRobotTypeToBuild();
+						System.out.println("new job: " + robotTypeToBuild);
 						postJob(channel, newJobsList[i], robotTypeToBuild);
 						break channelLoop;
 					}
@@ -705,6 +706,7 @@ public class EncampmentJobSystem {
 		}
 		
 		if (Clock.getRoundNum() > 200) {
+			hardEncampmentLimit = Integer.MAX_VALUE;
 			int numReachableEncampments = neutralEncampments.length - numUnreachableEncampments;
 			if (numReachableEncampments == 0) {
 				numEncampmentsNeeded = 0;
@@ -816,15 +818,23 @@ public class EncampmentJobSystem {
 	
 	
 	public static int getRobotTypeToBuild() {
+		System.out.println("supcount:" + supCount);
+		System.out.println("genCount:" + genCount);
 		if (robot.strategy == Strategy.NUKE) {
 			return 2; // artillery
 		} else {
 			if (supCount < 4 && genCount == 0) {
+				System.out.println("supplier");
+
 				return 0; // supplier
 			}
 			if (((double) supCount)/(supCount + genCount) > 0.8) {
+				System.out.println("generator");
+
 				return 1; // generator
 			} else {
+				System.out.println("supplier");
+
 				return 0; // supplier
 			}
 		}
@@ -1019,6 +1029,10 @@ public class EncampmentJobSystem {
 		} else { // 3
 			return RobotType.SHIELDS;
 		}
+	}
+	
+	public static int parseRobotTypeInt(int msgBody) {
+		return msgBody >> 22;
 	}
 	
 //	public static void main(String[] arg0) {

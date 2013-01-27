@@ -154,7 +154,7 @@ public class HQRobot extends BaseRobot {
 					if (enemyNukeHalfDone && !DataCache.hasDefusion && DataCache.numAlliedSoldiers > 5) {
 						upgrade = true;
 						rc.researchUpgrade(Upgrade.DEFUSION);
-					} else if (rc.getTeamPower() < 100 && Clock.getRoundNum() > 10) {
+					} else if (rc.getTeamPower() < 100 && Clock.getRoundNum() > 500) {
 						if (!DataCache.hasDefusion) {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.DEFUSION);
