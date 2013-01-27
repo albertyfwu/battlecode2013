@@ -123,12 +123,8 @@ public class EncampmentJobSystem {
 			int numReachableEncampments = allEncampments.length - numUnreachableEncampments;
 			if (numReachableEncampments == 0) {
 				numEncampmentsNeeded = 0;
-			} else if (numReachableEncampments < 10) {
-				numEncampmentsNeeded = 1;
-			} else if (numReachableEncampments < 30) {
-				numEncampmentsNeeded = 2;
 			} else {
-				numEncampmentsNeeded = 3;
+				numEncampmentsNeeded = 1;
 			}
 
 			MapLocation[] closestEncampments = getClosestMapLocations(DataCache.ourHQLocation, allEncampments, numEncampmentsNeeded);
@@ -232,6 +228,9 @@ public class EncampmentJobSystem {
 		case ARTILLERY:
 			robotTypeInt = 2;
 			break;
+		case SHIELDS:
+			robotTypeInt = 3;
+			break;
 		default:
 			break;	
 		}
@@ -257,6 +256,11 @@ public class EncampmentJobSystem {
 //			System.out.println("msgbody: " + message.body);
 			onOrOff = parseOnOrOff(message.body);
 			isTaken = parseTaken(message.body);
+			
+			String s = "onOrOff: " + onOrOff + " isTaken: " + isTaken + " location: " + parseLocation(message.body) + " robType: " + parseRobotType(message.body);
+			
+			rc.setIndicatorString(0, s);
+			
 			if (onOrOff == 1 && isTaken == 0) { //if job is on and untaken
 				goalLoc = parseLocation(message.body);
 				if (rc.canSenseSquare(goalLoc)) {
@@ -270,10 +274,10 @@ public class EncampmentJobSystem {
 				} else {
 					assignedRobotType = parseRobotType(message.body);
 					assignedChannel = channel;
-//					rc.setIndicatorString(1, goalLoc.toString());
+					rc.setIndicatorString(1, goalLoc.toString());
 					return channel;
 				}
-			} else if (onOrOff == 1) {
+			} else if (onOrOff == 1 && isTaken == 1) {
 				int postedRoundNum = parseRoundNum(message.body);
 				if ((16+currentRoundNum - postedRoundNum)%16 >= 4) { // it hasn't been written on for 5 turns
 					goalLoc = parseLocation(message.body);
@@ -286,13 +290,13 @@ public class EncampmentJobSystem {
 						if (robotOnSquare == null || !robotOnSquare.getTeam().equals(rc.getTeam())) {
 							assignedRobotType = parseRobotType(message.body);
 							assignedChannel = channel;
-//							rc.setIndicatorString(1, goalLoc.toString());
+							rc.setIndicatorString(1, assignedRobotType.toString());
 							return channel;
 						}
 					} else {
 						assignedRobotType = parseRobotType(message.body);
 						assignedChannel = channel;
-//						rc.setIndicatorString(1, goalLoc.toString());
+						rc.setIndicatorString(1, assignedRobotType.toString());
 						return channel;
 					}
 				}
@@ -300,7 +304,7 @@ public class EncampmentJobSystem {
 			
 		}
 		
-//		rc.setIndicatorString(1, "not shield");
+		rc.setIndicatorString(1, "not shield");
 		
 		for (int i = encampmentJobChannelList.length; --i >= 0; ) {
 			channel = encampmentJobChannelList[i];
@@ -321,6 +325,7 @@ public class EncampmentJobSystem {
 						if (robotOnSquare == null || !robotOnSquare.getTeam().equals(rc.getTeam())) {
 							assignedRobotType = parseRobotType(message.body);
 							assignedChannel = channel;
+							rc.setIndicatorString(1, assignedRobotType.toString());
 							return channel;
 						}
 					} else {
@@ -340,11 +345,13 @@ public class EncampmentJobSystem {
 							if (robotOnSquare == null || !robotOnSquare.getTeam().equals(rc.getTeam())) {
 								assignedRobotType = parseRobotType(message.body);
 								assignedChannel = channel;
+								rc.setIndicatorString(1, assignedRobotType.toString());
 								return channel;
 							}
 						} else {
 							assignedRobotType = parseRobotType(message.body);
 							assignedChannel = channel;
+							rc.setIndicatorString(1, assignedRobotType.toString());
 							return channel;
 						}
 					}
@@ -429,6 +436,7 @@ public class EncampmentJobSystem {
 			int locX = (message.body >> 8) & 0xFF;
 			int unreachableBit = message.body >> 16;
 			postCleanUp(shieldCompChannel); // cleanup
+			postCleanUp(shieldChannel);
 			if (unreachableBit == 1) { // if unreachable
 				unreachableEncampments.add(new MapLocation(locX, locY));
 				numUnreachableEncampments++;
@@ -611,7 +619,7 @@ public class EncampmentJobSystem {
 				if ((16+Clock.getRoundNum() - postedRoundNum)%16 >= 4) { // it hasn't been written on for 5 turns
 //					System.out.println("hello!!!!!");
 //					System.out.println("channel: " + channel.toString());
-					int robotTypeToBuild = getRobotTypeToBuild();
+					int robotTypeToBuild = 3;
 					postJobWithoutIncrementing(shieldChannel, parseLocation(msgLastCycle.body), robotTypeToBuild);
 				}
 			}
@@ -687,9 +695,7 @@ public class EncampmentJobSystem {
 //		System.out.println("numUnreachableEncampments: " + numUnreachableEncampments);
 		
 		
-		if (DataCache.numAlliedEncampments >= hardEncampmentLimit) {
-			numEncampmentsNeeded = 0;
-		}
+		
 //		System.out.println("Before update: " + Clock.getBytecodeNum());
 		MapLocation[] neutralEncampments;
 		if (robot.strategy == Strategy.NUKE){
@@ -697,8 +703,26 @@ public class EncampmentJobSystem {
 		} else {
 			neutralEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, Team.NEUTRAL);
 		}
+		
+		if (Clock.getRoundNum() > 200) {
+			int numReachableEncampments = neutralEncampments.length - numUnreachableEncampments;
+			if (numReachableEncampments == 0) {
+				numEncampmentsNeeded = 0;
+			} else if (numReachableEncampments < 10) {
+				numEncampmentsNeeded = 1;
+			} else if (numReachableEncampments < 30) {
+				numEncampmentsNeeded = 2;
+			} else {
+				numEncampmentsNeeded = 3;
+			}
+		}
+		
 		if (numEncampmentsNeeded > neutralEncampments.length){
 			numEncampmentsNeeded = neutralEncampments.length;
+		}
+		
+		if (DataCache.numAlliedEncampments >= hardEncampmentLimit || robot.enemyNukeHalfDone == true) {
+			numEncampmentsNeeded = 0;
 		}
 		
 		if (numEncampmentsNeeded != 0) {
@@ -777,9 +801,11 @@ public class EncampmentJobSystem {
 			for (int i = allLoc.length; --i >= 0; ) {
 				if (allDistances[i] < runningDist && allLocIndex[i] == 0 && !unreachableEncampments.contains(allLoc[i])) { 
 					// if distances are smaller and it's not unreachable
-					runningDist = allDistances[i];
-					runningLoc = allLoc[i];
-					runningIndex = i;
+					if (shieldsLoc == null || allLoc[i] != shieldsLoc) { // can't include shield loc
+						runningDist = allDistances[i];
+						runningLoc = allLoc[i];
+						runningIndex = i;
+					}
 				}
 			}
 			currentTopLocations[j] = runningLoc;
@@ -793,7 +819,7 @@ public class EncampmentJobSystem {
 		if (robot.strategy == Strategy.NUKE) {
 			return 2; // artillery
 		} else {
-			if (supCount == 0 && genCount == 0) {
+			if (supCount < 4 && genCount == 0) {
 				return 0; // supplier
 			}
 			if (((double) supCount)/(supCount + genCount) > 0.8) {

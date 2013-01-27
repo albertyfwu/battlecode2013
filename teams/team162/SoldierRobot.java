@@ -575,37 +575,42 @@ public class SoldierRobot extends BaseRobot {
 			nextSoldierState = SoldierState.PUSHING;
 			pushingCode();
 		} else {
-			// either charge up shields next to the shields encampment, or wait at another location until there is space		
-//			MapLocation shieldQueueLocation = rallyPoint;
-			// find an empty space next to the shields encampment
-			int distanceSquaredToShields = rc.getLocation().distanceSquaredTo(shieldLocation);
-			if (distanceSquaredToShields > 2) {
-				// not charging yet
-				for (int i = 8; --i >= 0; ) {
-					// Check to see if it's empty
-					MapLocation iterLocation = shieldLocation.add(DataCache.directionArray[i]);
-					if (rc.senseObjectAtLocation(iterLocation) == null) {
-						// Oh, there's an empty space! let's go to it
-						NavSystem.goToLocation(iterLocation);
-						return;
-					}
-				}
-				// we found the shields encampment, but there are no empty spaces, so wait at the queue location
-	//					NavSystem.goToLocation(EncampmentJobSystem.shieldsQueueLoc);
-				NavSystem.goToLocation(shieldQueueLocation);
+			if (!ourNukeHalfDone && enemyNukeHalfDone) {
+				nextSoldierState = SoldierState.ALL_IN;
+				allInCode();
 			} else {
-				// already charging
-				mineDensity = rc.senseMineLocations(findMidPoint(), rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
-				shieldsCutoff = (int) (DataCache.rushDist + 5 * (mineDensity * DataCache.rushDist)) + 50;
-	//					rc.setIndicatorString(1, "cutoff: " + Integer.toString(shieldsCutoff));
-				if (rc.getShields() > shieldsCutoff) {
-					// leave
-					if (!ourNukeHalfDone && enemyNukeHalfDone) {
-						nextSoldierState = SoldierState.ALL_IN;
-						allInCode();
-					} else {
-						nextSoldierState = SoldierState.RALLYING;
-						rallyingCode();
+				// either charge up shields next to the shields encampment, or wait at another location until there is space		
+	//			MapLocation shieldQueueLocation = rallyPoint;
+				// find an empty space next to the shields encampment
+				int distanceSquaredToShields = rc.getLocation().distanceSquaredTo(shieldLocation);
+				if (distanceSquaredToShields > 2) {
+					// not charging yet
+					for (int i = 8; --i >= 0; ) {
+						// Check to see if it's empty
+						MapLocation iterLocation = shieldLocation.add(DataCache.directionArray[i]);
+						if (rc.senseObjectAtLocation(iterLocation) == null) {
+							// Oh, there's an empty space! let's go to it
+							NavSystem.goToLocation(iterLocation);
+							return;
+						}
+					}
+					// we found the shields encampment, but there are no empty spaces, so wait at the queue location
+		//					NavSystem.goToLocation(EncampmentJobSystem.shieldsQueueLoc);
+					NavSystem.goToLocation(shieldQueueLocation);
+				} else {
+					// already charging
+					mineDensity = rc.senseMineLocations(findMidPoint(), rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+					shieldsCutoff = (int) (DataCache.rushDist + 5 * (mineDensity * DataCache.rushDist)) + 50;
+		//					rc.setIndicatorString(1, "cutoff: " + Integer.toString(shieldsCutoff));
+					if (rc.getShields() > shieldsCutoff) {
+						// leave
+						if (!ourNukeHalfDone && enemyNukeHalfDone) {
+							nextSoldierState = SoldierState.ALL_IN;
+							allInCode();
+						} else {
+							nextSoldierState = SoldierState.RALLYING;
+							rallyingCode();
+						}
 					}
 				}
 			}
