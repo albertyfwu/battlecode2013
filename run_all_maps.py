@@ -1,5 +1,10 @@
 import subprocess
 import re
+import csv
+
+# file to write to for csv
+myfile = open('match_results.csv', 'wb')
+wr = csv.writer(myfile, delimiter=',', quoting=csv.QUOTE_ALL)
 
 games = 0
 wins = {}
@@ -25,6 +30,9 @@ for line in iter(p.stdout.readline, ''):
         else:
             wins[winner] = 1
         print 'Games completed: %d, map: %s, winner: %s' % (games, current_map, winner)
+        # write to csv
+        wr.writerow([games, current_map, winner])
+        myfile.flush()
         print wins
         print ''
 
@@ -36,3 +44,4 @@ for winner in wins:
     print winner + ': ' + str(wins[winner])
     
 p.stdout.close()
+myfile.close()
