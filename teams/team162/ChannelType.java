@@ -7,6 +7,9 @@ public enum ChannelType {
 	// for strategy
 	STRATEGY,
 	
+	// for broadcasting move-out
+	MOVE_OUT,
+	
 	// for generator count
 	GEN_COUNT,
 	

@@ -177,22 +177,41 @@ public class NavSystem {
 					if (!hasBadMine(rc.getLocation().add(lookingAtCurrently))) {
 						rc.move(lookingAtCurrently);
 						return;
+					} else if (rc.getShields() > 50) {
+						rc.move(lookingAtCurrently);
+						return;
 					}
 				}
 			}
-			// if the robot still hasn't moved
-			if (rc.senseNearbyGameObjects(Robot.class, 2, rc.getTeam().opponent()).length == 0) {
-				// if there are no nearby enemies
-				rangedDefuseMine();
-			}
+//			// if the robot still hasn't moved
+//			if (rc.senseNearbyGameObjects(Robot.class, 2, rc.getTeam().opponent()).length == 0) {
+//				// if there are no nearby enemies
+//				rangedDefuseMine();
+//			}
 		}		
 	}
 	
 	public static boolean moveOrDefuse(Direction dir) throws GameActionException {
 		if (rc.isActive()) {
 			if (rc.canMove(dir)) {
+				if (!hasBadMine(rc.getLocation().add(dir))) {
+					rc.move(dir);
+					return true;
+				} else {
+					rc.defuseMine(rc.getLocation().add(dir));
+					return false;
+				}
+			} 
+			return false;
+		}
+		return false;
+	}
+	
+	public static boolean moveIgnoreMines(Direction dir) throws GameActionException {
+		if (rc.isActive()) {
+			if (rc.canMove(dir)) {
 				Team bombTeam = rc.senseMine(rc.getLocation().add(dir));
-				if (rc.getShields() > 50 && bombTeam == rc.getTeam().opponent()) {
+				if (rc.getShields() > 50 && (bombTeam == rc.getTeam().opponent() || bombTeam == Team.NEUTRAL)) {
 					rc.move(dir);
 					return true;
 				} else if (bombTeam == null || bombTeam == rc.getTeam()) {
@@ -605,7 +624,7 @@ public class NavSystem {
 				}
 			}
 			
-			NavSystem.moveOrDefuse(bestDir);
+			NavSystem.moveIgnoreMines(bestDir);
 		}
 	}
 	

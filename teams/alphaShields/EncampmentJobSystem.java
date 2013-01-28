@@ -331,6 +331,7 @@ public class EncampmentJobSystem {
 					} else {
 						assignedRobotType = parseRobotType(message.body);
 						assignedChannel = channel;
+						rc.setIndicatorString(1, assignedRobotType.toString());
 						return channel;
 					}
 				} else if (onOrOff == 1) {
@@ -705,7 +706,7 @@ public class EncampmentJobSystem {
 			neutralEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, Team.NEUTRAL);
 		}
 		
-		if (Clock.getRoundNum() > 200) {
+		if (Clock.getRoundNum() > 50) {
 			hardEncampmentLimit = Integer.MAX_VALUE;
 			int numReachableEncampments = neutralEncampments.length - numUnreachableEncampments;
 			if (numReachableEncampments == 0) {
@@ -823,12 +824,12 @@ public class EncampmentJobSystem {
 		if (robot.strategy == Strategy.NUKE) {
 			return 2; // artillery
 		} else {
-			if (supCount < 4 && genCount == 0) {
+			if (supCount < 2 && genCount == 0) {
 				System.out.println("supplier");
 
 				return 0; // supplier
 			}
-			if (((double) supCount)/(supCount + genCount) > 0.8) {
+			if (((double) supCount)/(supCount + genCount) > 0.67) {
 				System.out.println("generator");
 
 				return 1; // generator

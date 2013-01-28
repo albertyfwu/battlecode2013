@@ -10,6 +10,8 @@ import battlecode.common.Upgrade;
 
 public class HQRobot extends BaseRobot {
 	
+	public int move_out_round;
+	
 	public ChannelType powerChannel = ChannelType.HQPOWERLEVEL;
 	public ChannelType strategyChannel = ChannelType.STRATEGY;
 	public ChannelType genCountChannel = ChannelType.GEN_COUNT;
@@ -103,13 +105,20 @@ public class HQRobot extends BaseRobot {
 			// Check if enemy's nuke is half done
 			if (!enemyNukeHalfDone) {
 				enemyNukeHalfDone = rc.senseEnemyNukeHalfDone();
+				if (enemyNukeHalfDone) {
+					move_out_round = Clock.getRoundNum() + 150 - DataCache.rushDist;
+				}
 			}
 			if (enemyNukeHalfDone) {
 				// If it is half done, broadcast it
 				if (!ourNukeHalfDone) {
 					allInMode = true;
 				}
-				BroadcastSystem.write(ChannelType.ENEMY_NUKE_HALF_DONE, 1);
+				BroadcastSystem.write(ChannelType.ENEMY_NUKE_HALF_DONE, 1);				
+			}			
+			
+			if (move_out_round > 0) {
+				BroadcastSystem.write(ChannelType.MOVE_OUT, move_out_round);
 			}
 			
 			if (artillerySeen == false) {
@@ -148,22 +157,24 @@ public class HQRobot extends BaseRobot {
 	            EncampmentJobSystem.updateJobsAfterChecking();
 	        }
 			
+			rc.setIndicatorString(0, Double.toString((40 + 10 * (EncampmentJobSystem.genCount))/1.5));
+			rc.setIndicatorString(1, Integer.toString(DataCache.numAlliedSoldiers));
+			
 			if (rc.isActive()) {
 				if (strategy == Strategy.ECON || strategy == Strategy.RUSH) {
 					boolean upgrade = false;
 					if (enemyNukeHalfDone && !DataCache.hasDefusion && DataCache.numAlliedSoldiers > 5) {
-						upgrade = true;
-						rc.researchUpgrade(Upgrade.DEFUSION);
-					} else if (rc.getTeamPower() < 100 && Clock.getRoundNum() > 500) {
+						if (!DataCache.hasDefusion) {
+							upgrade = true;
+							rc.researchUpgrade(Upgrade.DEFUSION);
+						}
+					} else if (rc.getTeamPower() < 10) {
 						if (!DataCache.hasDefusion) {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.DEFUSION);
 						} else if (!DataCache.hasFusion) {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.FUSION);
-						} else {
-							upgrade = true;
-							rc.researchUpgrade(Upgrade.NUKE);
 						}
 					}
 					if (!upgrade) {
