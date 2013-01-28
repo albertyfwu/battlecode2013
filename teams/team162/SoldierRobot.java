@@ -14,6 +14,8 @@ import battlecode.common.Upgrade;
 
 public class SoldierRobot extends BaseRobot {
 	
+	public int move_out_round = 10000;
+	
 	// When soldier is born, its state is NEW (might have to walk out of mines that are completely surrounding the base)
 	public SoldierState soldierState = SoldierState.NEW;
 	public SoldierState nextSoldierState;
@@ -226,9 +228,17 @@ public class SoldierRobot extends BaseRobot {
 	public void run() {
 		try {
 			rc.setIndicatorString(0, soldierState.toString());
+//			rc.setIndicatorString(2, Integer.toString(move_out_round));
 			
 			DataCache.updateRoundVariables();
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
+			
+			if (move_out_round == 10000) {
+				Message message = BroadcastSystem.read(ChannelType.MOVE_OUT);
+				if (message.isValid) {
+					move_out_round = message.body;
+				}
+			}
 			
 			if (unassigned) {
 				// If this is not an encampment worker
@@ -248,7 +258,12 @@ public class SoldierRobot extends BaseRobot {
 				}
 				if (enemyNukeHalfDone && !ourNukeHalfDone && soldierState != SoldierState.ALL_IN) {
 //					soldierState = SoldierState.ALL_IN;
-					soldierState = SoldierState.CHARGE_SHIELDS;
+//					BroadcastSystem.write(ChannelType.MOVE_OUT, Clock.getRoundNum() + 100);
+					if (move_out_round <= Clock.getRoundNum()) {
+						soldierState = SoldierState.ALL_IN;
+					} else {
+						soldierState = SoldierState.RALLYING;
+					}
 				}
 				
 				switch (soldierState) {
@@ -314,40 +329,43 @@ public class SoldierRobot extends BaseRobot {
 			nextSoldierState = SoldierState.ESCAPE_HQ_MINES;
 			escapeHQMinesCode();
 		} else {
-			nextSoldierState = SoldierState.FINDING_START_MINE_POSITIONS;
-			findingStartMinePositionsCode();
+//			nextSoldierState = SoldierState.FINDING_START_MINE_POSITIONS;
+//			findingStartMinePositionsCode();
 //			nextSoldierState = SoldierState.PUSHING;
 //			pushingCode();
-//			if (shieldExists()) {
-//				nextSoldierState = SoldierState.CHARGE_SHIELDS;
-//				chargeShieldsCode();
-//			} else {
-////				nextSoldierState = SoldierState.RALLYING;
-////				rallyingCode();
-//				if (Clock.getRoundNum() < 200) {
-//					nextSoldierState = SoldierState.PUSHING;
-//					pushingCode();
-//				} else {
-//					nextSoldierState = SoldierState.RALLYING;
-//					rallyingCode();
-//				}
-//			}
-		}
-	}
-
-	public void rallyingCode() throws GameActionException {
-		if (enemyNukeHalfDone && !ourNukeHalfDone) {
-//			nextSoldierState = SoldierState.ALL_IN;
-//			allInCode();
-			// charge up
 			if (shieldExists()) {
 				nextSoldierState = SoldierState.CHARGE_SHIELDS;
 				chargeShieldsCode();
 			} else {
-				nextSoldierState = SoldierState.ALL_IN;
-				allInCode();
+//				nextSoldierState = SoldierState.RALLYING;
+//				rallyingCode();
+				if (Clock.getRoundNum() < 200) {
+					nextSoldierState = SoldierState.PUSHING;
+					pushingCode();
+				} else {
+					nextSoldierState = SoldierState.RALLYING;
+					rallyingCode();
+				}
 			}
-		} else {
+		}
+	}
+
+	public void rallyingCode() throws GameActionException {
+//		if (enemyNukeHalfDone && !ourNukeHalfDone ) {
+////			nextSoldierState = SoldierState.ALL_IN;
+////			allInCode();
+//			// charge up
+//			if (shieldExists()) {
+//				nextSoldierState = SoldierState.CHARGE_SHIELDS;
+//				chargeShieldsCode();
+//			} else {
+//				
+//			}
+////			} else {
+////				nextSoldierState = SoldierState.ALL_IN;
+////				allInCode();
+////			}
+//		} else {
 //			int hqPowerLevel2 = Integer.MAX_VALUE;
 //			Message message2 = BroadcastSystem.read(powerChannel);
 //			if (message2.isValid) {
@@ -367,13 +385,14 @@ public class SoldierRobot extends BaseRobot {
 				nextSoldierState = SoldierState.FIGHTING;
 				fightingCode();
 //			} else if (hqPowerLevel2 < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel2 < 100) {
-			} else if (DataCache.numAlliedSoldiers >= (40 + 10 * genCount)/1.5) {
+			} else if (DataCache.numAlliedRobots >= (40 + 10 * (genCount))/1.5) {
 				nextSoldierState = SoldierState.PUSHING;
 				pushingCode();
 			} else {
 				mineDensity = rc.senseMineLocations(findMidPoint(), rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
-				shieldsCutoff = (int) (DataCache.rushDist + 5 * (mineDensity * DataCache.rushDist)) + 50;
+				shieldsCutoff = (int) (DataCache.rushDist + 3 * (mineDensity * DataCache.rushDist)) + 50;
 				if (rc.getShields() < shieldsCutoff - 50 && shieldExists()) {
+					rc.setIndicatorString(2, "lower bound: " + (shieldsCutoff-50));
 					// not enough shields
 					nextSoldierState = SoldierState.CHARGE_SHIELDS;
 					chargeShieldsCode();
@@ -390,7 +409,7 @@ public class SoldierRobot extends BaseRobot {
 					}
 				}
 			}
-		}
+//		}
 	}
 
 	public void fightingCode() throws GameActionException {
@@ -437,11 +456,11 @@ public class SoldierRobot extends BaseRobot {
 //			aggressiveMicroCode();
 			microCode();
 		} else {
-			int genCount = Integer.MAX_VALUE;
-			Message message = BroadcastSystem.read(genCountChannel);
-			if (message.isValid){
-				genCount = message.body;
-			}
+//			int genCount = Integer.MAX_VALUE;
+//			Message message = BroadcastSystem.read(genCountChannel);
+//			if (message.isValid){
+//				genCount = message.body;
+//			}
 			
 //			if (DataCache.numAlliedSoldiers >= (40 + 10 * genCount)/1.5) {
 				pushCodeGetCloser();
@@ -537,8 +556,10 @@ public class SoldierRobot extends BaseRobot {
 		} else if (strategy != Strategy.NUKE && (hqPowerLevel < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel < 100) ) {
 //			nextSoldierState = SoldierState.PUSHING;
 //			pushingCode();
-			nextSoldierState = SoldierState.CHARGE_SHIELDS;
-			chargeShieldsCode();
+			if (shieldExists()) {
+				nextSoldierState = SoldierState.CHARGE_SHIELDS;
+				chargeShieldsCode();
+			}
 		} else {
 			miningSubroutine();
 		}
@@ -575,12 +596,21 @@ public class SoldierRobot extends BaseRobot {
 			nextSoldierState = SoldierState.PUSHING;
 			pushingCode();
 		} else {
-			if (!ourNukeHalfDone && enemyNukeHalfDone) {
-				nextSoldierState = SoldierState.ALL_IN;
-				allInCode();
+			int genCount = Integer.MAX_VALUE;
+			Message message = BroadcastSystem.read(genCountChannel);
+			if (message.isValid){
+				genCount = message.body;
+			}
+			if (DataCache.numAlliedRobots >= (40 + 10 * (genCount))/1.5) {
+				nextSoldierState = SoldierState.PUSHING;
+				pushingCode();
 			} else {
+				//			if (!ourNukeHalfDone && enemyNukeHalfDone) {
+				//				nextSoldierState = SoldierState.ALL_IN;
+				//				allInCode();
+				//			} else {
 				// either charge up shields next to the shields encampment, or wait at another location until there is space		
-	//			MapLocation shieldQueueLocation = rallyPoint;
+				//			MapLocation shieldQueueLocation = rallyPoint;
 				// find an empty space next to the shields encampment
 				int distanceSquaredToShields = rc.getLocation().distanceSquaredTo(shieldLocation);
 				if (distanceSquaredToShields > 2) {
@@ -595,24 +625,25 @@ public class SoldierRobot extends BaseRobot {
 						}
 					}
 					// we found the shields encampment, but there are no empty spaces, so wait at the queue location
-		//					NavSystem.goToLocation(EncampmentJobSystem.shieldsQueueLoc);
+					//					NavSystem.goToLocation(EncampmentJobSystem.shieldsQueueLoc);
 					NavSystem.goToLocation(shieldQueueLocation);
 				} else {
 					// already charging
 					mineDensity = rc.senseMineLocations(findMidPoint(), rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
-					shieldsCutoff = (int) (DataCache.rushDist + 5 * (mineDensity * DataCache.rushDist)) + 50;
-		//					rc.setIndicatorString(1, "cutoff: " + Integer.toString(shieldsCutoff));
+					shieldsCutoff = (int) (DataCache.rushDist + 3 * (mineDensity * DataCache.rushDist)) + 50;
+					rc.setIndicatorString(1, "high cutoff: " + Integer.toString(shieldsCutoff));
 					if (rc.getShields() > shieldsCutoff) {
 						// leave
-						if (!ourNukeHalfDone && enemyNukeHalfDone) {
-							nextSoldierState = SoldierState.ALL_IN;
-							allInCode();
-						} else {
-							nextSoldierState = SoldierState.RALLYING;
-							rallyingCode();
-						}
+						//						if (!ourNukeHalfDone && enemyNukeHalfDone) {
+						//							nextSoldierState = SoldierState.ALL_IN;
+						//							allInCode();
+						//						} else {
+						nextSoldierState = SoldierState.RALLYING;
+						rallyingCode();
+						//						}
 					}
 				}
+				//			}
 			}
 		}
 	}
