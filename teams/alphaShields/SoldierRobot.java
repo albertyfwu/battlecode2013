@@ -314,24 +314,24 @@ public class SoldierRobot extends BaseRobot {
 			nextSoldierState = SoldierState.ESCAPE_HQ_MINES;
 			escapeHQMinesCode();
 		} else {
-//			nextSoldierState = SoldierState.FINDING_START_MINE_POSITIONS;
-//			findingStartMinePositionsCode();
+			nextSoldierState = SoldierState.FINDING_START_MINE_POSITIONS;
+			findingStartMinePositionsCode();
 //			nextSoldierState = SoldierState.PUSHING;
 //			pushingCode();
-			if (shieldExists()) {
-				nextSoldierState = SoldierState.CHARGE_SHIELDS;
-				chargeShieldsCode();
-			} else {
-//				nextSoldierState = SoldierState.RALLYING;
-//				rallyingCode();
-				if (Clock.getRoundNum() < 200) {
-					nextSoldierState = SoldierState.PUSHING;
-					pushingCode();
-				} else {
-					nextSoldierState = SoldierState.RALLYING;
-					rallyingCode();
-				}
-			}
+//			if (shieldExists()) {
+//				nextSoldierState = SoldierState.CHARGE_SHIELDS;
+//				chargeShieldsCode();
+//			} else {
+////				nextSoldierState = SoldierState.RALLYING;
+////				rallyingCode();
+//				if (Clock.getRoundNum() < 200) {
+//					nextSoldierState = SoldierState.PUSHING;
+//					pushingCode();
+//				} else {
+//					nextSoldierState = SoldierState.RALLYING;
+//					rallyingCode();
+//				}
+//			}
 		}
 	}
 
@@ -832,7 +832,10 @@ public class SoldierRobot extends BaseRobot {
 			}
 		} else if (DataCache.numNearbyEnemySoldiers == 0 || DataCache.numNearbyAlliedSoldiers >= 3 * DataCache.numNearbyEnemySoldiers){ // if no enemies in one, two, or three dist
 //			// if no enemies in 3-dist or we outnumber them 3 to 1
-			NavSystem.goToLocation(closestEnemyLocation);
+//			NavSystem.goToLocation(closestEnemyLocation);
+			if (rc.isActive()) {
+				NavSystem.moveCloserFavorNoMines(closestEnemyLocation);
+			}
 
 		} else { // enemies in two or three dist
 			double[] our23 = getEnemies2Or3StepsAway();

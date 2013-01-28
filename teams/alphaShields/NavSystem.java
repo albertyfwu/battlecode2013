@@ -582,6 +582,33 @@ public class NavSystem {
 		}
 	}
 	
+	public static void moveCloserFavorNoMines(MapLocation destination) throws GameActionException {
+		Direction dir = rc.getLocation().directionTo(destination);
+		double distance = rc.getLocation().distanceSquaredTo(destination);
+		double currDist;
+		if (rc.canMove(dir) && !hasBadMine(rc.getLocation().add(dir))) {
+			rc.move(dir);
+		} else {
+			Direction bestDir = dir;
+			Direction currentDir = dir;
+			for (int directionOffset: directionOffsets) {
+				if (directionOffset != 0) {
+					currentDir = Direction.values()[(dir.ordinal() + directionOffset+8) % 8];
+					if (rc.canMove(currentDir) && !hasBadMine(rc.getLocation().add(currentDir))) {
+						currDist = rc.getLocation().add(currentDir).distanceSquaredTo(destination);
+						if (currDist < distance) {
+							distance = currDist;
+							bestDir = currentDir;
+						}
+						
+					}
+				}
+			}
+			
+			NavSystem.moveOrDefuse(bestDir);
+		}
+	}
+	
 	public static void tryMoveCloser() throws GameActionException {
 		boolean moved = NavSystem.moveCloser();
 //		System.out.println("moved: " + moved);
