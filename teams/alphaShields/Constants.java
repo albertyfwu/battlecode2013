@@ -62,7 +62,7 @@ public interface Constants {
 	 */
 	
 	// If we have fewer than this number of soldiers, then turn off FIGHTING mode; otherwise, keep FIGHTing
-	public static final int FIGHTING_NOT_ENOUGH_ALLIED_SOLDIERS = 15;
+	public static final int FIGHTING_NOT_ENOUGH_ALLIED_SOLDIERS = 50;
 	
 	/**
 	 * Mining
