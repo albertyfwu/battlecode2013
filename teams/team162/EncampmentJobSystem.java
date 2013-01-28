@@ -706,7 +706,7 @@ public class EncampmentJobSystem {
 			neutralEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, Team.NEUTRAL);
 		}
 		
-		if (Clock.getRoundNum() > 200) {
+		if (Clock.getRoundNum() > 50) {
 			hardEncampmentLimit = Integer.MAX_VALUE;
 			int numReachableEncampments = neutralEncampments.length - numUnreachableEncampments;
 			if (numReachableEncampments == 0) {

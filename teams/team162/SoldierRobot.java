@@ -57,6 +57,8 @@ public class SoldierRobot extends BaseRobot {
 	public MapLocation shieldLocation;
 	public MapLocation shieldQueueLocation;
 	
+	public double healthLastTurn = 40;
+	
 	public SoldierRobot(RobotController rc) throws GameActionException {
 		super(rc);
 		
@@ -310,7 +312,12 @@ public class SoldierRobot extends BaseRobot {
 				captureCode();
 			}
 			
-			reportArtillerySighting();
+			double currHealth = rc.getEnergon();
+			
+			reportArtillerySighting(currHealth);
+			
+			healthLastTurn = currHealth;
+			
 			if (nextSoldierState != null) {
 				soldierState = nextSoldierState;
 				nextSoldierState = null; // clear the state for the next call of run() to use
@@ -339,7 +346,7 @@ public class SoldierRobot extends BaseRobot {
 			} else {
 //				nextSoldierState = SoldierState.RALLYING;
 //				rallyingCode();
-				if (Clock.getRoundNum() < 200) {
+				if (Clock.getRoundNum() < 50) {
 					nextSoldierState = SoldierState.PUSHING;
 					pushingCode();
 				} else {
@@ -520,7 +527,7 @@ public class SoldierRobot extends BaseRobot {
 			} else {
 //				nextSoldierState = SoldierState.RALLYING;
 //				rallyingCode();
-				if (Clock.getRoundNum() < 200) {
+				if (Clock.getRoundNum() < 50) {
 					nextSoldierState = SoldierState.PUSHING;
 					pushingCode();
 				} else {
@@ -537,7 +544,7 @@ public class SoldierRobot extends BaseRobot {
 			} else {
 //				nextSoldierState = SoldierState.RALLYING;
 //				rallyingCode();
-				if (Clock.getRoundNum() < 200) {
+				if (Clock.getRoundNum() < 50) {
 					nextSoldierState = SoldierState.PUSHING;
 					pushingCode();
 				} else {
@@ -667,19 +674,39 @@ public class SoldierRobot extends BaseRobot {
 			fightingCode();
 		}
 	}
+	
+	/**
+	 * compares current health to health last turn and determines whether or not it got splashed damaged upon
+	 * @param currHealth
+	 * @param lastTurnHealth
+	 * @return
+	 */
+	public boolean detectArtillerySplash(double currHealth, double lastTurnHealth) {
+		int numEnemyNeighbors = rc.senseNearbyGameObjects(Robot.class, 2, rc.getTeam().opponent()).length;
+		if (lastTurnHealth - currHealth > numEnemyNeighbors * 6 + 10) {
+			System.out.println("artillery splash damage detected");
+			return true;
+		}
+		return false;
+	}
 
 	/**
 	 * Method that writes to a channel to inform others that an artillery has been seen.
 	 * Primarily used by HQ to know to build a shields encampment.
 	 * @throws GameActionException
 	 */
-	public void reportArtillerySighting() throws GameActionException {
+	public void reportArtillerySighting(double currHealth) throws GameActionException {
 		Robot[] nearbyEnemyRobots = rc.senseNearbyGameObjects(Robot.class, 14, rc.getTeam().opponent());
 		for (Robot robot : nearbyEnemyRobots) {
 			RobotInfo robotInfo = rc.senseRobotInfo(robot);
 			if (robotInfo.type == RobotType.ARTILLERY) {
 				BroadcastSystem.write(ChannelType.ARTILLERY_SEEN, Constants.TRUE);
+				return;
 			}
+		}
+		
+		if (detectArtillerySplash(currHealth, healthLastTurn)) {
+			BroadcastSystem.write(ChannelType.ARTILLERY_SEEN, Constants.TRUE);
 		}
 	}
 	
