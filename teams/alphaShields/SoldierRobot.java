@@ -314,24 +314,24 @@ public class SoldierRobot extends BaseRobot {
 			nextSoldierState = SoldierState.ESCAPE_HQ_MINES;
 			escapeHQMinesCode();
 		} else {
-			nextSoldierState = SoldierState.FINDING_START_MINE_POSITIONS;
-			findingStartMinePositionsCode();
+//			nextSoldierState = SoldierState.FINDING_START_MINE_POSITIONS;
+//			findingStartMinePositionsCode();
 //			nextSoldierState = SoldierState.PUSHING;
 //			pushingCode();
-//			if (shieldExists()) {
-//				nextSoldierState = SoldierState.CHARGE_SHIELDS;
-//				chargeShieldsCode();
-//			} else {
-////				nextSoldierState = SoldierState.RALLYING;
-////				rallyingCode();
-//				if (Clock.getRoundNum() < 200) {
-//					nextSoldierState = SoldierState.PUSHING;
-//					pushingCode();
-//				} else {
-//					nextSoldierState = SoldierState.RALLYING;
-//					rallyingCode();
-//				}
-//			}
+			if (shieldExists()) {
+				nextSoldierState = SoldierState.CHARGE_SHIELDS;
+				chargeShieldsCode();
+			} else {
+//				nextSoldierState = SoldierState.RALLYING;
+//				rallyingCode();
+				if (Clock.getRoundNum() < 200) {
+					nextSoldierState = SoldierState.PUSHING;
+					pushingCode();
+				} else {
+					nextSoldierState = SoldierState.RALLYING;
+					rallyingCode();
+				}
+			}
 		}
 	}
 
@@ -537,8 +537,10 @@ public class SoldierRobot extends BaseRobot {
 		} else if (strategy != Strategy.NUKE && (hqPowerLevel < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel < 100) ) {
 //			nextSoldierState = SoldierState.PUSHING;
 //			pushingCode();
-			nextSoldierState = SoldierState.CHARGE_SHIELDS;
-			chargeShieldsCode();
+			if (shieldExists()) {
+				nextSoldierState = SoldierState.CHARGE_SHIELDS;
+				chargeShieldsCode();
+			}
 		} else {
 			miningSubroutine();
 		}
