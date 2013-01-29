@@ -756,7 +756,7 @@ public class SoldierRobot extends BaseRobot {
 			NavSystem.goToLocation(shieldQueueLocation);
 		} else {
 			// already charging
-			shieldsCutoff = DataCache.rushDist + 70;
+			shieldsCutoff = DataCache.rushDist + 75;
 //					rc.setIndicatorString(1, "high cutoff: " + Integer.toString(shieldsCutoff));
 			if (rc.getShields() > shieldsCutoff) {
 				nextSoldierState = SoldierState.ALL_IN;
