@@ -53,6 +53,8 @@ public class EncampmentJobSystem {
 	public static int supCount;
 	public static int genCount;
 	
+	public static double supGenRatio;
+	
 	public static int artCount;
 	
 	public static int hardEncampmentLimit;
@@ -78,6 +80,19 @@ public class EncampmentJobSystem {
 			hardEncampmentLimit = 3;
 		} else {
 			hardEncampmentLimit = 2;
+		}
+		
+		MapLocation midPoint = findMidPoint();
+		int rSquared = DataCache.rushDistSquared / 4;
+		double mineDensity = rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+		double adjRushDist = DataCache.rushDist * (1 + 2 * mineDensity);
+		if (adjRushDist > 100) {
+			supGenRatio = 0.67;
+			System.out.println("supGenRatio: 0.67");
+		} else {
+			supGenRatio = 0.8;
+			System.out.println("supGenRatio: 0.8");
+
 		}
 		
 		
@@ -829,7 +844,7 @@ public class EncampmentJobSystem {
 
 				return 0; // supplier
 			}
-			if (((double) supCount)/(supCount + genCount) > 0.8) {
+			if (((double) supCount)/(supCount + genCount) > supGenRatio) {
 				System.out.println("generator");
 
 				return 1; // generator
@@ -900,8 +915,20 @@ public class EncampmentJobSystem {
 				}
 			}
 		}
+
+		for (MapLocation shieldLoc : possibleShieldLocations) {
+
+			if (!unreachableEncampments.contains(shieldLoc) && shieldLoc.distanceSquaredTo(DataCache.enemyHQLocation) <= 2 * DataCache.rushDistSquared) {
+				distanceToLine = Math.abs(lineA * shieldLoc.x + lineB * shieldLoc.y + lineC) / lineDistanceDenom;
+				if (distanceToLine < 10) {
+					//					System.out.println("new loc2: " + shieldLoc);
+					//					rc.setIndicatorString(0, shieldLoc.toString());
+					return shieldLoc;
+				}
+			}
+		}
 		
-//		rc.setIndicatorString(0, "null");
+		System.out.println("null");
 		
 		return null;
 		
@@ -941,6 +968,15 @@ public class EncampmentJobSystem {
 //		int encampmentRadius = (int) (DataCache.rushDistSquared/25 + 6 * Math.sqrt(DataCache.rushDistSquared)/5 + 9);
 		int encampmentRadiusSquared = 72;
 		return rc.senseEncampmentSquares(artCenter, encampmentRadiusSquared, Team.NEUTRAL);
+	}
+	
+	private static MapLocation findMidPoint() {
+		MapLocation enemyLoc = DataCache.enemyHQLocation;
+		MapLocation ourLoc = DataCache.ourHQLocation;
+		int x, y;
+		x = (enemyLoc.x + ourLoc.x) / 2;
+		y = (enemyLoc.y + ourLoc.y) / 2;
+		return new MapLocation(x,y);
 	}
 
 	/**

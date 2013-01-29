@@ -121,7 +121,7 @@ public class SoldierRobot extends BaseRobot {
 			if (unassigned) {
 				
 				// check if we need to retreat
-				if (!shieldExists()) {
+				if (!shieldExists() && soldierState != SoldierState.ALL_IN) {
 					Message retreatMsg = BroadcastSystem.read(ChannelType.RETREAT_CHANNEL);
 					if (retreatMsg.isValid && retreatMsg.body == Constants.RETREAT) { 
 						soldierState = SoldierState.RETREAT;
@@ -144,7 +144,7 @@ public class SoldierRobot extends BaseRobot {
 						enemyNukeHalfDone = true;
 					}
 				}
-				if (enemyNukeHalfDone && !ourNukeHalfDone && soldierState != SoldierState.ALL_IN) {
+				if (enemyNukeHalfDone && !ourNukeHalfDone && soldierState != SoldierState.ALL_IN ) {
 //					soldierState = SoldierState.ALL_IN;
 //					BroadcastSystem.write(ChannelType.MOVE_OUT, Clock.getRoundNum() + 100);
 					if (move_out_round <= Clock.getRoundNum()) {
@@ -489,7 +489,7 @@ public class SoldierRobot extends BaseRobot {
 	}
 
 	public void allInCode() throws GameActionException {
-		if (DataCache.numEnemyRobots > 0) {
+		if (DataCache.numNearbyAlliedRobots > 0) {
 //			aggressiveMicroCode();
 			microCode();
 		} else {

@@ -829,7 +829,7 @@ public class EncampmentJobSystem {
 
 				return 0; // supplier
 			}
-			if (((double) supCount)/(supCount + genCount) > 0.67) {
+			if (((double) supCount)/(supCount + genCount) > 0.8) {
 				System.out.println("generator");
 
 				return 1; // generator
