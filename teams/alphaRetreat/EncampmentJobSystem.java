@@ -133,7 +133,7 @@ public class EncampmentJobSystem {
 			postJob(EncampmentJobSystem.encampmentChannels[i], encampmentJobs[i], getRobotTypeToBuild(closestEncampments[i]));
 		}
 		
-		numEncampmentLocsToInitScoresPerRound = (int)Math.ceil(initialNeutralEncLocs.length / 10f);
+		numEncampmentLocsToInitScoresPerRound = (int)Math.floor(initialNeutralEncLocs.length / 10f);
 		numEncampmentLocsToInitScoresFirstRound = initialNeutralEncLocs.length - 9 * numEncampmentLocsToInitScoresPerRound;
 	}
 	
@@ -154,7 +154,8 @@ public class EncampmentJobSystem {
 		}
 		for (int i = start; --i >= stop; ) {
 			MapLocation iterLocation = initialNeutralEncLocs[i];
-			double score = Math.sqrt(iterLocation.distanceSquaredTo(DataCache.ourHQLocation)) - 1.1 * Math.sqrt(iterLocation.distanceSquaredTo(pathCenter));
+//			double score = Math.sqrt(iterLocation.distanceSquaredTo(DataCache.ourHQLocation)) - 1.1 * Math.sqrt(iterLocation.distanceSquaredTo(pathCenter));
+			double score = DataCache.ourHQLocation.distanceSquaredTo(iterLocation);
 			encampmentLocScores.set(iterLocation, score);
 		}
 	}
@@ -852,6 +853,35 @@ public class EncampmentJobSystem {
 				currentTopLocations[j] = runningLoc;
 				allLocIndex[runningIndex] = true;
 			}
+//			double[] allDistances = new double[allLoc.length];
+//			for (int i = allLoc.length; --i >= 0; ) {
+//				MapLocation iterLocation = allLoc[i];
+//				allDistances[i] = Math.sqrt(iterLocation.distanceSquaredTo(DataCache.ourHQLocation)) - 1.1 * Math.sqrt(iterLocation.distanceSquaredTo(pathCenter));
+////				allDistances[i] = origin.distanceSquaredTo(iterLocation);
+//			}
+//			
+//			double bestScore;
+//			MapLocation runningLoc = null;
+//			int runningIndex = 0;
+//			// first round, so be gentle
+//			for (int j = k; --j >= 0; ) {
+//				bestScore = Double.MAX_VALUE;
+//				for (int i = allLoc.length; --i >= 0; ) {
+//					MapLocation iterLocation = allLoc[i];
+//					double currentScore = allDistances[i];
+//					if (currentScore < bestScore && allLocIndex[i] == false && !unreachableEncampments.contains(iterLocation)) {
+//						// if score is better, and the location is not unreachable
+//						if (shieldsLoc == null || !iterLocation.equals(shieldsLoc)) {
+//							// can't include shieldLoc
+//							bestScore = currentScore;
+//							runningLoc = iterLocation;
+//							runningIndex = i;
+//						}
+//					}
+//				}
+//				currentTopLocations[j] = runningLoc;
+//				allLocIndex[runningIndex] = true;
+//			}
 		}
 		return currentTopLocations;
 	}

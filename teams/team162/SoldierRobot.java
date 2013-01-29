@@ -59,6 +59,8 @@ public class SoldierRobot extends BaseRobot {
 	
 	public double healthLastTurn = 40;
 	
+	public int lifeTime = 0;
+	
 	public SoldierRobot(RobotController rc) throws GameActionException {
 		super(rc);
 		
@@ -69,31 +71,6 @@ public class SoldierRobot extends BaseRobot {
 			unassigned = false;
 			EncampmentJobSystem.updateJobTaken();
 		}
-		
-		// TODO: this will fuck up if we ever build artillery for non-nuke bots
-		// LEARN THE STRATEGY
-//		Message message = BroadcastSystem.read(ChannelType.STRATEGY);
-//		if (message.isValid && message.body < Strategy.values().length && message.body >= 0) {
-//			strategy = Strategy.values()[message.body];
-//		} else {
-//			// we couldn't read the strategy channel
-//			MapLocation[] alliedEncampmentSquares = rc.senseAlliedEncampmentSquares();
-//			if (alliedEncampmentSquares.length == 0) {
-//				strategy = Strategy.ECON;
-//			} else {
-//				Robot robot = (Robot) rc.senseObjectAtLocation(alliedEncampmentSquares[0]);
-//				RobotInfo robotInfo = rc.senseRobotInfo(robot);
-//				if (robotInfo.type == RobotType.ARTILLERY) {
-//					strategy = Strategy.NUKE;
-//				} else {
-//					strategy = Strategy.ECON;
-//				}
-//			}
-//		}
-		
-		strategy = Strategy.ECON;
-		
-//		rc.setIndicatorString(2, strategy.toString());
 		
 		rallyPoint = findRallyPoint();
 		
@@ -121,8 +98,6 @@ public class SoldierRobot extends BaseRobot {
 	public void run() {
 		try {
 			rc.setIndicatorString(0, soldierState.toString());
-//			rc.setIndicatorString(1, Integer.toString(move_out_round));
-//			rc.setIndicatorString(2, Integer.toString(move_out_round));
 			
 			DataCache.updateRoundVariables();
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
@@ -142,29 +117,19 @@ public class SoldierRobot extends BaseRobot {
 					if (retreatMsg.isValid && retreatMsg.body == Constants.RETREAT) { 
 //						rc.setIndicatorString(1, "shouldn't get here");
 						soldierState = SoldierState.RETREAT;
-						System.out.println("retreat");
+//						System.out.println("retreat");
 					}
 				}
 				
 				// If this is not an encampment worker
-				// Check if our nuke is half done
-				if (!ourNukeHalfDone) {
-					Message message = BroadcastSystem.read(ChannelType.OUR_NUKE_HALF_DONE);
-					if (message.isValid && message.body == 1) {
-						ourNukeHalfDone = true;
-					}
-				}
 				// Check if enemy nuke is half done
 				if (!enemyNukeHalfDone) {
 					Message message = BroadcastSystem.read(ChannelType.ENEMY_NUKE_HALF_DONE);
-					if (message.isValid && message.body == 1) {
+					if (message.isValid && message.body == Constants.TRUE) {
 						enemyNukeHalfDone = true;
 					}
 				}
-				if (enemyNukeHalfDone && !ourNukeHalfDone && soldierState != SoldierState.ALL_IN && soldierState != SoldierState.EXPRESS_CHARGE_SHIELDS) {
-//					soldierState = SoldierState.ALL_IN;
-//					BroadcastSystem.write(ChannelType.MOVE_OUT, Clock.getRoundNum() + 100);
-//					rc.setIndicatorString(1, "do we get in here");
+				if (enemyNukeHalfDone && soldierState != SoldierState.ALL_IN && soldierState != SoldierState.EXPRESS_CHARGE_SHIELDS) {
 					if (move_out_round <= Clock.getRoundNum()) {
 						soldierState = SoldierState.ALL_IN;
 					} else {
@@ -289,22 +254,12 @@ public class SoldierRobot extends BaseRobot {
 			miningDirConstant = dirToEnemyHQ.rotateRight().rotateRight();
 		}
 		
-		if (strategy == Strategy.NUKE) {
-			if (Clock.getRoundNum() < 10 * 3) {
-				offset = 2;
-			} else if (Clock.getRoundNum() < 10 * 6) {
-				offset = 2;
-			} else {
-				offset = 3;
-			}
+		if (Clock.getRoundNum() < 10 * 3) {
+			offset = 2;
+		} else if (Clock.getRoundNum() < 10 * 6) {
+			offset = 3;
 		} else {
-			if (Clock.getRoundNum() < 10 * 3) {
-				offset = 2;
-			} else if (Clock.getRoundNum() < 10 * 6) {
-				offset = 3;
-			} else {
-				offset = 4;
-			}
+			offset = 4;
 		}
 		
 		newOffset = 2 * offset + 1;
@@ -333,26 +288,12 @@ public class SoldierRobot extends BaseRobot {
 	}
 	
 	private MapLocation findRallyPoint() {
-		if (strategy == Strategy.NUKE) {
-			int dx = DataCache.enemyHQLocation.x - DataCache.ourHQLocation.x;
-			int dy = DataCache.enemyHQLocation.y - DataCache.ourHQLocation.y;
-			
-			double vectorMag = Math.sqrt(dx*dx + dy*dy);
-			double dxNorm = dx/vectorMag;
-			double dyNorm = dy/vectorMag;
-			
-			int centerx = (int) (DataCache.ourHQLocation.x + 8 * dxNorm);
-			int centery = (int) (DataCache.ourHQLocation.y + 8 * dyNorm);
-			
-			return new MapLocation(centerx, centery);
-		} else {
-			MapLocation enemyLoc = DataCache.enemyHQLocation;
-			MapLocation ourLoc = DataCache.ourHQLocation;
-			int x, y;
-			x = (enemyLoc.x + 3 * ourLoc.x) / 4;
-			y = (enemyLoc.y + 3 * ourLoc.y) / 4;
-			return new MapLocation(x,y);
-		}
+		MapLocation enemyLoc = DataCache.enemyHQLocation;
+		MapLocation ourLoc = DataCache.ourHQLocation;
+		int x, y;
+		x = (enemyLoc.x + 3 * ourLoc.x) / 4;
+		y = (enemyLoc.y + 3 * ourLoc.y) / 4;
+		return new MapLocation(x,y);
 	}
 	
 	public double distanceToLine(MapLocation location) {
@@ -498,14 +439,14 @@ public class SoldierRobot extends BaseRobot {
 					nextSoldierState = SoldierState.PUSHING;
 					pushingCode();
 				} else {
-					Message msg;
-					if (Clock.getRoundNum() % Constants.CHANNEL_CYCLE == 0 && Clock.getRoundNum() > 0) {
+					Message msg; // checks if artillery was seen or not
+					if (DataCache.onCycle) {
 						msg = BroadcastSystem.readLastCycle(ChannelType.ARTILLERY_SEEN);
 					} else {
 						msg = BroadcastSystem.read(ChannelType.ARTILLERY_SEEN);
 					}
 					
-					if (Clock.getRoundNum() >= 200 || msg.body == Constants.TRUE) {
+					if (Clock.getRoundNum() >= 200 || msg.body == Constants.TRUE) { // if artillery spotted or it's been 200 rounds, back the fuck off
 						nextSoldierState = SoldierState.RALLYING;
 						rallyingCode();
 					} else {
@@ -519,11 +460,7 @@ public class SoldierRobot extends BaseRobot {
 			}
 		} else {
 			// Otherwise, just keep fighting
-			if (strategy == Strategy.NUKE) {
-				defendMicro();
-			} else {
-				microCode();
-			}
+			microCode();
 		}
 	}
 
@@ -561,13 +498,8 @@ public class SoldierRobot extends BaseRobot {
 			NavSystem.goToLocation(DataCache.ourHQLocation);
 		} else {
 			// We're done
-			if (strategy == Strategy.NUKE) { 
-				nextSoldierState = SoldierState.FINDING_START_MINE_POSITIONS;
-				findingStartMinePositionsCode();
-			} else {
-				nextSoldierState = SoldierState.RALLYING;
-				rallyingCode();
-			}
+			nextSoldierState = SoldierState.RALLYING;
+			rallyingCode();
 		}
 	}
 
@@ -597,7 +529,7 @@ public class SoldierRobot extends BaseRobot {
 			hqPowerLevel = (int) rc.getTeamPower();
 		}
 		
-		if (DataCache.numEnemyRobots > 0 && strategy != Strategy.NUKE) {
+		if (DataCache.numEnemyRobots > 0) {
 //			nextSoldierState = SoldierState.FIGHTING;
 //			fightingCode();
 			if (shieldExists()) {
@@ -614,32 +546,7 @@ public class SoldierRobot extends BaseRobot {
 					rallyingCode();
 				}
 			}
-		} else if (strategy == Strategy.NUKE && DataCache.numEnemyRobots > 1) {
-//			nextSoldierState = SoldierState.FIGHTING;
-//			fightingCode();
-			if (shieldExists()) {
-				nextSoldierState = SoldierState.CHARGE_SHIELDS;
-				chargeShieldsCode();
-			} else {
-//				nextSoldierState = SoldierState.RALLYING;
-//				rallyingCode();
-				if (Clock.getRoundNum() < 50) {
-					nextSoldierState = SoldierState.PUSHING;
-					pushingCode();
-				} else {
-					nextSoldierState = SoldierState.RALLYING;
-					rallyingCode();
-				}
-			}
-		} else if (strategy == Strategy.NUKE && DataCache.numEnemyRobots == 1) {
-			Robot[] enemyRobots = rc.senseNearbyGameObjects(Robot.class, 14, rc.getTeam().opponent());
-			if (enemyRobots.length == 1) {
-				RobotInfo rinfo = rc.senseRobotInfo(enemyRobots[0]);
-				NavSystem.goToLocation(rinfo.location);
-			} else {
-				miningSubroutine();
-			}
-		} else if (strategy != Strategy.NUKE && (hqPowerLevel < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel < 100) ) {
+		} else if ((hqPowerLevel < 10 * (1+DataCache.numAlliedEncampments) || hqPowerLevel < 100) ) {
 //			nextSoldierState = SoldierState.PUSHING;
 //			pushingCode();
 			if (shieldExists()) {
@@ -756,7 +663,7 @@ public class SoldierRobot extends BaseRobot {
 			NavSystem.goToLocation(shieldQueueLocation);
 		} else {
 			// already charging
-			shieldsCutoff = DataCache.rushDist + 70;
+			shieldsCutoff = DataCache.rushDist + 75;
 //					rc.setIndicatorString(1, "high cutoff: " + Integer.toString(shieldsCutoff));
 			if (rc.getShields() > shieldsCutoff) {
 				nextSoldierState = SoldierState.ALL_IN;
@@ -794,7 +701,7 @@ public class SoldierRobot extends BaseRobot {
 	public boolean detectArtillerySplash(double currHealth, double lastTurnHealth) {
 		int numEnemyNeighbors = rc.senseNearbyGameObjects(Robot.class, 2, rc.getTeam().opponent()).length;
 		if (lastTurnHealth - currHealth > numEnemyNeighbors * 6 + 10) {
-			System.out.println("artillery splash damage detected");
+//			System.out.println("artillery splash damage detected");
 			return true;
 		}
 		return false;
@@ -1065,7 +972,7 @@ public class SoldierRobot extends BaseRobot {
 						NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
 					}
 				} else {
-					if (enemy23[2] - our23[2] >= 6 || our23[2] < 1) {
+					if (enemy23[2] - our23[2] >= 3 || our23[2] < 1) {
 						NavSystem.goToLocationAvoidMines(closestEnemyLocation);
 					} else {
 						NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
@@ -1219,9 +1126,22 @@ public class SoldierRobot extends BaseRobot {
 	 */
 	private void captureCode() throws GameActionException {
 		if (!unassigned) { // if assigned to something
+			if (EncampmentJobSystem.assignedRobotType != RobotType.SHIELDS) {
+				MapLocation shieldLoc = EncampmentJobSystem.readShieldLocation();
+				if (shieldLoc != null && shieldLoc.equals(EncampmentJobSystem.goalLoc)) { // if the shield location is our goal loc, don't bother doing the job
+					unassigned = true;
+					return;
+				}
+			}
 			EncampmentJobSystem.updateJobTaken();
 		}
 		if (rc.isActive()) {
+			lifeTime++;
+			if (lifeTime > 100 && !currentLocation.equals(EncampmentJobSystem.goalLoc)) {
+				unassigned = true;
+				EncampmentJobSystem.postUnreachableMessage(EncampmentJobSystem.goalLoc);
+				return;
+			}
 			if (rc.senseEncampmentSquare(currentLocation) && currentLocation.equals(EncampmentJobSystem.goalLoc)) {
 				if (rc.getTeamPower() > rc.senseCaptureCost()) {
 					rc.captureEncampment(EncampmentJobSystem.assignedRobotType);

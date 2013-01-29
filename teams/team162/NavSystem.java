@@ -65,13 +65,7 @@ public class NavSystem {
 		// Calculate the center of the map
 		mapCenter = new MapLocation(mapWidth / 2, mapHeight / 2);
 		
-		// swarm coefficients
-		if (robot.strategy == Strategy.NUKE) {
-			swarmC = 0;
-		} else {
-//			swarmC = 1.5;
-			swarmC = 0;
-		}
+		swarmC = 0;
 	}
 	
 	/**
@@ -606,7 +600,7 @@ public class NavSystem {
 		Direction dir = rc.getLocation().directionTo(destination);
 		double distance = rc.getLocation().distanceSquaredTo(destination);
 		double currDist;
-		if (rc.canMove(dir) && !hasBadMine(rc.getLocation().add(dir))) {
+		if (rc.canMove(dir) && !hasBadMine(rc.getLocation().add(dir)) && rc.isActive()) {
 			rc.move(dir);
 		} else {
 			Direction bestDir = dir;
@@ -808,6 +802,16 @@ public class NavSystem {
 			if(index[0] >= 0 && index[0] <= 4 && index[1] >= 0 && index[1] <= 4){
 				if (info.type != RobotType.SOLDIER) {
 					array[index[0]][index[1]]=100;
+				}
+			}
+		}
+		
+		for (int i = 5; --i >=0; ) {
+			for (int j = 5; --j >= 0; ) {
+				int yLoc = myLoc.y + 2-i;
+				int xLoc = myLoc.x + 2-j;
+				if (xLoc >= rc.getMapWidth() || xLoc < 0 || yLoc >= rc.getMapHeight() || yLoc < 0) {
+					array[i][j] = 100;
 				}
 			}
 		}
