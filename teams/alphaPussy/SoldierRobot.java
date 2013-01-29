@@ -1137,7 +1137,7 @@ public class SoldierRobot extends BaseRobot {
 		}
 		if (rc.isActive()) {
 			lifeTime++;
-			if (lifeTime > 100) {
+			if (lifeTime > 100 && !currentLocation.equals(EncampmentJobSystem.goalLoc)) {
 				unassigned = true;
 				EncampmentJobSystem.postUnreachableMessage(EncampmentJobSystem.goalLoc);
 				return;
