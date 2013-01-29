@@ -137,7 +137,7 @@ public class SoldierRobot extends BaseRobot {
 			if (unassigned) {
 				
 				// check if we need to retreat
-				if (!shieldExists()) {
+				if (!shieldExists() && soldierState != SoldierState.ALL_IN) {
 					Message retreatMsg = BroadcastSystem.read(ChannelType.RETREAT_CHANNEL);
 					if (retreatMsg.isValid && retreatMsg.body == Constants.RETREAT) { 
 //						rc.setIndicatorString(1, "shouldn't get here");
@@ -161,7 +161,6 @@ public class SoldierRobot extends BaseRobot {
 						enemyNukeHalfDone = true;
 					}
 				}
-				rc.setIndicatorString(2, "badass " + soldierState.toString());
 				if (enemyNukeHalfDone && !ourNukeHalfDone && soldierState != SoldierState.ALL_IN && soldierState != SoldierState.EXPRESS_CHARGE_SHIELDS) {
 //					soldierState = SoldierState.ALL_IN;
 //					BroadcastSystem.write(ChannelType.MOVE_OUT, Clock.getRoundNum() + 100);
@@ -173,7 +172,7 @@ public class SoldierRobot extends BaseRobot {
 					}
 				}
 				
-				rc.setIndicatorString(0, soldierState.toString());
+//				rc.setIndicatorString(0, soldierState.toString());
 				
 				switch (soldierState) {
 				case NEW:
@@ -194,7 +193,7 @@ public class SoldierRobot extends BaseRobot {
 					if (shieldExists()) {
 						expressChargeShieldsCode();
 					} else {
-						rc.setIndicatorString(1, "shouldn't get here");
+//						rc.setIndicatorString(1, "shouldn't get here");
 						nextSoldierState = SoldierState.ALL_IN;
 						allInCode();
 					}
@@ -519,7 +518,7 @@ public class SoldierRobot extends BaseRobot {
 	}
 
 	public void allInCode() throws GameActionException {
-		if (DataCache.numEnemyRobots > 0) {
+		if (DataCache.numNearbyAlliedRobots > 0) {
 //			aggressiveMicroCode();
 			microCode();
 		} else {
@@ -718,7 +717,7 @@ public class SoldierRobot extends BaseRobot {
 	public void expressChargeShieldsCode() throws GameActionException {		
 		// find an empty space next to the shields encampment
 		int distanceSquaredToShields = rc.getLocation().distanceSquaredTo(shieldLocation);
-		rc.setIndicatorString(2, "distance: " + distanceSquaredToShields);
+//		rc.setIndicatorString(2, "distance: " + distanceSquaredToShields);
 		if (distanceSquaredToShields > 2) {
 			// not charging yet
 			for (int i = 8; --i >= 0; ) {

@@ -177,7 +177,7 @@ public class NavSystem {
 					if (!hasBadMine(rc.getLocation().add(lookingAtCurrently))) {
 						rc.move(lookingAtCurrently);
 						return;
-					} else if (rc.getShields() > 50) {
+					} else if (rc.getShields() > 50) { // if you have enough shields
 						rc.move(lookingAtCurrently);
 						return;
 					}
@@ -211,7 +211,7 @@ public class NavSystem {
 		if (rc.isActive()) {
 			if (rc.canMove(dir)) {
 				Team bombTeam = rc.senseMine(rc.getLocation().add(dir));
-				if (rc.getShields() > 50 && (bombTeam == rc.getTeam().opponent() || bombTeam == Team.NEUTRAL)) {
+				if (rc.getShields() > 50 && (bombTeam == rc.getTeam().opponent())) {
 					rc.move(dir);
 					return true;
 				} else if (bombTeam == null || bombTeam == rc.getTeam()) {

@@ -112,7 +112,7 @@ public class HQRobot extends BaseRobot {
 			if (!enemyNukeHalfDone) {
 				enemyNukeHalfDone = rc.senseEnemyNukeHalfDone();
 				if (enemyNukeHalfDone) {
-					move_out_round = Clock.getRoundNum() + 150 - DataCache.rushDist;
+					move_out_round = Clock.getRoundNum() + 140 - DataCache.rushDist;
 				}
 			}
 			if (enemyNukeHalfDone) {
@@ -174,13 +174,17 @@ public class HQRobot extends BaseRobot {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.DEFUSION);
 						}
-					} else if (rc.getTeamPower() < 10) {
+					} else if (DataCache.numAlliedRobots >= (40 + 10 * (EncampmentJobSystem.genCount))/1.5 ) {
 						if (!DataCache.hasDefusion) {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.DEFUSION);
 						} else if (!DataCache.hasFusion) {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.FUSION);
+						} else if (!DataCache.hasPickaxe) {
+							upgrade = true;
+							rc.researchUpgrade(Upgrade.PICKAXE);
+
 						}
 					}
 					if (!upgrade) {

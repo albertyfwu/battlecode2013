@@ -82,6 +82,8 @@ public class HQRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
+			
+			rc.setIndicatorString(2, Integer.toString(move_out_round));
 //			rc.setIndicatorString(0, Integer.toString(rc.checkResearchProgress(Upgrade.NUKE)));
 //			if (Clock.getRoundNum() > 50) {
 //				BroadcastSystem.write(ChannelType.ARTILLERY_SEEN, Constants.TRUE);
@@ -90,7 +92,11 @@ public class HQRobot extends BaseRobot {
 			DataCache.updateRoundVariables();
 			BroadcastSystem.write(powerChannel, (int) rc.getTeamPower()); // broadcast the team power
 			BroadcastSystem.write(strategyChannel, strategy.ordinal()); // broadcast the strategy
-			BroadcastSystem.write(genCountChannel, EncampmentJobSystem.genCount); // broadcast the number of generators we've built
+			BroadcastSystem.write(genCountChannel, EncampmentJobSystem.genCount); // broadcast the number of generators we've built\
+			
+			if (Clock.getRoundNum() % Constants.CHANNEL_CYCLE == 0 && Clock.getRoundNum() > 0) {
+				persistRetreatChannel();
+			}
 			
 			// Check if our nuke is half done
 			if (!ourNukeHalfDone) {
@@ -106,7 +112,7 @@ public class HQRobot extends BaseRobot {
 			if (!enemyNukeHalfDone) {
 				enemyNukeHalfDone = rc.senseEnemyNukeHalfDone();
 				if (enemyNukeHalfDone) {
-					move_out_round = Clock.getRoundNum() + 150 - DataCache.rushDist;
+					move_out_round = Clock.getRoundNum() + 140 - DataCache.rushDist;
 				}
 			}
 			if (enemyNukeHalfDone) {
@@ -207,6 +213,13 @@ public class HQRobot extends BaseRobot {
 			System.out.println("caught exception before it killed us:");
 			System.out.println(rc.getRobot().getID());
 			e.printStackTrace();
+		}
+	}
+	
+	public void persistRetreatChannel() {
+		Message msg = BroadcastSystem.readLastCycle(ChannelType.RETREAT_CHANNEL);
+		if (msg.isValid && msg.body == Constants.RETREAT) { // if needs to be persisted
+			BroadcastSystem.write(ChannelType.RETREAT_CHANNEL, Constants.RETREAT);
 		}
 	}
 	

@@ -67,8 +67,8 @@ public class DataCache {
 	public static void updateRoundVariables() throws GameActionException {
 		numAlliedRobots = rc.senseNearbyGameObjects(Robot.class, 10000, rc.getTeam()).length;
 		numAlliedEncampments = rc.senseEncampmentSquares(rc.getLocation(), 10000, rc.getTeam()).length;
-		String s = "stuff: " + numAlliedRobots + ", " + numAlliedEncampments + ", " + EncampmentJobSystem.numEncampmentsNeeded;
-		rc.setIndicatorString(2, s);
+//		String s = "stuff: " + numAlliedRobots + ", " + numAlliedEncampments + ", " + EncampmentJobSystem.numEncampmentsNeeded;
+//		rc.setIndicatorString(2, s);
 		numAlliedSoldiers = numAlliedRobots - numAlliedEncampments - 1 - EncampmentJobSystem.numEncampmentsNeeded;
 		
 		numNearbyAlliedRobots = rc.senseNearbyGameObjects(Robot.class, 14, rc.getTeam()).length;

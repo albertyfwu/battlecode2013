@@ -17,7 +17,7 @@ public class BroadcastSystem {
 	
 	public static BaseRobot robot;
 	public static RobotController rc;
-	public static byte signature = 0x3D; // TODO: Better signature verification (based on round number, channel type, etc.)
+	public static byte signature = 0x4C; // TODO: Better signature verification (based on round number, channel type, etc.)
 	public static final int signatureMask = 0x00FFFFFF;
 	
 	/**

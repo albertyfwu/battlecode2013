@@ -47,6 +47,9 @@ public enum ChannelType {
 	// check if our nuke is half done
 	OUR_NUKE_HALF_DONE,
 	
+	// retreat channel
+	RETREAT_CHANNEL,
+	
 	//shield location
 	SHIELD_LOCATION;
 	

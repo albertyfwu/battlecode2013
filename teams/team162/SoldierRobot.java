@@ -100,6 +100,128 @@ public class SoldierRobot extends BaseRobot {
 		initializeMining();
 	}
 	
+	
+	@Override
+	public void run() {
+		try {
+			rc.setIndicatorString(0, soldierState.toString());
+			rc.setIndicatorString(1, Integer.toString(move_out_round));
+//			rc.setIndicatorString(2, Integer.toString(move_out_round));
+			
+			DataCache.updateRoundVariables();
+			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
+			
+			if (move_out_round == 10000) {
+				Message message = BroadcastSystem.read(ChannelType.MOVE_OUT);
+				if (message.isValid) {
+					move_out_round = message.body;
+				}
+			}
+			
+			if (unassigned) {
+				
+				// check if we need to retreat
+				if (!shieldExists()) {
+					Message retreatMsg = BroadcastSystem.read(ChannelType.RETREAT_CHANNEL);
+					if (retreatMsg.isValid && retreatMsg.body == Constants.RETREAT) { 
+						soldierState = SoldierState.RETREAT;
+						System.out.println("retreat");
+					}
+				}
+				
+				// If this is not an encampment worker
+				// Check if our nuke is half done
+				if (!ourNukeHalfDone) {
+					Message message = BroadcastSystem.read(ChannelType.OUR_NUKE_HALF_DONE);
+					if (message.isValid && message.body == 1) {
+						ourNukeHalfDone = true;
+					}
+				}
+				// Check if enemy nuke is half done
+				if (!enemyNukeHalfDone) {
+					Message message = BroadcastSystem.read(ChannelType.ENEMY_NUKE_HALF_DONE);
+					if (message.isValid && message.body == 1) {
+						enemyNukeHalfDone = true;
+					}
+				}
+				if (enemyNukeHalfDone && !ourNukeHalfDone && soldierState != SoldierState.ALL_IN ) {
+//					soldierState = SoldierState.ALL_IN;
+//					BroadcastSystem.write(ChannelType.MOVE_OUT, Clock.getRoundNum() + 100);
+					if (move_out_round <= Clock.getRoundNum()) {
+						soldierState = SoldierState.ALL_IN;
+					} else {
+						soldierState = SoldierState.RALLYING;
+					}
+				}
+				
+				switch (soldierState) {
+				case NEW:
+					newCode();
+					break;
+				case FINDING_START_MINE_POSITIONS:
+					findingStartMinePositionsCode();
+					break;
+				case CHARGE_SHIELDS:
+					if (shieldExists()) {
+						chargeShieldsCode();
+					} else {
+						nextSoldierState = SoldierState.RALLYING;
+						rallyingCode();
+					}
+					break;
+				case MINING:
+					miningCode();
+					break;
+				case ESCAPE_HQ_MINES:
+					escapeHQMinesCode();
+					break;
+				case CLEAR_OUT_HQ_MINES:
+					clearOutHQMinesCode();
+					break;
+				case ALL_IN:
+					allInCode();
+					break;
+				case PUSHING: 
+					pushingCode();
+					break;
+				case FIGHTING:
+					fightingCode();
+					break;
+				case RALLYING:
+					rallyingCode();
+					break;
+				case RETREAT:
+					retreatCode();
+					break;
+				default:
+					break;
+				}
+			} else {
+				// This soldier has an encampment job, so it should go do that job
+				captureCode();
+			}
+			
+			double currHealth = rc.getEnergon();
+			
+			boolean artillerySeen = reportArtillerySighting(currHealth);
+			if (artillerySeen && !shieldExists()) {
+				soldierState = SoldierState.RETREAT;
+				BroadcastSystem.write(ChannelType.RETREAT_CHANNEL, Constants.RETREAT);
+			}
+			
+			healthLastTurn = currHealth;
+			
+			if (nextSoldierState != null) {
+				soldierState = nextSoldierState;
+				nextSoldierState = null; // clear the state for the next call of run() to use
+			}
+		} catch (Exception e) {
+			System.out.println("caught exception before it killed us:");
+			System.out.println(rc.getRobot().getID());
+			e.printStackTrace();
+		}
+	}
+	
 	private MapLocation findMidPoint() {
 		MapLocation enemyLoc = DataCache.enemyHQLocation;
 		MapLocation ourLoc = DataCache.ourHQLocation;
@@ -225,109 +347,7 @@ public class SoldierRobot extends BaseRobot {
 		}
 		miningStartLocation = new MapLocation(newX, newY);
 	}
-	
-	@Override
-	public void run() {
-		try {
-			rc.setIndicatorString(0, soldierState.toString());
-//			rc.setIndicatorString(2, Integer.toString(move_out_round));
-			
-			DataCache.updateRoundVariables();
-			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
-			
-			if (move_out_round == 10000) {
-				Message message = BroadcastSystem.read(ChannelType.MOVE_OUT);
-				if (message.isValid) {
-					move_out_round = message.body;
-				}
-			}
-			
-			if (unassigned) {
-				// If this is not an encampment worker
-				// Check if our nuke is half done
-				if (!ourNukeHalfDone) {
-					Message message = BroadcastSystem.read(ChannelType.OUR_NUKE_HALF_DONE);
-					if (message.isValid && message.body == 1) {
-						ourNukeHalfDone = true;
-					}
-				}
-				// Check if enemy nuke is half done
-				if (!enemyNukeHalfDone) {
-					Message message = BroadcastSystem.read(ChannelType.ENEMY_NUKE_HALF_DONE);
-					if (message.isValid && message.body == 1) {
-						enemyNukeHalfDone = true;
-					}
-				}
-				if (enemyNukeHalfDone && !ourNukeHalfDone && soldierState != SoldierState.ALL_IN) {
-//					soldierState = SoldierState.ALL_IN;
-//					BroadcastSystem.write(ChannelType.MOVE_OUT, Clock.getRoundNum() + 100);
-					if (move_out_round <= Clock.getRoundNum()) {
-						soldierState = SoldierState.ALL_IN;
-					} else {
-						soldierState = SoldierState.RALLYING;
-					}
-				}
-				
-				switch (soldierState) {
-				case NEW:
-					newCode();
-					break;
-				case FINDING_START_MINE_POSITIONS:
-					findingStartMinePositionsCode();
-					break;
-				case CHARGE_SHIELDS:
-					if (shieldExists()) {
-						chargeShieldsCode();
-					} else {
-						nextSoldierState = SoldierState.RALLYING;
-						rallyingCode();
-					}
-					break;
-				case MINING:
-					miningCode();
-					break;
-				case ESCAPE_HQ_MINES:
-					escapeHQMinesCode();
-					break;
-				case CLEAR_OUT_HQ_MINES:
-					clearOutHQMinesCode();
-					break;
-				case ALL_IN:
-					allInCode();
-					break;
-				case PUSHING: 
-					pushingCode();
-					break;
-				case FIGHTING:
-					fightingCode();
-					break;
-				case RALLYING:
-					rallyingCode();
-					break;
-				default:
-					break;
-				}
-			} else {
-				// This soldier has an encampment job, so it should go do that job
-				captureCode();
-			}
-			
-			double currHealth = rc.getEnergon();
-			
-			reportArtillerySighting(currHealth);
-			
-			healthLastTurn = currHealth;
-			
-			if (nextSoldierState != null) {
-				soldierState = nextSoldierState;
-				nextSoldierState = null; // clear the state for the next call of run() to use
-			}
-		} catch (Exception e) {
-			System.out.println("caught exception before it killed us:");
-			System.out.println(rc.getRobot().getID());
-			e.printStackTrace();
-		}
-	}	
+
 	
 	public void newCode() throws GameActionException {
 		// If we're standing on a mine close to our base, we should clear out the mine
@@ -392,14 +412,14 @@ public class SoldierRobot extends BaseRobot {
 				nextSoldierState = SoldierState.FIGHTING;
 				fightingCode();
 //			} else if (hqPowerLevel2 < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel2 < 100) {
-			} else if (DataCache.numAlliedRobots >= (40 + 10 * (genCount))/1.5) {
+			} else if (DataCache.numAlliedRobots >= (40 + 10 * (genCount))/1.5 && !enemyNukeHalfDone) {
 				nextSoldierState = SoldierState.PUSHING;
 				pushingCode();
 			} else {
 				mineDensity = rc.senseMineLocations(findMidPoint(), rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
 				shieldsCutoff = (int) (DataCache.rushDist + 3 * (mineDensity * DataCache.rushDist)) + 50;
 				if (rc.getShields() < shieldsCutoff - 50 && shieldExists()) {
-					rc.setIndicatorString(2, "lower bound: " + (shieldsCutoff-50));
+//					rc.setIndicatorString(2, "lower bound: " + (shieldsCutoff-50));
 					// not enough shields
 					nextSoldierState = SoldierState.CHARGE_SHIELDS;
 					chargeShieldsCode();
@@ -418,11 +438,21 @@ public class SoldierRobot extends BaseRobot {
 			}
 //		}
 	}
+	
+	public void retreatCode() throws GameActionException {
+		if (DataCache.numEnemyRobots == 0) {
+			nextSoldierState = SoldierState.RALLYING;
+			BroadcastSystem.write(ChannelType.RETREAT_CHANNEL, 0);
+			rallyingCode();
+		} else {
+			NavSystem.moveCloserFavorNoMines(rallyPoint);
+		}
+	}
 
 	public void fightingCode() throws GameActionException {
 		if (DataCache.numEnemyRobots == 0) {
 			if (DataCache.numAlliedSoldiers < Constants.FIGHTING_NOT_ENOUGH_ALLIED_SOLDIERS) {
-				if (!ourNukeHalfDone && enemyNukeHalfDone) {
+				if (move_out_round <= Clock.getRoundNum()) {
 					nextSoldierState = SoldierState.PUSHING;
 					pushingCode();
 				} else {
@@ -459,7 +489,7 @@ public class SoldierRobot extends BaseRobot {
 	}
 
 	public void allInCode() throws GameActionException {
-		if (DataCache.numEnemyRobots > 0) {
+		if (DataCache.numNearbyAlliedRobots > 0) {
 //			aggressiveMicroCode();
 			microCode();
 		} else {
@@ -608,7 +638,7 @@ public class SoldierRobot extends BaseRobot {
 			if (message.isValid){
 				genCount = message.body;
 			}
-			if (DataCache.numAlliedRobots >= (40 + 10 * (genCount))/1.5) {
+			if (DataCache.numAlliedRobots >= (40 + 10 * (genCount))/1.5 && !enemyNukeHalfDone) {
 				nextSoldierState = SoldierState.PUSHING;
 				pushingCode();
 			} else {
@@ -638,7 +668,7 @@ public class SoldierRobot extends BaseRobot {
 					// already charging
 					mineDensity = rc.senseMineLocations(findMidPoint(), rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
 					shieldsCutoff = (int) (DataCache.rushDist + 3 * (mineDensity * DataCache.rushDist)) + 50;
-					rc.setIndicatorString(1, "high cutoff: " + Integer.toString(shieldsCutoff));
+//					rc.setIndicatorString(1, "high cutoff: " + Integer.toString(shieldsCutoff));
 					if (rc.getShields() > shieldsCutoff) {
 						// leave
 						//						if (!ourNukeHalfDone && enemyNukeHalfDone) {
@@ -695,19 +725,21 @@ public class SoldierRobot extends BaseRobot {
 	 * Primarily used by HQ to know to build a shields encampment.
 	 * @throws GameActionException
 	 */
-	public void reportArtillerySighting(double currHealth) throws GameActionException {
+	public boolean reportArtillerySighting(double currHealth) throws GameActionException {
 		Robot[] nearbyEnemyRobots = rc.senseNearbyGameObjects(Robot.class, 14, rc.getTeam().opponent());
 		for (Robot robot : nearbyEnemyRobots) {
 			RobotInfo robotInfo = rc.senseRobotInfo(robot);
 			if (robotInfo.type == RobotType.ARTILLERY) {
 				BroadcastSystem.write(ChannelType.ARTILLERY_SEEN, Constants.TRUE);
-				return;
+				return true;
 			}
 		}
 		
 		if (detectArtillerySplash(currHealth, healthLastTurn)) {
 			BroadcastSystem.write(ChannelType.ARTILLERY_SEEN, Constants.TRUE);
+			return true;
 		}
+		return false;
 	}
 	
 	private void defendMicro() throws GameActionException {
@@ -888,7 +920,7 @@ public class SoldierRobot extends BaseRobot {
 					NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
 				}
 			}
-		} else if (DataCache.numNearbyEnemySoldiers == 0){ // if no enemies in one, two, or three dist
+		} else if (DataCache.numNearbyEnemySoldiers == 0 || DataCache.numNearbyAlliedSoldiers >= 3 * DataCache.numNearbyEnemySoldiers){ // if no enemies in one, two, or three dist
 //			// if no enemies in 3-dist or we outnumber them 3 to 1
 //			NavSystem.goToLocation(closestEnemyLocation);
 			if (rc.isActive()) {
