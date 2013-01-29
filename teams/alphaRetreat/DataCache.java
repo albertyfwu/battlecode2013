@@ -1,5 +1,6 @@
 package alphaRetreat;
 
+import battlecode.common.Clock;
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
@@ -20,6 +21,8 @@ public class DataCache {
 	public static int rushDist;
 	
 	public static Direction[] directionArray = Direction.values();
+	
+	public static boolean onCycle;
 	
 	// Map width
 	public static int mapWidth;
@@ -65,10 +68,10 @@ public class DataCache {
 	 * A function that updates round variables
 	 */
 	public static void updateRoundVariables() throws GameActionException {
+		onCycle = Clock.getRoundNum() % Constants.CHANNEL_CYCLE == 0 && Clock.getRoundNum() > 0;
+		
 		numAlliedRobots = rc.senseNearbyGameObjects(Robot.class, 10000, rc.getTeam()).length;
 		numAlliedEncampments = rc.senseEncampmentSquares(rc.getLocation(), 10000, rc.getTeam()).length;
-//		String s = "stuff: " + numAlliedRobots + ", " + numAlliedEncampments + ", " + EncampmentJobSystem.numEncampmentsNeeded;
-//		rc.setIndicatorString(2, s);
 		numAlliedSoldiers = numAlliedRobots - numAlliedEncampments - 1 - EncampmentJobSystem.numEncampmentsNeeded;
 		
 		numNearbyAlliedRobots = rc.senseNearbyGameObjects(Robot.class, 14, rc.getTeam()).length;
