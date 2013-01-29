@@ -457,10 +457,8 @@ public class SoldierRobot extends BaseRobot {
 					chargeShieldsCode();
 				} else {
 					if (rc.senseEncampmentSquare(currentLocation) && currentLocation.distanceSquaredTo(DataCache.enemyHQLocation) < 0.55 * DataCache.rushDistSquared ) {
-						if (rc.getTeamPower() > rc.senseCaptureCost() && Util.Random() < 0.5) {
-							if (rc.isActive()) {
-								rc.captureEncampment(RobotType.ARTILLERY);
-							}
+						if (rc.getTeamPower() > rc.senseCaptureCost() && Util.Random() < 0.5 && rc.isActive()) {
+							rc.captureEncampment(RobotType.ARTILLERY);
 						}
 					} else {
 						boolean layedMine = false;
@@ -500,7 +498,14 @@ public class SoldierRobot extends BaseRobot {
 					nextSoldierState = SoldierState.PUSHING;
 					pushingCode();
 				} else {
-					if (Clock.getRoundNum() >= 200) {
+					Message msg;
+					if (Clock.getRoundNum() % Constants.CHANNEL_CYCLE == 0 && Clock.getRoundNum() > 0) {
+						msg = BroadcastSystem.readLastCycle(ChannelType.ARTILLERY_SEEN);
+					} else {
+						msg = BroadcastSystem.read(ChannelType.ARTILLERY_SEEN);
+					}
+					
+					if (Clock.getRoundNum() >= 200 || msg.body == Constants.TRUE) {
 						nextSoldierState = SoldierState.RALLYING;
 						rallyingCode();
 					} else {
@@ -653,17 +658,19 @@ public class SoldierRobot extends BaseRobot {
 			GameObject object = rc.senseObjectAtLocation(shieldLocation);
 			if (object != null && rc.senseRobotInfo((Robot) object).type == RobotType.SHIELDS) {
 				// set the shieldQueueLocation						
-				int dx = DataCache.enemyHQLocation.x - DataCache.ourHQLocation.x;
-				int dy = DataCache.enemyHQLocation.y - DataCache.ourHQLocation.y;
+				int dx = shieldLocation.x - DataCache.ourHQLocation.x;
+				int dy = shieldLocation.y - DataCache.ourHQLocation.y;
 				
-				double vectorMag = Math.sqrt(dx*dx + dy*dy);
-				double dxNorm = dx/vectorMag;
-				double dyNorm = dy/vectorMag;
+				double maxDxDy = Math.max(Math.abs(dx), Math.abs(dy));
 				
-				int centerx = (int) (shieldLocation.x - 10 * dxNorm);
-				int centery = (int) (shieldLocation.y - 10 * dyNorm);
+				double dxNorm = dx / maxDxDy;
+				double dyNorm = dy / maxDxDy;
+				
+				int centerx = (int) (shieldLocation.x - 5 * dxNorm);
+				int centery = (int) (shieldLocation.y - 5 * dyNorm);
 				
 				shieldQueueLocation = new MapLocation(centerx, centery);
+				
 				rallyPoint = shieldQueueLocation;
 						
 				return true;
@@ -1058,7 +1065,7 @@ public class SoldierRobot extends BaseRobot {
 						NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
 					}
 				} else {
-					if (enemy23[2] - our23[2] > 5 || our23[2] < 1) {
+					if (enemy23[2] - our23[2] >= 6 || our23[2] < 1) {
 						NavSystem.goToLocationAvoidMines(closestEnemyLocation);
 					} else {
 						NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);

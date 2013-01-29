@@ -1065,7 +1065,7 @@ public class SoldierRobot extends BaseRobot {
 						NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
 					}
 				} else {
-					if (enemy23[2] - our23[2] > 5 || our23[2] < 1) {
+					if (enemy23[2] - our23[2] >= 3 || our23[2] < 1) {
 						NavSystem.goToLocationAvoidMines(closestEnemyLocation);
 					} else {
 						NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);

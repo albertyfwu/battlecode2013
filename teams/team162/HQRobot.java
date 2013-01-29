@@ -83,7 +83,7 @@ public class HQRobot extends BaseRobot {
 	public void run() {
 		try {
 			
-			rc.setIndicatorString(2, Integer.toString(move_out_round));
+//			rc.setIndicatorString(2, Integer.toString(move_out_round));
 //			rc.setIndicatorString(0, Integer.toString(rc.checkResearchProgress(Upgrade.NUKE)));
 //			if (Clock.getRoundNum() > 50) {
 //				BroadcastSystem.write(ChannelType.ARTILLERY_SEEN, Constants.TRUE);
@@ -134,7 +134,7 @@ public class HQRobot extends BaseRobot {
 				} else {
 					message = BroadcastSystem.read(ChannelType.ARTILLERY_SEEN);
 				}
-				if ((message.isValid && message.body == Constants.TRUE) || enemyNukeHalfDone) {
+				if ((message.isValid && message.body == Constants.TRUE) || enemyNukeHalfDone || Clock.getRoundNum() >= 200) {
 					artillerySeen = true;
 					BroadcastSystem.write(ChannelType.ARTILLERY_SEEN, Constants.TRUE); // write artillery seen
 					EncampmentJobSystem.setShieldLocation();
@@ -164,7 +164,7 @@ public class HQRobot extends BaseRobot {
 	        }
 			
 			rc.setIndicatorString(0, Double.toString((40 + 10 * (EncampmentJobSystem.genCount))/1.5));
-			rc.setIndicatorString(1, Integer.toString(DataCache.numAlliedSoldiers));
+//			rc.setIndicatorString(1, Integer.toString(DataCache.numAlliedSoldiers));
 			
 			if (rc.isActive()) {
 				if (strategy == Strategy.ECON || strategy == Strategy.RUSH) {
@@ -174,13 +174,13 @@ public class HQRobot extends BaseRobot {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.DEFUSION);
 						}
-					} else if (DataCache.numAlliedRobots >= (40 + 10 * (EncampmentJobSystem.genCount))/1.5 ) {
-						if (!DataCache.hasDefusion) {
-							upgrade = true;
-							rc.researchUpgrade(Upgrade.DEFUSION);
-						} else if (!DataCache.hasFusion) {
+					} else if (rc.getTeamPower() <= 10 * (1 + DataCache.numAlliedEncampments)) {
+						if (!DataCache.hasFusion) {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.FUSION);
+						} else if (!DataCache.hasDefusion) {
+							upgrade = true;
+							rc.researchUpgrade(Upgrade.DEFUSION);
 						} else if (!DataCache.hasPickaxe) {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.PICKAXE);
