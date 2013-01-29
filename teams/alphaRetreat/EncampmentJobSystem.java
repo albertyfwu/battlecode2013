@@ -17,6 +17,7 @@ public class EncampmentJobSystem {
 	public static MapLocation goalLoc;
 	
 	public static MapLocation pathCenter;
+	public static MapLocation pathCenterSlightlyCloserToUs;
 	
 	public static MapLocation shieldsLoc; // location of the shields encampment
 	public static ChannelType shieldChannel = ChannelType.ENCSHIELD;
@@ -49,10 +50,8 @@ public class EncampmentJobSystem {
 	public static FastLocSet unreachableEncampments = new FastLocSet();
 	public static int numUnreachableEncampments;
 	
-	public static MapLocation[] initialNeutralEncLocs;
-	public static FastLocMapDouble encampmentLocScores = new FastLocMapDouble();
-	public static int numEncampmentLocsToInitScoresPerRound;
-	public static int numEncampmentLocsToInitScoresFirstRound;
+	public static MapLocation[] sortedNeutralEncLocs;
+	public static double[] sortedNeutralEncScores;
 	
 	public static RobotType assignedRobotType;
 	public static ChannelType assignedChannel;
@@ -86,6 +85,7 @@ public class EncampmentJobSystem {
 		hardEncampmentLimit = 2;
 		
 		pathCenter = getPathCenter();
+		pathCenterSlightlyCloserToUs = getPathCenterSlightlyCloserToUs();
 		
 		double mineDensity = findMineDensity();
 		double adjRushDist = DataCache.rushDist * (1 + 2 * mineDensity);
@@ -100,7 +100,8 @@ public class EncampmentJobSystem {
 		
 		
 		
-		initialNeutralEncLocs = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, Team.NEUTRAL);
+		sortedNeutralEncLocs = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, Team.NEUTRAL);
+		sortedNeutralEncScores = new double[sortedNeutralEncLocs.length];
 		
 		MapLocation[] nearbyEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 9, Team.NEUTRAL);
 		
@@ -114,14 +115,14 @@ public class EncampmentJobSystem {
 		}
 		
 
-		int numReachableEncampments = initialNeutralEncLocs.length - numUnreachableEncampments;
+		int numReachableEncampments = sortedNeutralEncLocs.length - numUnreachableEncampments;
 		if (numReachableEncampments == 0) {
 			numEncampmentsNeeded = 0;
 		} else {
 			numEncampmentsNeeded = 1;
 		}
 
-		MapLocation[] closestEncampments = getBestEncampmentLocations(DataCache.ourHQLocation, initialNeutralEncLocs, numEncampmentsNeeded);
+		MapLocation[] closestEncampments = getBestEncampmentLocations(DataCache.ourHQLocation, sortedNeutralEncLocs, numEncampmentsNeeded);
 
 		for (int i = numEncampmentsNeeded; --i >= 0; ) {
 			// save in list of jobs
@@ -131,32 +132,6 @@ public class EncampmentJobSystem {
 			encampmentChannels[i] = encampmentJobChannelList[i];
 			
 			postJob(EncampmentJobSystem.encampmentChannels[i], encampmentJobs[i], getRobotTypeToBuild(closestEncampments[i]));
-		}
-		
-		numEncampmentLocsToInitScoresPerRound = (int)Math.floor(initialNeutralEncLocs.length / 10f);
-		numEncampmentLocsToInitScoresFirstRound = initialNeutralEncLocs.length - 9 * numEncampmentLocsToInitScoresPerRound;
-	}
-	
-	/**
-	 * This function is called to initialize encampmentLocScores over the span of 10 rounds
-	 */
-	public static void initializeEncampmentLocScores() {
-		// each round we should initialize Math.ceil(L / 10) encampmentLocScores
-		int start;
-		int stop;
-		if (Clock.getRoundNum() == 1) {
-			start = initialNeutralEncLocs.length;
-			stop = start - numEncampmentLocsToInitScoresFirstRound;
-		} else {
-			start = initialNeutralEncLocs.length - numEncampmentLocsToInitScoresFirstRound - (Clock.getRoundNum() - 2) * numEncampmentLocsToInitScoresPerRound;
-			stop = start - numEncampmentLocsToInitScoresPerRound;
-		}
-		for (int i = start; --i >= stop; ) {
-			MapLocation iterLocation = initialNeutralEncLocs[i];
-			double score = Math.sqrt(iterLocation.distanceSquaredTo(DataCache.ourHQLocation)) - 1.1 * Math.sqrt(iterLocation.distanceSquaredTo(pathCenter));
-//			double score = DataCache.ourHQLocation.distanceSquaredTo(iterLocation);
-//			double score = 0;
-			encampmentLocScores.set(iterLocation, score);
 		}
 	}
 	
@@ -168,6 +143,31 @@ public class EncampmentJobSystem {
 		return new MapLocation((x1+x2)/2, (y1+y2)/2);
 	}
 	
+	public static MapLocation getPathCenterSlightlyCloserToUs() {
+		int x1 = DataCache.ourHQLocation.x;
+		int y1 = DataCache.ourHQLocation.y;
+		int x2 = DataCache.enemyHQLocation.x;
+		int y2 = DataCache.enemyHQLocation.y;
+		return new MapLocation((int) (0.6 * x1 + 0.4 * x2), (int) (0.6 * y1 + 0.4 * y2));
+	}
+	
+	/**
+	 * Function for sorting the neutral encampment scores so that we don't waste any time later when we call
+	 * getBestEncampmentLoc....
+	 */
+	public static void sortNeutralEncampmentScores() {
+		for (int i = sortedNeutralEncLocs.length; --i >= 0; ) {
+			MapLocation iterLocation = sortedNeutralEncLocs[i];
+			// get the score
+			sortedNeutralEncScores[i] = Math.sqrt(iterLocation.distanceSquaredTo(DataCache.ourHQLocation)) - 1.1 * Math.sqrt(iterLocation.distanceSquaredTo(pathCenterSlightlyCloserToUs));
+		}
+		
+		// TODO: sort in place
+		Quicksort.sort(sortedNeutralEncLocs, sortedNeutralEncScores);
+		sortedNeutralEncScores = Quicksort.numbers;
+		sortedNeutralEncLocs = Quicksort.locations;
+	}
+		
 	public static void updateShieldJob() {
 		if (shieldJobOustanding == false) {
 			postShieldJob();
@@ -797,11 +797,11 @@ public class EncampmentJobSystem {
 	 * This still costs lots of bytecodes
 	 */
 	public static MapLocation[] getBestEncampmentLocations(MapLocation origin, MapLocation[] allLoc, int k) {
-		MapLocation[] currentTopLocations = new MapLocation[k];
 		
-		boolean[] allLocIndex = new boolean[allLoc.length];
-		
-		if (Clock.getRoundNum() == 0) {
+		if (Clock.getRoundNum() == 0) {			
+			MapLocation[] currentTopLocations = new MapLocation[k];			
+			boolean[] allLocIndex = new boolean[allLoc.length];
+			
 			int[] allDistances = new int[allLoc.length];
 			for (int i = allLoc.length; --i >= 0; ) {
 				MapLocation iterLocation = allLoc[i];
@@ -830,60 +830,36 @@ public class EncampmentJobSystem {
 				currentTopLocations[j] = runningLoc;
 				allLocIndex[runningIndex] = true;
 			}
+			
+			return currentTopLocations;
 		} else {
-			double bestScore;
-			MapLocation runningLoc = null;
-			int runningIndex = 0;
-			// all other rounds; we'll have fully initialized the encloc array, so we can just call encampmentLocScores.get()
-			for (int j = k; --j >= 0; ) {
-				bestScore = Double.MAX_VALUE;
-				for (int i = allLoc.length; --i >= 0; ) {
-					MapLocation iterLocation = allLoc[i];
-					double currentScore = encampmentLocScores.get(iterLocation);
-					if (currentScore < bestScore && allLocIndex[i] == false && !unreachableEncampments.contains(iterLocation)) {
-						// if score is better, and the location is not unreachable
-						if (shieldsLoc == null || !iterLocation.equals(shieldsLoc)) {
-							// can't include shieldLoc
-							bestScore = currentScore;
-							runningLoc = iterLocation;
-							runningIndex = i;
-						}
-					}
-				}
-				currentTopLocations[j] = runningLoc;
-				allLocIndex[runningIndex] = true;
+			int count = 0;
+			MapLocation[] currentTopLocations = new MapLocation[k];
+			
+			
+			// make a FastLocSet of the current neutral encampments
+			FastLocSet allLocSet = new FastLocSet();
+			for (MapLocation iterLocation : allLoc) {
+				allLocSet.add(iterLocation);
 			}
-//			double[] allDistances = new double[allLoc.length];
-//			for (int i = allLoc.length; --i >= 0; ) {
-//				MapLocation iterLocation = allLoc[i];
-//				allDistances[i] = Math.sqrt(iterLocation.distanceSquaredTo(DataCache.ourHQLocation)) - 1.1 * Math.sqrt(iterLocation.distanceSquaredTo(pathCenter));
-////				allDistances[i] = origin.distanceSquaredTo(iterLocation);
-//			}
-//			
-//			double bestScore;
-//			MapLocation runningLoc = null;
-//			int runningIndex = 0;
-//			// first round, so be gentle
-//			for (int j = k; --j >= 0; ) {
-//				bestScore = Double.MAX_VALUE;
-//				for (int i = allLoc.length; --i >= 0; ) {
-//					MapLocation iterLocation = allLoc[i];
-//					double currentScore = allDistances[i];
-//					if (currentScore < bestScore && allLocIndex[i] == false && !unreachableEncampments.contains(iterLocation)) {
-//						// if score is better, and the location is not unreachable
-//						if (shieldsLoc == null || !iterLocation.equals(shieldsLoc)) {
-//							// can't include shieldLoc
-//							bestScore = currentScore;
-//							runningLoc = iterLocation;
-//							runningIndex = i;
-//						}
-//					}
-//				}
-//				currentTopLocations[j] = runningLoc;
-//				allLocIndex[runningIndex] = true;
-//			}
+			
+			// now, we can use the sorted initial neutral encampment locations and scores
+			for (int i = 0; i < sortedNeutralEncScores.length; i++) {
+				if (count < k) { // we still need more encampment locations
+					MapLocation iterLocation = sortedNeutralEncLocs[i];
+					// check to see if location exists in allLocSet
+					if (allLocSet.contains(iterLocation)) {
+						// this is eligible location, so insert it into currentToplocations
+						currentTopLocations[count] = iterLocation;
+						count++;
+					}
+				} else {
+					break;
+				}
+			}
+			
+			return currentTopLocations;
 		}
-		return currentTopLocations;
 	}
 	
 	

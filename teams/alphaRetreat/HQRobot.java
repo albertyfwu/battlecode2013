@@ -24,16 +24,16 @@ public class HQRobot extends BaseRobot {
 	
 	@Override
 	public void run() {
-		try {
+		try {			
 			DataCache.updateRoundVariables();
 			BroadcastSystem.write(powerChannel, (int) rc.getTeamPower()); // broadcast the team power
 			BroadcastSystem.write(genCountChannel, EncampmentJobSystem.genCount); // broadcast the number of generators we've built\
 			
-			// for round numbers 1 through 10, make sure to initialize the scores for the encampment location scores
-			if (Clock.getRoundNum() != 0 && Clock.getRoundNum() <= 10) {
-//				System.out.println(Clock.getRoundNum());
-				EncampmentJobSystem.initializeEncampmentLocScores();
+			// Do a quicksort for the EncampmentJobSystem so it saves bytecode later
+			if (Clock.getRoundNum() == 1) {
+				EncampmentJobSystem.sortNeutralEncampmentScores();
 			}
+			// end quicksort test
 			
 			if (DataCache.onCycle) {
 				persistRetreatChannel();
