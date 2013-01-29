@@ -1180,15 +1180,15 @@ public class SoldierRobot extends BaseRobot {
 		int ourY = DataCache.ourHQLocation.y;
 		int enemyX = DataCache.enemyHQLocation.x;
 		int enemyY = DataCache.enemyHQLocation.y;
-		int dx = (enemyX - ourX) >> 3;
-		int dy = (enemyY - ourY) >> 3;
+		int dx = (enemyX - ourX) >> 3; // 8
+		int dy = (enemyY - ourY) >> 3; // 8
 		
 		MapLocation pt1 = new MapLocation(ourX + dx, ourY + dy);
 		MapLocation pt2 = new MapLocation(ourX + 3*dx, ourY + 3*dy);
 		MapLocation pt3 = new MapLocation(ourX + 5*dx, ourY + 5*dy);
 		MapLocation pt4 = new MapLocation(ourX + 7*dx, ourY + 7*dy);
 
-		int rSquared = DataCache.rushDistSquared / 64;
+		int rSquared = DataCache.rushDistSquared >> 6; // 64
 		double mineDensity1 = rc.senseMineLocations(pt1, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
 		double mineDensity2 = rc.senseMineLocations(pt2, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
 		double mineDensity3 = rc.senseMineLocations(pt3, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
