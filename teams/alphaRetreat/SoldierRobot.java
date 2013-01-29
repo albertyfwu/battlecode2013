@@ -142,7 +142,7 @@ public class SoldierRobot extends BaseRobot {
 					if (retreatMsg.isValid && retreatMsg.body == Constants.RETREAT) { 
 //						rc.setIndicatorString(1, "shouldn't get here");
 						soldierState = SoldierState.RETREAT;
-						System.out.println("retreat");
+//						System.out.println("retreat");
 					}
 				}
 				
@@ -794,7 +794,7 @@ public class SoldierRobot extends BaseRobot {
 	public boolean detectArtillerySplash(double currHealth, double lastTurnHealth) {
 		int numEnemyNeighbors = rc.senseNearbyGameObjects(Robot.class, 2, rc.getTeam().opponent()).length;
 		if (lastTurnHealth - currHealth > numEnemyNeighbors * 6 + 10) {
-			System.out.println("artillery splash damage detected");
+//			System.out.println("artillery splash damage detected");
 			return true;
 		}
 		return false;
@@ -1219,6 +1219,13 @@ public class SoldierRobot extends BaseRobot {
 	 */
 	private void captureCode() throws GameActionException {
 		if (!unassigned) { // if assigned to something
+			if (EncampmentJobSystem.assignedRobotType != RobotType.SHIELDS) {
+				MapLocation shieldLoc = EncampmentJobSystem.readShieldLocation();
+				if (shieldLoc != null && shieldLoc.equals(EncampmentJobSystem.goalLoc)) { // if the shield location is our goal loc, don't bother doing the job
+					unassigned = true;
+					return;
+				}
+			}
 			EncampmentJobSystem.updateJobTaken();
 		}
 		if (rc.isActive()) {

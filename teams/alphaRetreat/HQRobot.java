@@ -141,7 +141,7 @@ public class HQRobot extends BaseRobot {
 					if (EncampmentJobSystem.shieldsLoc != null) {
 						EncampmentJobSystem.postShieldLocation();
 					}
-					System.out.println("artilleryseen");
+//					System.out.println("artilleryseen");
 				}
 			} else if (EncampmentJobSystem.shieldsLoc != null) {
 				if (!rc.canSenseSquare(EncampmentJobSystem.shieldsLoc) || !(rc.senseEncampmentSquares(EncampmentJobSystem.shieldsLoc, 0, rc.getTeam()).length > 0)) {
