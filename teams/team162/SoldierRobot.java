@@ -72,24 +72,26 @@ public class SoldierRobot extends BaseRobot {
 		
 		// TODO: this will fuck up if we ever build artillery for non-nuke bots
 		// LEARN THE STRATEGY
-		Message message = BroadcastSystem.read(ChannelType.STRATEGY);
-		if (message.isValid && message.body < Strategy.values().length && message.body >= 0) {
-			strategy = Strategy.values()[message.body];
-		} else {
-			// we couldn't read the strategy channel
-			MapLocation[] alliedEncampmentSquares = rc.senseAlliedEncampmentSquares();
-			if (alliedEncampmentSquares.length == 0) {
-				strategy = Strategy.ECON;
-			} else {
-				Robot robot = (Robot) rc.senseObjectAtLocation(alliedEncampmentSquares[0]);
-				RobotInfo robotInfo = rc.senseRobotInfo(robot);
-				if (robotInfo.type == RobotType.ARTILLERY) {
-					strategy = Strategy.NUKE;
-				} else {
-					strategy = Strategy.ECON;
-				}
-			}
-		}
+//		Message message = BroadcastSystem.read(ChannelType.STRATEGY);
+//		if (message.isValid && message.body < Strategy.values().length && message.body >= 0) {
+//			strategy = Strategy.values()[message.body];
+//		} else {
+//			// we couldn't read the strategy channel
+//			MapLocation[] alliedEncampmentSquares = rc.senseAlliedEncampmentSquares();
+//			if (alliedEncampmentSquares.length == 0) {
+//				strategy = Strategy.ECON;
+//			} else {
+//				Robot robot = (Robot) rc.senseObjectAtLocation(alliedEncampmentSquares[0]);
+//				RobotInfo robotInfo = rc.senseRobotInfo(robot);
+//				if (robotInfo.type == RobotType.ARTILLERY) {
+//					strategy = Strategy.NUKE;
+//				} else {
+//					strategy = Strategy.ECON;
+//				}
+//			}
+//		}
+		
+		strategy = Strategy.ECON;
 		
 //		rc.setIndicatorString(2, strategy.toString());
 		
@@ -97,7 +99,21 @@ public class SoldierRobot extends BaseRobot {
 		
 		rSquared = DataCache.rushDistSquared / 4;
 		
-		initializeMining();
+		initializeMining(); // TODO: do we really need every soldier to do this?
+		
+		// If this soldier is just born, and we're in ALL_IN mode, then charge up at shields and then go to the fight
+		if (move_out_round == 10000) {
+			Message message = BroadcastSystem.read(ChannelType.MOVE_OUT);
+			if (message.isValid) {
+				move_out_round = message.body;
+			}
+		}
+		
+		if (Clock.getRoundNum() > move_out_round) {
+			// if we're in all-in mode, then we're a reinforcement
+			// since we're a reinforcement, we should go to the shields if it exists and then go to battle
+			soldierState = SoldierState.EXPRESS_CHARGE_SHIELDS;
+		}
 	}
 	
 	
@@ -105,7 +121,7 @@ public class SoldierRobot extends BaseRobot {
 	public void run() {
 		try {
 			rc.setIndicatorString(0, soldierState.toString());
-			rc.setIndicatorString(1, Integer.toString(move_out_round));
+//			rc.setIndicatorString(1, Integer.toString(move_out_round));
 //			rc.setIndicatorString(2, Integer.toString(move_out_round));
 			
 			DataCache.updateRoundVariables();
@@ -124,6 +140,7 @@ public class SoldierRobot extends BaseRobot {
 				if (!shieldExists() && soldierState != SoldierState.ALL_IN) {
 					Message retreatMsg = BroadcastSystem.read(ChannelType.RETREAT_CHANNEL);
 					if (retreatMsg.isValid && retreatMsg.body == Constants.RETREAT) { 
+//						rc.setIndicatorString(1, "shouldn't get here");
 						soldierState = SoldierState.RETREAT;
 						System.out.println("retreat");
 					}
@@ -144,15 +161,18 @@ public class SoldierRobot extends BaseRobot {
 						enemyNukeHalfDone = true;
 					}
 				}
-				if (enemyNukeHalfDone && !ourNukeHalfDone && soldierState != SoldierState.ALL_IN ) {
+				if (enemyNukeHalfDone && !ourNukeHalfDone && soldierState != SoldierState.ALL_IN && soldierState != SoldierState.EXPRESS_CHARGE_SHIELDS) {
 //					soldierState = SoldierState.ALL_IN;
 //					BroadcastSystem.write(ChannelType.MOVE_OUT, Clock.getRoundNum() + 100);
+//					rc.setIndicatorString(1, "do we get in here");
 					if (move_out_round <= Clock.getRoundNum()) {
 						soldierState = SoldierState.ALL_IN;
 					} else {
 						soldierState = SoldierState.RALLYING;
 					}
 				}
+				
+//				rc.setIndicatorString(0, soldierState.toString());
 				
 				switch (soldierState) {
 				case NEW:
@@ -167,6 +187,15 @@ public class SoldierRobot extends BaseRobot {
 					} else {
 						nextSoldierState = SoldierState.RALLYING;
 						rallyingCode();
+					}
+					break;
+				case EXPRESS_CHARGE_SHIELDS:
+					if (shieldExists()) {
+						expressChargeShieldsCode();
+					} else {
+//						rc.setIndicatorString(1, "shouldn't get here");
+						nextSoldierState = SoldierState.ALL_IN;
+						allInCode();
 					}
 					break;
 				case MINING:
@@ -203,10 +232,13 @@ public class SoldierRobot extends BaseRobot {
 			
 			double currHealth = rc.getEnergon();
 			
+			
 			boolean artillerySeen = reportArtillerySighting(currHealth);
-			if (artillerySeen && !shieldExists()) {
-				soldierState = SoldierState.RETREAT;
-				BroadcastSystem.write(ChannelType.RETREAT_CHANNEL, Constants.RETREAT);
+			if (artillerySeen && !shieldExists()) { // if we see artillery and we're near their base, retreat
+				if (currentLocation.distanceSquaredTo(DataCache.enemyHQLocation) < 0.16 * DataCache.rushDistSquared) {
+					soldierState = SoldierState.RETREAT;
+					BroadcastSystem.write(ChannelType.RETREAT_CHANNEL, Constants.RETREAT);
+				}
 			}
 			
 			healthLastTurn = currHealth;
@@ -416,7 +448,7 @@ public class SoldierRobot extends BaseRobot {
 				nextSoldierState = SoldierState.PUSHING;
 				pushingCode();
 			} else {
-				mineDensity = rc.senseMineLocations(findMidPoint(), rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+				mineDensity = findMineDensity();
 				shieldsCutoff = (int) (DataCache.rushDist + 3 * (mineDensity * DataCache.rushDist)) + 50;
 				if (rc.getShields() < shieldsCutoff - 50 && shieldExists()) {
 //					rc.setIndicatorString(2, "lower bound: " + (shieldsCutoff-50));
@@ -424,16 +456,23 @@ public class SoldierRobot extends BaseRobot {
 					nextSoldierState = SoldierState.CHARGE_SHIELDS;
 					chargeShieldsCode();
 				} else {
-					boolean layedMine = false;
-					if (rc.senseMine(currentLocation) == null) {
-						if (rc.isActive() && Util.Random() < 0.1) {
-							rc.layMine();
-							layedMine = true;
+					if (rc.senseEncampmentSquare(currentLocation) && currentLocation.distanceSquaredTo(DataCache.enemyHQLocation) < 0.55 * DataCache.rushDistSquared ) {
+						if (rc.getTeamPower() > rc.senseCaptureCost() && Util.Random() < 0.5) {
+							rc.captureEncampment(RobotType.ARTILLERY);
+						}
+					} else {
+						boolean layedMine = false;
+						if (rc.senseMine(currentLocation) == null) {
+							if (rc.isActive() && Util.Random() < 0.1) {
+								rc.layMine();
+								layedMine = true;
+							}
+						}
+						if (!layedMine) {
+							NavSystem.goToLocation(rallyPoint);
 						}
 					}
-					if (!layedMine) {
-						NavSystem.goToLocation(rallyPoint);
-					}
+					
 				}
 			}
 //		}
@@ -444,6 +483,9 @@ public class SoldierRobot extends BaseRobot {
 			nextSoldierState = SoldierState.RALLYING;
 			BroadcastSystem.write(ChannelType.RETREAT_CHANNEL, 0);
 			rallyingCode();
+		} else if (DataCache.numAlliedSoldiers >= Constants.FIGHTING_NOT_ENOUGH_ALLIED_SOLDIERS) {
+			nextSoldierState = SoldierState.FIGHTING;
+			fightingCode();
 		} else {
 			NavSystem.moveCloserFavorNoMines(rallyPoint);
 		}
@@ -666,7 +708,7 @@ public class SoldierRobot extends BaseRobot {
 					NavSystem.goToLocation(shieldQueueLocation);
 				} else {
 					// already charging
-					mineDensity = rc.senseMineLocations(findMidPoint(), rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+					mineDensity = findMineDensity();
 					shieldsCutoff = (int) (DataCache.rushDist + 3 * (mineDensity * DataCache.rushDist)) + 50;
 //					rc.setIndicatorString(1, "high cutoff: " + Integer.toString(shieldsCutoff));
 					if (rc.getShields() > shieldsCutoff) {
@@ -681,6 +723,35 @@ public class SoldierRobot extends BaseRobot {
 					}
 				}
 				//			}
+			}
+		}
+	}
+	
+	public void expressChargeShieldsCode() throws GameActionException {		
+		// find an empty space next to the shields encampment
+		int distanceSquaredToShields = rc.getLocation().distanceSquaredTo(shieldLocation);
+//		rc.setIndicatorString(2, "distance: " + distanceSquaredToShields);
+		if (distanceSquaredToShields > 2) {
+			// not charging yet
+			for (int i = 8; --i >= 0; ) {
+				// Check to see if it's empty
+				MapLocation iterLocation = shieldLocation.add(DataCache.directionArray[i]);
+				if (rc.senseObjectAtLocation(iterLocation) == null) {
+					// Oh, there's an empty space! let's go to it
+					NavSystem.goToLocation(iterLocation);
+					return;
+				}
+			}
+			// we found the shields encampment, but there are no empty spaces, so wait at the queue location
+			//					NavSystem.goToLocation(EncampmentJobSystem.shieldsQueueLoc);
+			NavSystem.goToLocation(shieldQueueLocation);
+		} else {
+			// already charging
+			shieldsCutoff = DataCache.rushDist + 50;
+//					rc.setIndicatorString(1, "high cutoff: " + Integer.toString(shieldsCutoff));
+			if (rc.getShields() > shieldsCutoff) {
+				nextSoldierState = SoldierState.ALL_IN;
+				allInCode();
 			}
 		}
 	}
@@ -1173,6 +1244,27 @@ public class SoldierRobot extends BaseRobot {
 			}
 			
 		}
+	}
+	
+	private double findMineDensity() {
+		int ourX = DataCache.ourHQLocation.x;
+		int ourY = DataCache.ourHQLocation.y;
+		int enemyX = DataCache.enemyHQLocation.x;
+		int enemyY = DataCache.enemyHQLocation.y;
+		
+		MapLocation pt1 = new MapLocation(ourX + (enemyX-ourX)/8, ourY + (enemyY-ourY)/8);
+		MapLocation pt2 = new MapLocation(ourX + 3*(enemyX-ourX)/8, ourY + 3*(enemyY-ourY)/8);
+		MapLocation pt3 = new MapLocation(ourX + 5*(enemyX-ourX)/8, ourY + 5*(enemyY-ourY)/8);
+		MapLocation pt4 = new MapLocation(ourX + 7*(enemyX-ourX)/8, ourY + 7*(enemyY-ourY)/8);
+
+		int rSquared = DataCache.rushDistSquared / 64;
+		double mineDensity1 = rc.senseMineLocations(pt1, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+		double mineDensity2 = rc.senseMineLocations(pt2, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+		double mineDensity3 = rc.senseMineLocations(pt3, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+		double mineDensity4 = rc.senseMineLocations(pt4, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+
+		return (mineDensity1 + mineDensity2 + mineDensity3 + mineDensity4)/4.0;
+
 	}
 	
 	

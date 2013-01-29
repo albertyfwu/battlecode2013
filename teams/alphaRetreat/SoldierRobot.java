@@ -1232,7 +1232,7 @@ public class SoldierRobot extends BaseRobot {
 					NavSystem.setupGetCloser(EncampmentJobSystem.goalLoc);
 					NavSystem.tryMoveCloser();
 				} else {
-					NavSystem.goToLocation(EncampmentJobSystem.goalLoc);
+					NavSystem.moveCloserFavorNoMines(EncampmentJobSystem.goalLoc);
 //					if (NavSystem.navMode == NavMode.NEUTRAL){
 //						NavSystem.setupSmartNav(EncampmentJobSystem.goalLoc);
 //						NavSystem.followWaypoints();

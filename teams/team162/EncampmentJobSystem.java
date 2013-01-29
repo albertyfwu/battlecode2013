@@ -82,9 +82,7 @@ public class EncampmentJobSystem {
 			hardEncampmentLimit = 2;
 		}
 		
-		MapLocation midPoint = findMidPoint();
-		int rSquared = DataCache.rushDistSquared / 4;
-		double mineDensity = rc.senseMineLocations(midPoint, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+		double mineDensity = findMineDensity();
 		double adjRushDist = DataCache.rushDist * (1 + 2 * mineDensity);
 		if (adjRushDist > 100) {
 			supGenRatio = 0.67;
@@ -127,7 +125,7 @@ public class EncampmentJobSystem {
 						// broadcast job opening
 						encampmentChannels[i] = encampmentJobChannelList[i];
 
-						postJob(EncampmentJobSystem.encampmentChannels[i], encampmentJobs[i], getRobotTypeToBuild());
+						postJob(EncampmentJobSystem.encampmentChannels[i], encampmentJobs[i], getRobotTypeToBuild(closestEncampments[i]));
 					}
 
 				} else {
@@ -151,7 +149,7 @@ public class EncampmentJobSystem {
 				// broadcast job opening
 				encampmentChannels[i] = encampmentJobChannelList[i];
 				
-				postJob(EncampmentJobSystem.encampmentChannels[i], encampmentJobs[i], getRobotTypeToBuild());
+				postJob(EncampmentJobSystem.encampmentChannels[i], encampmentJobs[i], getRobotTypeToBuild(closestEncampments[i]));
 			}
 		}
 		
@@ -319,7 +317,7 @@ public class EncampmentJobSystem {
 			
 		}
 		
-		rc.setIndicatorString(1, "not shield");
+//		rc.setIndicatorString(1, "not shield");
 		
 		for (int i = encampmentJobChannelList.length; --i >= 0; ) {
 			channel = encampmentJobChannelList[i];
@@ -672,7 +670,7 @@ public class EncampmentJobSystem {
 					channelIndex = arrayIndex(channel, channelList);
 					if (channelIndex == -1) { // if not already used, use it and post job
 						channelList[i] = channel;
-						int robotTypeToBuild = getRobotTypeToBuild();
+						int robotTypeToBuild = getRobotTypeToBuild(newJobsList[i]);
 						System.out.println("new job: " + robotTypeToBuild);
 						postJob(channel, newJobsList[i], robotTypeToBuild);
 						break channelLoop;
@@ -833,7 +831,7 @@ public class EncampmentJobSystem {
 	}
 	
 	
-	public static int getRobotTypeToBuild() {
+	public static int getRobotTypeToBuild(MapLocation loc) {
 		System.out.println("supcount:" + supCount);
 		System.out.println("genCount:" + genCount);
 		if (robot.strategy == Strategy.NUKE) {
@@ -868,7 +866,7 @@ public class EncampmentJobSystem {
 	 * @throws GameActionException
 	 */
 	public static MapLocation getShieldLocation() throws GameActionException {
-		MapLocation[] possibleShieldLocations = rc.senseEncampmentSquares(DataCache.ourHQLocation, DataCache.rushDistSquared/4, null); 
+		MapLocation[] possibleShieldLocations = rc.senseEncampmentSquares(DataCache.ourHQLocation, DataCache.rushDistSquared/9, null); 
 		int x1 = DataCache.ourHQLocation.x;
 		int y1 = DataCache.ourHQLocation.y;
 		int x2 = DataCache.enemyHQLocation.x;
@@ -933,6 +931,27 @@ public class EncampmentJobSystem {
 		return null;
 		
 		
+	}
+	
+	private static double findMineDensity() {
+		int ourX = DataCache.ourHQLocation.x;
+		int ourY = DataCache.ourHQLocation.y;
+		int enemyX = DataCache.enemyHQLocation.x;
+		int enemyY = DataCache.enemyHQLocation.y;
+		
+		MapLocation pt1 = new MapLocation(ourX + (enemyX-ourX)/8, ourY + (enemyY-ourY)/8);
+		MapLocation pt2 = new MapLocation(ourX + 3*(enemyX-ourX)/8, ourY + 3*(enemyY-ourY)/8);
+		MapLocation pt3 = new MapLocation(ourX + 5*(enemyX-ourX)/8, ourY + 5*(enemyY-ourY)/8);
+		MapLocation pt4 = new MapLocation(ourX + 7*(enemyX-ourX)/8, ourY + 7*(enemyY-ourY)/8);
+
+		int rSquared = DataCache.rushDistSquared / 64;
+		double mineDensity1 = rc.senseMineLocations(pt1, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+		double mineDensity2 = rc.senseMineLocations(pt2, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+		double mineDensity3 = rc.senseMineLocations(pt3, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+		double mineDensity4 = rc.senseMineLocations(pt4, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+
+		return (mineDensity1 + mineDensity2 + mineDensity3 + mineDensity4)/4.0;
+
 	}
 	
 	/**
