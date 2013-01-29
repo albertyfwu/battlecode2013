@@ -49,7 +49,10 @@ public class EncampmentJobSystem {
 	public static FastLocSet unreachableEncampments = new FastLocSet();
 	public static int numUnreachableEncampments;
 	
-	public static FastLocSet unpreferableEncampments = new FastLocSet();
+	public static MapLocation[] initialNeutralEncLocs;
+	public static FastLocMapDouble encampmentLocScores = new FastLocMapDouble();
+	public static int numEncampmentLocsToInitScoresPerRound;
+	public static int numEncampmentLocsToInitScoresFirstRound;
 	
 	public static RobotType assignedRobotType;
 	public static ChannelType assignedChannel;
@@ -82,6 +85,8 @@ public class EncampmentJobSystem {
 		artCount = 0;
 		hardEncampmentLimit = 2;
 		
+		pathCenter = getPathCenter();
+		
 		double mineDensity = findMineDensity();
 		double adjRushDist = DataCache.rushDist * (1 + 2 * mineDensity);
 		if (adjRushDist > 100) {
@@ -94,7 +99,8 @@ public class EncampmentJobSystem {
 		
 		
 		
-		MapLocation[] allEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, Team.NEUTRAL);
+		
+		initialNeutralEncLocs = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, Team.NEUTRAL);
 		
 		MapLocation[] nearbyEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 9, Team.NEUTRAL);
 		
@@ -106,26 +112,16 @@ public class EncampmentJobSystem {
 				numUnreachableEncampments++;
 			}
 		}
-
-		pathCenter = getPathCenter();
-		int unpreferableRadiusSquared = DataCache.rushDistSquared / 100; // radius is 1/10 of the distance from our HQ to enemy HQ
-		for (int i = allEncampments.length; --i >= 0; ) {
-			MapLocation encLoc = allEncampments[i];
-			// so we don't un-prioritize encampment locations near the middle of the map
-			if (encLoc.distanceSquaredTo(pathCenter) <= unpreferableRadiusSquared) {
-				unpreferableEncampments.add(encLoc);
-			}
-		}		
 		
 
-		int numReachableEncampments = allEncampments.length - numUnreachableEncampments;
+		int numReachableEncampments = initialNeutralEncLocs.length - numUnreachableEncampments;
 		if (numReachableEncampments == 0) {
 			numEncampmentsNeeded = 0;
 		} else {
 			numEncampmentsNeeded = 1;
 		}
 
-		MapLocation[] closestEncampments = getBestEncampmentLocations(DataCache.ourHQLocation, allEncampments, numEncampmentsNeeded);
+		MapLocation[] closestEncampments = getBestEncampmentLocations(DataCache.ourHQLocation, initialNeutralEncLocs, numEncampmentsNeeded);
 
 		for (int i = numEncampmentsNeeded; --i >= 0; ) {
 			// save in list of jobs
@@ -137,6 +133,30 @@ public class EncampmentJobSystem {
 			postJob(EncampmentJobSystem.encampmentChannels[i], encampmentJobs[i], getRobotTypeToBuild(closestEncampments[i]));
 		}
 		
+		numEncampmentLocsToInitScoresPerRound = (int)Math.ceil(initialNeutralEncLocs.length / 10f);
+		numEncampmentLocsToInitScoresFirstRound = initialNeutralEncLocs.length - 9 * numEncampmentLocsToInitScoresPerRound;
+	}
+	
+	/**
+	 * This function is called to initialize encampmentLocScores over the span of 10 rounds
+	 */
+	public static void initializeEncampmentLocScores() {
+		int round = Clock.getRoundNum();
+		// each round we should initialize Math.ceil(L / 10) encampmentLocScores
+		int start;
+		int stop;
+		if (round == 1) {
+			start = initialNeutralEncLocs.length;
+			stop = start - numEncampmentLocsToInitScoresFirstRound;
+		} else {
+			start = initialNeutralEncLocs.length - numEncampmentLocsToInitScoresFirstRound - (round - 2) * numEncampmentLocsToInitScoresPerRound;
+			stop = start - numEncampmentLocsToInitScoresPerRound;
+		}
+		for (int i = start; --i >= stop; ) {
+			MapLocation iterLocation = initialNeutralEncLocs[i];
+			double score = Math.sqrt(iterLocation.distanceSquaredTo(DataCache.ourHQLocation)) - 1.1 * Math.sqrt(iterLocation.distanceSquaredTo(pathCenter));
+			encampmentLocScores.set(iterLocation, score);
+		}
 	}
 	
 	public static MapLocation getPathCenter() {
@@ -777,49 +797,61 @@ public class EncampmentJobSystem {
 	 */
 	public static MapLocation[] getBestEncampmentLocations(MapLocation origin, MapLocation[] allLoc, int k) {
 		MapLocation[] currentTopLocations = new MapLocation[k];
-		int numPreferableLocations = allLoc.length - unpreferableEncampments.getSize();
-		int numUnpreferableLocationsStillNeeded = 0;
-		if (k > numPreferableLocations) {
-			numUnpreferableLocationsStillNeeded = k - numPreferableLocations;
-		}
-		
-		int[] allDistances = new int[allLoc.length];
-		for (int i = allLoc.length; --i >= 0; ) {
-			allDistances[i] = origin.distanceSquaredTo(allLoc[i]);
-		}
 		
 		boolean[] allLocIndex = new boolean[allLoc.length];
 		
-		int runningDist = 1000000;
-		MapLocation runningLoc = null;
-		int runningIndex = 0;
-		for (int j = k; --j >= 0; ) {
-			runningDist = 1000000;
+		if (Clock.getRoundNum() == 0) {
+			int[] allDistances = new int[allLoc.length];
 			for (int i = allLoc.length; --i >= 0; ) {
-				if (allDistances[i] < runningDist && allLocIndex[i] == false && !unreachableEncampments.contains(allLoc[i])) { 
-					// if distances are smaller and it's not unreachable
-					if (!unpreferableEncampments.contains(allLoc[i])) {
-						// if it lies outside our unprioritized circle
-						if (shieldsLoc == null || allLoc[i] != shieldsLoc) { // can't include shield loc
-							runningDist = allDistances[i];
-							runningLoc = allLoc[i];
+				MapLocation iterLocation = allLoc[i];
+				allDistances[i] = origin.distanceSquaredTo(iterLocation);
+			}
+			
+			int bestScore;
+			MapLocation runningLoc = null;
+			int runningIndex = 0;
+			// first round, so be gentle
+			for (int j = k; --j >= 0; ) {
+				bestScore = Integer.MAX_VALUE;
+				for (int i = allLoc.length; --i >= 0; ) {
+					MapLocation iterLocation = allLoc[i];
+					int currentScore = allDistances[i];
+					if (currentScore < bestScore && allLocIndex[i] == false && !unreachableEncampments.contains(iterLocation)) {
+						// if score is better, and the location is not unreachable
+						if (shieldsLoc == null || !iterLocation.equals(shieldsLoc)) {
+							// can't include shieldLoc
+							bestScore = currentScore;
+							runningLoc = iterLocation;
 							runningIndex = i;
-						}
-					} else {
-						if (numUnpreferableLocationsStillNeeded > 0) {
-							// if it lies inside our unprioritized circle
-							if (shieldsLoc == null || allLoc[i] != shieldsLoc) { // can't include shield loc
-								runningDist = allDistances[i];
-								runningLoc = allLoc[i];
-								runningIndex = i;
-							}
-							numUnpreferableLocationsStillNeeded--;
 						}
 					}
 				}
+				currentTopLocations[j] = runningLoc;
+				allLocIndex[runningIndex] = true;
 			}
-			currentTopLocations[j] = runningLoc;
-			allLocIndex[runningIndex] = true;
+		} else {
+			double bestScore;
+			MapLocation runningLoc = null;
+			int runningIndex = 0;
+			// all other rounds; we'll have fully initialized the encloc array, so we can just call encampmentLocScores.get()
+			for (int j = k; --j >= 0; ) {
+				bestScore = Double.MAX_VALUE;
+				for (int i = allLoc.length; --i >= 0; ) {
+					MapLocation iterLocation = allLoc[i];
+					double currentScore = encampmentLocScores.get(iterLocation);
+					if (currentScore < bestScore && allLocIndex[i] == false && !unreachableEncampments.contains(iterLocation)) {
+						// if score is better, and the location is not unreachable
+						if (shieldsLoc == null || !iterLocation.equals(shieldsLoc)) {
+							// can't include shieldLoc
+							bestScore = currentScore;
+							runningLoc = iterLocation;
+							runningIndex = i;
+						}
+					}
+				}
+				currentTopLocations[j] = runningLoc;
+				allLocIndex[runningIndex] = true;
+			}
 		}
 		return currentTopLocations;
 	}
@@ -827,16 +859,16 @@ public class EncampmentJobSystem {
 	
 	public static int getRobotTypeToBuild(MapLocation loc) {
 		if (supCount < 2 && genCount == 0) {
-			System.out.println("supplier");
+//			System.out.println("supplier");
 
 			return 0; // supplier
 		}
 		if (((double) supCount)/(supCount + genCount) > supGenRatio) {
-			System.out.println("generator");
+//			System.out.println("generator");
 
 			return 1; // generator
 		} else {
-			System.out.println("supplier");
+//			System.out.println("supplier");
 
 			return 0; // supplier
 		}		
