@@ -457,7 +457,7 @@ public class SoldierRobot extends BaseRobot {
 					chargeShieldsCode();
 				} else {
 					if (rc.senseEncampmentSquare(currentLocation) && currentLocation.distanceSquaredTo(DataCache.enemyHQLocation) < 0.55 * DataCache.rushDistSquared ) {
-						if (rc.getTeamPower() > rc.senseCaptureCost() && Util.Random() < 0.5) {
+						if (rc.getTeamPower() > rc.senseCaptureCost() && Util.Random() < 0.5 && rc.isActive()) {
 							rc.captureEncampment(RobotType.ARTILLERY);
 						}
 					} else {
@@ -498,7 +498,14 @@ public class SoldierRobot extends BaseRobot {
 					nextSoldierState = SoldierState.PUSHING;
 					pushingCode();
 				} else {
-					if (Clock.getRoundNum() >= 200) {
+					Message msg;
+					if (Clock.getRoundNum() % Constants.CHANNEL_CYCLE == 0 && Clock.getRoundNum() > 0) {
+						msg = BroadcastSystem.readLastCycle(ChannelType.ARTILLERY_SEEN);
+					} else {
+						msg = BroadcastSystem.read(ChannelType.ARTILLERY_SEEN);
+					}
+					
+					if (Clock.getRoundNum() >= 200 || msg.body == Constants.TRUE) {
 						nextSoldierState = SoldierState.RALLYING;
 						rallyingCode();
 					} else {

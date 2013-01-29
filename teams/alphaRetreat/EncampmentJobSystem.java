@@ -710,7 +710,7 @@ public class EncampmentJobSystem {
 //		System.out.println("numUnreachableEncampments: " + numUnreachableEncampments);
 		
 		
-		
+		rc.setIndicatorString(1, Integer.toString(Clock.getBytecodeNum()));
 //		System.out.println("Before update: " + Clock.getBytecodeNum());
 		MapLocation[] neutralEncampments;
 		if (robot.strategy == Strategy.NUKE){
@@ -724,13 +724,18 @@ public class EncampmentJobSystem {
 			int numReachableEncampments = neutralEncampments.length - numUnreachableEncampments;
 			if (numReachableEncampments == 0) {
 				numEncampmentsNeeded = 0;
-			} else if (numReachableEncampments < 10) {
-				numEncampmentsNeeded = 1;
-			} else if (numReachableEncampments < 30) {
-				numEncampmentsNeeded = 2;
-			} else {
+			} else if (DataCache.rushDist < 70) {
 				numEncampmentsNeeded = 3;
+			} else {
+				numEncampmentsNeeded = 4;
 			}
+//			} else if (numReachableEncampments < 10) {
+//				numEncampmentsNeeded = 1;
+//			} else if (numReachableEncampments < 30) {
+//				numEncampmentsNeeded = 2;
+//			} else {
+//				numEncampmentsNeeded = 3;
+//			}
 		}
 		
 		if (numEncampmentsNeeded > neutralEncampments.length){
@@ -766,6 +771,8 @@ public class EncampmentJobSystem {
 				}
 			}
 		}
+		
+		rc.setIndicatorString(2, Integer.toString(Clock.getBytecodeNum()));
 //		System.out.println("After update: " + Clock.getRoundNum());
 	}
 
