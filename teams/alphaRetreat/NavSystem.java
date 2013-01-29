@@ -805,6 +805,16 @@ public class NavSystem {
 				}
 			}
 		}
+		
+		for (int i = 5; --i >=0; ) {
+			for (int j = 5; --j >= 0; ) {
+				int yLoc = myLoc.y + 2-i;
+				int xLoc = myLoc.x + 2-j;
+				if (xLoc >= rc.getMapWidth() || xLoc < 0 || yLoc >= rc.getMapHeight() || yLoc < 0) {
+					array[i][j] = 100;
+				}
+			}
+		}
 		return array;
 	}
 }

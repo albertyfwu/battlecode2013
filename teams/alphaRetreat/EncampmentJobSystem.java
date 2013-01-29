@@ -86,10 +86,9 @@ public class EncampmentJobSystem {
 		double adjRushDist = DataCache.rushDist * (1 + 2 * mineDensity);
 		if (adjRushDist > 100) {
 			supGenRatio = 0.67;
-			System.out.println("supGenRatio: 0.67");
+
 		} else {
 			supGenRatio = 0.8;
-			System.out.println("supGenRatio: 0.8");
 
 		}
 		
@@ -118,6 +117,7 @@ public class EncampmentJobSystem {
 			}
 		}		
 		
+
 		int numReachableEncampments = allEncampments.length - numUnreachableEncampments;
 		if (numReachableEncampments == 0) {
 			numEncampmentsNeeded = 0;
@@ -261,9 +261,9 @@ public class EncampmentJobSystem {
 			onOrOff = parseOnOrOff(message.body);
 			isTaken = parseTaken(message.body);
 			
-			String s = "onOrOff: " + onOrOff + " isTaken: " + isTaken + " location: " + parseLocation(message.body) + " robType: " + parseRobotType(message.body);
+//			String s = "onOrOff: " + onOrOff + " isTaken: " + isTaken + " location: " + parseLocation(message.body) + " robType: " + parseRobotType(message.body);
 			
-			rc.setIndicatorString(0, s);
+//			rc.setIndicatorString(0, s);
 			
 			if (onOrOff == 1 && isTaken == 0) { //if job is on and untaken
 				goalLoc = parseLocation(message.body);
@@ -477,7 +477,6 @@ public class EncampmentJobSystem {
 			postCleanUp(channel); // cleanup
 //			System.out.println("locy: " + locY + " locx: " + locX);
 			if (unreachableBit == 1) { // if unreachable
-//				System.out.println("unreachable!!!");
 				unreachableEncampments.add(new MapLocation(locY, locX));
 				numUnreachableEncampments++;
 				return EncampmentJobMessageType.FAILURE;
@@ -504,6 +503,7 @@ public class EncampmentJobSystem {
 			int unreachableBit = message.body >> 16;
 			postCleanUp(shieldCompChannel); // cleanup
 			if (unreachableBit == 1) { // if unreachable
+				System.out.println("unreachable!!!");
 				unreachableEncampments.add(new MapLocation(locX, locY));
 				numUnreachableEncampments++;
 				// update shieldLocation and broadcast it
@@ -587,7 +587,6 @@ public class EncampmentJobSystem {
 			Message msgLastCycle = BroadcastSystem.readLastCycle(channel);
 //			System.out.println("isValid: " + msgLastCycle.isValid);
 //			System.out.println("body: " + msgLastCycle.body);
-
 			if (msgLastCycle.isValid && msgLastCycle.body != maxMessage) {
 				// check if the job was on and was untaken
 				if (parseOnOrOff(msgLastCycle.body) == 1) {
@@ -719,6 +718,7 @@ public class EncampmentJobSystem {
 			numEncampmentsNeeded = 0;
 		}
 
+
 		if (numEncampmentsNeeded != 0) {
 			MapLocation[] newJobsList = getBestEncampmentLocations(DataCache.ourHQLocation, neutralEncampments, numEncampmentsNeeded);
 //			System.out.println("new jobs list: " + Clock.getBytecodeNum());
@@ -729,7 +729,6 @@ public class EncampmentJobSystem {
 				EncampmentJobSystem.encampmentJobs[i] = newJobsList[i];
 //				System.out.println("encampmentJobs.x: " + encampmentJobs[i].x);
 //				System.out.println("encampmentJobs.y: " + encampmentJobs[i].y);
-
 				EncampmentJobSystem.encampmentChannels[i] = channelList[i];
 			}
 
@@ -739,7 +738,6 @@ public class EncampmentJobSystem {
 			for (int i = encampmentJobChannelList.length; --i >= 0; ) {
 				ChannelType channel = encampmentJobChannelList[i];
 				if (arrayIndex(channel, EncampmentJobSystem.encampmentChannels) == -1) { // if unused
-//					System.out.println("channel overwrite: " + channel.toString());
 					BroadcastSystem.writeMaxMessage(channel); // reset the channel
 				}
 			}
