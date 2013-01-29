@@ -574,12 +574,13 @@ public class NavSystem {
 		return false;
 	}
 	
-	public static void moveCloserFavorNoMines() throws GameActionException {
+	public static boolean moveCloserFavorNoMines() throws GameActionException {
 		Direction dir = rc.getLocation().directionTo(destination);
 		double distance = rc.getLocation().distanceSquaredTo(destination);
 		double currDist;
 		if (rc.canMove(dir) && !hasBadMine(rc.getLocation().add(dir))) {
 			rc.move(dir);
+			return true;
 		} else {
 			Direction bestDir = dir;
 			Direction currentDir = dir;
@@ -597,7 +598,7 @@ public class NavSystem {
 				}
 			}
 			
-			NavSystem.moveOrDefuse(bestDir);
+			return NavSystem.moveOrDefuse(bestDir);
 		}
 	}
 	
@@ -629,7 +630,7 @@ public class NavSystem {
 	}
 	
 	public static void tryMoveCloser() throws GameActionException {
-		boolean moved = NavSystem.moveCloser();
+		boolean moved = NavSystem.moveCloserFavorNoMines();
 //		System.out.println("moved: " + moved);
 		if (moved == false) {	
 			NavSystem.setupBFSMode(destination);

@@ -458,7 +458,9 @@ public class SoldierRobot extends BaseRobot {
 				} else {
 					if (rc.senseEncampmentSquare(currentLocation) && currentLocation.distanceSquaredTo(DataCache.enemyHQLocation) < 0.55 * DataCache.rushDistSquared ) {
 						if (rc.getTeamPower() > rc.senseCaptureCost() && Util.Random() < 0.5) {
-							rc.captureEncampment(RobotType.ARTILLERY);
+							if (rc.isActive()) {
+								rc.captureEncampment(RobotType.ARTILLERY);
+							}
 						}
 					} else {
 						boolean layedMine = false;
@@ -651,17 +653,19 @@ public class SoldierRobot extends BaseRobot {
 			GameObject object = rc.senseObjectAtLocation(shieldLocation);
 			if (object != null && rc.senseRobotInfo((Robot) object).type == RobotType.SHIELDS) {
 				// set the shieldQueueLocation						
-				int dx = DataCache.enemyHQLocation.x - DataCache.ourHQLocation.x;
-				int dy = DataCache.enemyHQLocation.y - DataCache.ourHQLocation.y;
+				int dx = shieldLocation.x - DataCache.ourHQLocation.x;
+				int dy = shieldLocation.y - DataCache.ourHQLocation.y;
 				
-				double vectorMag = Math.sqrt(dx*dx + dy*dy);
-				double dxNorm = dx/vectorMag;
-				double dyNorm = dy/vectorMag;
+				double maxDxDy = Math.max(Math.abs(dx), Math.abs(dy));
 				
-				int centerx = (int) (shieldLocation.x - 10 * dxNorm);
-				int centery = (int) (shieldLocation.y - 10 * dyNorm);
+				double dxNorm = dx / maxDxDy;
+				double dyNorm = dy / maxDxDy;
+				
+				int centerx = (int) (shieldLocation.x - 5 * dxNorm);
+				int centery = (int) (shieldLocation.y - 5 * dyNorm);
 				
 				shieldQueueLocation = new MapLocation(centerx, centery);
+				
 				rallyPoint = shieldQueueLocation;
 						
 				return true;

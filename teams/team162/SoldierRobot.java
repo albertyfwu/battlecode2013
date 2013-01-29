@@ -458,7 +458,9 @@ public class SoldierRobot extends BaseRobot {
 				} else {
 					if (rc.senseEncampmentSquare(currentLocation) && currentLocation.distanceSquaredTo(DataCache.enemyHQLocation) < 0.55 * DataCache.rushDistSquared ) {
 						if (rc.getTeamPower() > rc.senseCaptureCost() && Util.Random() < 0.5) {
-							rc.captureEncampment(RobotType.ARTILLERY);
+							if (rc.isActive()) {
+								rc.captureEncampment(RobotType.ARTILLERY);
+							}
 						}
 					} else {
 						boolean layedMine = false;
@@ -1232,7 +1234,7 @@ public class SoldierRobot extends BaseRobot {
 					NavSystem.setupGetCloser(EncampmentJobSystem.goalLoc);
 					NavSystem.tryMoveCloser();
 				} else {
-					NavSystem.goToLocation(EncampmentJobSystem.goalLoc);
+					NavSystem.moveCloserFavorNoMines(EncampmentJobSystem.goalLoc);
 //					if (NavSystem.navMode == NavMode.NEUTRAL){
 //						NavSystem.setupSmartNav(EncampmentJobSystem.goalLoc);
 //						NavSystem.followWaypoints();

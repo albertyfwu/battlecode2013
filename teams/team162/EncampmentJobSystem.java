@@ -740,7 +740,7 @@ public class EncampmentJobSystem {
 		if (DataCache.numAlliedEncampments >= hardEncampmentLimit || robot.enemyNukeHalfDone == true) {
 			numEncampmentsNeeded = 0;
 		}
-		
+
 		if (numEncampmentsNeeded != 0) {
 			MapLocation[] newJobsList = getClosestMapLocations(DataCache.ourHQLocation, neutralEncampments, numEncampmentsNeeded);
 //			System.out.println("new jobs list: " + Clock.getBytecodeNum());
@@ -800,6 +800,7 @@ public class EncampmentJobSystem {
 	 * This still costs lots of bytecodes
 	 */
 	public static MapLocation[] getClosestMapLocations(MapLocation origin, MapLocation[] allLoc, int k) {
+		System.out.println("start: " + Clock.getBytecodeNum());
 		MapLocation[] currentTopLocations = new MapLocation[k];
 
 		int[] allDistances = new int[allLoc.length];
@@ -827,6 +828,7 @@ public class EncampmentJobSystem {
 			currentTopLocations[j] = runningLoc;
 			allLocIndex[runningIndex] = 1;
 		}
+		System.out.println("end: " + Clock.getBytecodeNum());
 		return currentTopLocations;
 	}
 	
