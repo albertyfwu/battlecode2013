@@ -141,21 +141,21 @@ public class EncampmentJobSystem {
 	 * This function is called to initialize encampmentLocScores over the span of 10 rounds
 	 */
 	public static void initializeEncampmentLocScores() {
-		int round = Clock.getRoundNum();
 		// each round we should initialize Math.ceil(L / 10) encampmentLocScores
 		int start;
 		int stop;
-		if (round == 1) {
+		if (Clock.getRoundNum() == 1) {
 			start = initialNeutralEncLocs.length;
 			stop = start - numEncampmentLocsToInitScoresFirstRound;
 		} else {
-			start = initialNeutralEncLocs.length - numEncampmentLocsToInitScoresFirstRound - (round - 2) * numEncampmentLocsToInitScoresPerRound;
+			start = initialNeutralEncLocs.length - numEncampmentLocsToInitScoresFirstRound - (Clock.getRoundNum() - 2) * numEncampmentLocsToInitScoresPerRound;
 			stop = start - numEncampmentLocsToInitScoresPerRound;
 		}
 		for (int i = start; --i >= stop; ) {
 			MapLocation iterLocation = initialNeutralEncLocs[i];
-//			double score = Math.sqrt(iterLocation.distanceSquaredTo(DataCache.ourHQLocation)) - 1.1 * Math.sqrt(iterLocation.distanceSquaredTo(pathCenter));
-			double score = DataCache.ourHQLocation.distanceSquaredTo(iterLocation);
+			double score = Math.sqrt(iterLocation.distanceSquaredTo(DataCache.ourHQLocation)) - 1.1 * Math.sqrt(iterLocation.distanceSquaredTo(pathCenter));
+//			double score = DataCache.ourHQLocation.distanceSquaredTo(iterLocation);
+//			double score = 0;
 			encampmentLocScores.set(iterLocation, score);
 		}
 	}
