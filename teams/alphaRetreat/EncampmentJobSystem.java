@@ -16,6 +16,8 @@ public class EncampmentJobSystem {
 	public static RobotController rc;
 	public static MapLocation goalLoc;
 	
+	public static MapLocation pathCenter;
+	
 	public static MapLocation shieldsLoc; // location of the shields encampment
 	public static ChannelType shieldChannel = ChannelType.ENCSHIELD;
 	public static ChannelType shieldCompChannel = ChannelType.COMPSHIELD;
@@ -44,8 +46,10 @@ public class EncampmentJobSystem {
 
 	public static int numEncampmentsNeeded; // must be less than encampmentJobChannelList.length
 	
-	public static FastLocSet unreachableEncampments = new FastLocSet();;
+	public static FastLocSet unreachableEncampments = new FastLocSet();
 	public static int numUnreachableEncampments;
+	
+	public static FastLocSet unpreferableEncampments = new FastLocSet();
 	
 	public static RobotType assignedRobotType;
 	public static ChannelType assignedChannel;
@@ -96,12 +100,22 @@ public class EncampmentJobSystem {
 		
 		for (int i = nearbyEncampments.length; --i >= 0; ) {
 			MapLocation encLoc = nearbyEncampments[i];
+			// so we don't lock ourselves in
 			if (encLoc.x == DataCache.ourHQLocation.x){
 				unreachableEncampments.add(encLoc);
 				numUnreachableEncampments++;
 			}
 		}
-		
+
+		pathCenter = getPathCenter();
+		int unpreferableRadiusSquared = DataCache.rushDistSquared / 100; // radius is 1/10 of the distance from our HQ to enemy HQ
+		for (int i = allEncampments.length; --i >= 0; ) {
+			MapLocation encLoc = allEncampments[i];
+			// so we don't un-prioritize encampment locations near the middle of the map
+			if (encLoc.distanceSquaredTo(pathCenter) <= unpreferableRadiusSquared) {
+				unpreferableEncampments.add(encLoc);
+			}
+		}		
 		
 
 		int numReachableEncampments = allEncampments.length - numUnreachableEncampments;
@@ -123,6 +137,14 @@ public class EncampmentJobSystem {
 			postJob(EncampmentJobSystem.encampmentChannels[i], encampmentJobs[i], getRobotTypeToBuild(closestEncampments[i]));
 		}
 		
+	}
+	
+	public static MapLocation getPathCenter() {
+		int x1 = DataCache.ourHQLocation.x;
+		int y1 = DataCache.ourHQLocation.y;
+		int x2 = DataCache.enemyHQLocation.x;
+		int y2 = DataCache.enemyHQLocation.y;
+		return new MapLocation((x1+x2)/2, (y1+y2)/2);
 	}
 	
 	public static void updateShieldJob() {
@@ -567,18 +589,20 @@ public class EncampmentJobSystem {
 //			System.out.println("body: " + msgLastCycle.body);
 			if (msgLastCycle.isValid && msgLastCycle.body != maxMessage) {
 				// check if the job was on and was untaken
-				if (parseOnOrOff(msgLastCycle.body) == 1 && parseTaken(msgLastCycle.body) == 0) {
-//					System.out.println("hello!!!!!");
-//					System.out.println("channel: " + channel.toString());
-					int robotTypeToBuild = parseRobotTypeInt(msgLastCycle.body);
-					postJobWithoutIncrementing(channel, parseLocation(msgLastCycle.body), robotTypeToBuild);
-				} else if (parseOnOrOff(msgLastCycle.body) == 1 && parseTaken(msgLastCycle.body) == 1) {
-					int postedRoundNum = parseRoundNum(msgLastCycle.body);
-					if ((16+Clock.getRoundNum() - postedRoundNum)%16 >= 4) { // it hasn't been written on for 5 turns
-//						System.out.println("hello!!!!!");
-//						System.out.println("channel: " + channel.toString());
+				if (parseOnOrOff(msgLastCycle.body) == 1) {
+					if (parseTaken(msgLastCycle.body) == 0) {
+	//					System.out.println("hello!!!!!");
+	//					System.out.println("channel: " + channel.toString());
 						int robotTypeToBuild = parseRobotTypeInt(msgLastCycle.body);
 						postJobWithoutIncrementing(channel, parseLocation(msgLastCycle.body), robotTypeToBuild);
+					} else if (parseTaken(msgLastCycle.body) == 1) {
+						int postedRoundNum = parseRoundNum(msgLastCycle.body);
+						if (((16+Clock.getRoundNum() - postedRoundNum) & 0xF) >= 4) { // it hasn't been written on for 5 turns
+	//						System.out.println("hello!!!!!");
+	//						System.out.println("channel: " + channel.toString());
+							int robotTypeToBuild = parseRobotTypeInt(msgLastCycle.body);
+							postJobWithoutIncrementing(channel, parseLocation(msgLastCycle.body), robotTypeToBuild);
+						}
 					}
 				}
 			}
@@ -672,13 +696,7 @@ public class EncampmentJobSystem {
 	 * @throws GameActionException
 	 */
 	public static void updateJobs() throws GameActionException {
-		
-//		System.out.println("numUnreachableEncampments: " + numUnreachableEncampments);
-		
-		
-//		System.out.println("Before update: " + Clock.getBytecodeNum());
-		MapLocation[] neutralEncampments;
-		neutralEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, Team.NEUTRAL);
+		MapLocation[] neutralEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, Team.NEUTRAL);
 		
 		if (Clock.getRoundNum() > 50) {
 			hardEncampmentLimit = Integer.MAX_VALUE;
@@ -690,13 +708,6 @@ public class EncampmentJobSystem {
 			} else {
 				numEncampmentsNeeded = 4;
 			}
-//			} else if (numReachableEncampments < 10) {
-//				numEncampmentsNeeded = 1;
-//			} else if (numReachableEncampments < 30) {
-//				numEncampmentsNeeded = 2;
-//			} else {
-//				numEncampmentsNeeded = 3;
-//			}
 		}
 		
 		if (numEncampmentsNeeded > neutralEncampments.length){
@@ -731,8 +742,6 @@ public class EncampmentJobSystem {
 				}
 			}
 		}
-		
-//		System.out.println("After update: " + Clock.getRoundNum());
 	}
 
 	/**
@@ -767,15 +776,19 @@ public class EncampmentJobSystem {
 	 * This still costs lots of bytecodes
 	 */
 	public static MapLocation[] getBestEncampmentLocations(MapLocation origin, MapLocation[] allLoc, int k) {
-//		System.out.println("start: " + Clock.getBytecodeNum());
 		MapLocation[] currentTopLocations = new MapLocation[k];
-
+		int numPreferableLocations = allLoc.length - unpreferableEncampments.getSize();
+		int numUnpreferableLocationsStillNeeded = 0;
+		if (k > numPreferableLocations) {
+			numUnpreferableLocationsStillNeeded = k - numPreferableLocations;
+		}
+		
 		int[] allDistances = new int[allLoc.length];
 		for (int i = allLoc.length; --i >= 0; ) {
 			allDistances[i] = origin.distanceSquaredTo(allLoc[i]);
 		}
 		
-		int[] allLocIndex = new int[allLoc.length];
+		boolean[] allLocIndex = new boolean[allLoc.length];
 		
 		int runningDist = 1000000;
 		MapLocation runningLoc = null;
@@ -783,23 +796,31 @@ public class EncampmentJobSystem {
 		for (int j = k; --j >= 0; ) {
 			runningDist = 1000000;
 			for (int i = allLoc.length; --i >= 0; ) {
-
-//				if (unreachableEncampments.contains(allLoc[i])) {
-//					System.out.println("unreachable loc: " + allLoc[i]);
-//				}
-				if (allDistances[i] < runningDist && allLocIndex[i] == 0 && !unreachableEncampments.contains(allLoc[i])) { 
+				if (allDistances[i] < runningDist && allLocIndex[i] == false && !unreachableEncampments.contains(allLoc[i])) { 
 					// if distances are smaller and it's not unreachable
-					if (shieldsLoc == null || allLoc[i] != shieldsLoc) { // can't include shield loc
-						runningDist = allDistances[i];
-						runningLoc = allLoc[i];
-						runningIndex = i;
+					if (!unpreferableEncampments.contains(allLoc[i])) {
+						// if it lies outside our unprioritized circle
+						if (shieldsLoc == null || allLoc[i] != shieldsLoc) { // can't include shield loc
+							runningDist = allDistances[i];
+							runningLoc = allLoc[i];
+							runningIndex = i;
+						}
+					} else {
+						if (numUnpreferableLocationsStillNeeded > 0) {
+							// if it lies inside our unprioritized circle
+							if (shieldsLoc == null || allLoc[i] != shieldsLoc) { // can't include shield loc
+								runningDist = allDistances[i];
+								runningLoc = allLoc[i];
+								runningIndex = i;
+							}
+							numUnpreferableLocationsStillNeeded--;
+						}
 					}
 				}
 			}
 			currentTopLocations[j] = runningLoc;
-			allLocIndex[runningIndex] = 1;
+			allLocIndex[runningIndex] = true;
 		}
-//		System.out.println("end: " + Clock.getBytecodeNum());
 		return currentTopLocations;
 	}
 	
@@ -952,15 +973,6 @@ public class EncampmentJobSystem {
 		return rc.senseEncampmentSquares(artCenter, encampmentRadiusSquared, Team.NEUTRAL);
 	}
 	
-	private static MapLocation findMidPoint() {
-		MapLocation enemyLoc = DataCache.enemyHQLocation;
-		MapLocation ourLoc = DataCache.ourHQLocation;
-		int x, y;
-		x = (enemyLoc.x + ourLoc.x) / 2;
-		y = (enemyLoc.y + ourLoc.y) / 2;
-		return new MapLocation(x,y);
-	}
-
 	/**
 	 * Creates a 24-bit job message to send from the goal location
 	 * @param goalLoc
@@ -977,7 +989,7 @@ public class EncampmentJobSystem {
 		if (onOrOff) {
 			msg += 0x10;
 		}
-		msg += Clock.getRoundNum() % 16;
+		msg += Clock.getRoundNum() & 0xF;
 		
 		return msg;
 	}

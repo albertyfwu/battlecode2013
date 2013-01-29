@@ -25,8 +25,6 @@ public class HQRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
-			int beginBytecode = Clock.getBytecodeNum();
-			
 			DataCache.updateRoundVariables();
 			BroadcastSystem.write(powerChannel, (int) rc.getTeamPower()); // broadcast the team power
 			BroadcastSystem.write(genCountChannel, EncampmentJobSystem.genCount); // broadcast the number of generators we've built\
@@ -67,7 +65,7 @@ public class HQRobot extends BaseRobot {
 					}
 				}
 			} else if (EncampmentJobSystem.shieldsLoc != null) {
-				if (!rc.canSenseSquare(EncampmentJobSystem.shieldsLoc) || !(rc.senseEncampmentSquares(EncampmentJobSystem.shieldsLoc, 0, rc.getTeam()).length > 0)) {
+				if (!rc.canSenseSquare(EncampmentJobSystem.shieldsLoc) || rc.senseEncampmentSquares(EncampmentJobSystem.shieldsLoc, 0, rc.getTeam()).length == 0) {
 					// post shield encampment job
 					EncampmentJobSystem.updateShieldJob();
 				}
@@ -78,15 +76,13 @@ public class HQRobot extends BaseRobot {
 					EncampmentJobSystem.checkShieldCompletion();
 				}
 			}
-			
+
 			// to handle broadcasting between channel cycles
 			if (DataCache.onCycle) {
                 EncampmentJobSystem.updateJobsOnCycle();
 	        } else {
 	            EncampmentJobSystem.updateJobsAfterChecking();
 	        }
-			
-			rc.setIndicatorString(0, Double.toString((40 + 10 * (EncampmentJobSystem.genCount))/1.5));
 			
 			if (rc.isActive()) {
 				boolean upgrade = false;
@@ -114,8 +110,6 @@ public class HQRobot extends BaseRobot {
 					spawnSoldier();
 				}
 			}
-			
-//			System.out.println(Clock.getBytecodeNum() - beginBytecode);
 		} catch (Exception e) {
 			System.out.println("caught exception before it killed us:");
 			System.out.println(rc.getRobot().getID());
