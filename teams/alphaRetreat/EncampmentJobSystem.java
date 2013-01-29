@@ -317,7 +317,7 @@ public class EncampmentJobSystem {
 			
 		}
 		
-		rc.setIndicatorString(1, "not shield");
+//		rc.setIndicatorString(1, "not shield");
 		
 		for (int i = encampmentJobChannelList.length; --i >= 0; ) {
 			channel = encampmentJobChannelList[i];
