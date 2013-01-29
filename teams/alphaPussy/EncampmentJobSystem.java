@@ -1,4 +1,4 @@
-package alphaRetreat;
+package alphaPussy;
 
 import battlecode.common.Clock;
 import battlecode.common.GameActionException;
@@ -278,7 +278,7 @@ public class EncampmentJobSystem {
 				} else {
 					assignedRobotType = parseRobotType(message.body);
 					assignedChannel = channel;
-//					rc.setIndicatorString(1, goalLoc.toString());
+					rc.setIndicatorString(1, goalLoc.toString());
 					return channel;
 				}
 			} else if (onOrOff == 1 && isTaken == 1) {
@@ -294,13 +294,13 @@ public class EncampmentJobSystem {
 						if (robotOnSquare == null || !robotOnSquare.getTeam().equals(rc.getTeam())) {
 							assignedRobotType = parseRobotType(message.body);
 							assignedChannel = channel;
-//							rc.setIndicatorString(1, assignedRobotType.toString());
+							rc.setIndicatorString(1, assignedRobotType.toString());
 							return channel;
 						}
 					} else {
 						assignedRobotType = parseRobotType(message.body);
 						assignedChannel = channel;
-//						rc.setIndicatorString(1, assignedRobotType.toString());
+						rc.setIndicatorString(1, assignedRobotType.toString());
 						return channel;
 					}
 				}
@@ -329,13 +329,13 @@ public class EncampmentJobSystem {
 						if (robotOnSquare == null || !robotOnSquare.getTeam().equals(rc.getTeam())) {
 							assignedRobotType = parseRobotType(message.body);
 							assignedChannel = channel;
-//							rc.setIndicatorString(1, goalLoc.toString());
+							rc.setIndicatorString(1, assignedRobotType.toString());
 							return channel;
 						}
 					} else {
 						assignedRobotType = parseRobotType(message.body);
 						assignedChannel = channel;
-//						rc.setIndicatorString(1, goalLoc.toString());
+						rc.setIndicatorString(1, assignedRobotType.toString());
 						return channel;
 					}
 				} else if (onOrOff == 1) {
@@ -350,13 +350,13 @@ public class EncampmentJobSystem {
 							if (robotOnSquare == null || !robotOnSquare.getTeam().equals(rc.getTeam())) {
 								assignedRobotType = parseRobotType(message.body);
 								assignedChannel = channel;
-//								rc.setIndicatorString(1, goalLoc.toString());
+								rc.setIndicatorString(1, assignedRobotType.toString());
 								return channel;
 							}
 						} else {
 							assignedRobotType = parseRobotType(message.body);
 							assignedChannel = channel;
-//							rc.setIndicatorString(1, goalLoc.toString());
+							rc.setIndicatorString(1, assignedRobotType.toString());
 							return channel;
 						}
 					}
