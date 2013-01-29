@@ -658,17 +658,19 @@ public class SoldierRobot extends BaseRobot {
 			GameObject object = rc.senseObjectAtLocation(shieldLocation);
 			if (object != null && rc.senseRobotInfo((Robot) object).type == RobotType.SHIELDS) {
 				// set the shieldQueueLocation						
-				int dx = DataCache.enemyHQLocation.x - DataCache.ourHQLocation.x;
-				int dy = DataCache.enemyHQLocation.y - DataCache.ourHQLocation.y;
+				int dx = shieldLocation.x - DataCache.ourHQLocation.x;
+				int dy = shieldLocation.y - DataCache.ourHQLocation.y;
 				
-				double vectorMag = Math.sqrt(dx*dx + dy*dy);
-				double dxNorm = dx/vectorMag;
-				double dyNorm = dy/vectorMag;
+				double maxDxDy = Math.max(Math.abs(dx), Math.abs(dy));
 				
-				int centerx = (int) (shieldLocation.x - 10 * dxNorm);
-				int centery = (int) (shieldLocation.y - 10 * dyNorm);
+				double dxNorm = dx / maxDxDy;
+				double dyNorm = dy / maxDxDy;
+				
+				int centerx = (int) (shieldLocation.x - 5 * dxNorm);
+				int centery = (int) (shieldLocation.y - 5 * dyNorm);
 				
 				shieldQueueLocation = new MapLocation(centerx, centery);
+				
 				rallyPoint = shieldQueueLocation;
 						
 				return true;
@@ -1239,7 +1241,7 @@ public class SoldierRobot extends BaseRobot {
 					NavSystem.setupGetCloser(EncampmentJobSystem.goalLoc);
 					NavSystem.tryMoveCloser();
 				} else {
-					NavSystem.goToLocation(EncampmentJobSystem.goalLoc);
+					NavSystem.moveCloserFavorNoMines(EncampmentJobSystem.goalLoc);
 //					if (NavSystem.navMode == NavMode.NEUTRAL){
 //						NavSystem.setupSmartNav(EncampmentJobSystem.goalLoc);
 //						NavSystem.followWaypoints();
