@@ -1,4 +1,4 @@
-package alphaRetreat;
+package alphaPussy;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -381,7 +381,7 @@ public class SoldierRobot extends BaseRobot {
 			}
 	
 			// If there are enemies nearby, trigger FIGHTING SoldierState
-			if (DataCache.numEnemyRobots > 0) {
+			if (DataCache.numNearbyEnemyRobots > 0 || (DataCache.numAlliedRobots >= 10 && DataCache.numEnemyRobots > 0)) {
 				nextSoldierState = SoldierState.FIGHTING;
 				fightingCode();
 //			} else if (hqPowerLevel2 < 10*(1+DataCache.numAlliedEncampments) || hqPowerLevel2 < 100) {
