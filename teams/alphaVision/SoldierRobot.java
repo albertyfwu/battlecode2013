@@ -1,4 +1,4 @@
-package alphaRetreat;
+package alphaVision;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;

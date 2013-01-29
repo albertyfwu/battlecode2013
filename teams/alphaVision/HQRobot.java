@@ -1,4 +1,4 @@
-package alphaRetreat;
+package alphaVision;
 
 import battlecode.common.Clock;
 import battlecode.common.Direction;
@@ -90,7 +90,10 @@ public class HQRobot extends BaseRobot {
 			
 			if (rc.isActive()) {
 				boolean upgrade = false;
-				if (enemyNukeHalfDone && !DataCache.hasDefusion && DataCache.numAlliedSoldiers > 5) {
+				if (!DataCache.hasVision) {
+						upgrade = true;
+						rc.researchUpgrade(Upgrade.VISION);
+				} else if (enemyNukeHalfDone && !DataCache.hasDefusion && DataCache.numAlliedSoldiers > 5) {
 					if (!DataCache.hasDefusion) {
 						upgrade = true;
 						rc.researchUpgrade(Upgrade.DEFUSION);
