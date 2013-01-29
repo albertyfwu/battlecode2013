@@ -121,7 +121,7 @@ public class SoldierRobot extends BaseRobot {
 			if (unassigned) {
 				
 				// check if we need to retreat
-				if (!shieldExists()) {
+				if (!shieldExists() && soldierState != SoldierState.ALL_IN) {
 					Message retreatMsg = BroadcastSystem.read(ChannelType.RETREAT_CHANNEL);
 					if (retreatMsg.isValid && retreatMsg.body == Constants.RETREAT) { 
 						soldierState = SoldierState.RETREAT;

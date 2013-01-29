@@ -203,10 +203,13 @@ public class SoldierRobot extends BaseRobot {
 			
 			double currHealth = rc.getEnergon();
 			
+			
 			boolean artillerySeen = reportArtillerySighting(currHealth);
-			if (artillerySeen && !shieldExists()) {
-				soldierState = SoldierState.RETREAT;
-				BroadcastSystem.write(ChannelType.RETREAT_CHANNEL, Constants.RETREAT);
+			if (artillerySeen && !shieldExists()) { // if we see artillery and we're near their base, retreat
+				if (currentLocation.distanceSquaredTo(DataCache.enemyHQLocation) < 0.16 * DataCache.rushDistSquared) {
+					soldierState = SoldierState.RETREAT;
+					BroadcastSystem.write(ChannelType.RETREAT_CHANNEL, Constants.RETREAT);
+				}
 			}
 			
 			healthLastTurn = currHealth;
@@ -416,7 +419,7 @@ public class SoldierRobot extends BaseRobot {
 				nextSoldierState = SoldierState.PUSHING;
 				pushingCode();
 			} else {
-				mineDensity = rc.senseMineLocations(findMidPoint(), rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+				mineDensity = findMineDensity();
 				shieldsCutoff = (int) (DataCache.rushDist + 3 * (mineDensity * DataCache.rushDist)) + 50;
 				if (rc.getShields() < shieldsCutoff - 50 && shieldExists()) {
 //					rc.setIndicatorString(2, "lower bound: " + (shieldsCutoff-50));
@@ -424,16 +427,23 @@ public class SoldierRobot extends BaseRobot {
 					nextSoldierState = SoldierState.CHARGE_SHIELDS;
 					chargeShieldsCode();
 				} else {
-					boolean layedMine = false;
-					if (rc.senseMine(currentLocation) == null) {
-						if (rc.isActive() && Util.Random() < 0.1) {
-							rc.layMine();
-							layedMine = true;
+					if (rc.senseEncampmentSquare(currentLocation) && currentLocation.distanceSquaredTo(DataCache.enemyHQLocation) < 0.55 * DataCache.rushDistSquared ) {
+						if (rc.getTeamPower() > rc.senseCaptureCost() && Util.Random() < 0.5) {
+							rc.captureEncampment(RobotType.ARTILLERY);
+						}
+					} else {
+						boolean layedMine = false;
+						if (rc.senseMine(currentLocation) == null) {
+							if (rc.isActive() && Util.Random() < 0.1) {
+								rc.layMine();
+								layedMine = true;
+							}
+						}
+						if (!layedMine) {
+							NavSystem.goToLocation(rallyPoint);
 						}
 					}
-					if (!layedMine) {
-						NavSystem.goToLocation(rallyPoint);
-					}
+					
 				}
 			}
 //		}
@@ -444,6 +454,9 @@ public class SoldierRobot extends BaseRobot {
 			nextSoldierState = SoldierState.RALLYING;
 			BroadcastSystem.write(ChannelType.RETREAT_CHANNEL, 0);
 			rallyingCode();
+		} else if (DataCache.numAlliedSoldiers >= Constants.FIGHTING_NOT_ENOUGH_ALLIED_SOLDIERS) {
+			nextSoldierState = SoldierState.FIGHTING;
+			fightingCode();
 		} else {
 			NavSystem.moveCloserFavorNoMines(rallyPoint);
 		}
@@ -666,7 +679,7 @@ public class SoldierRobot extends BaseRobot {
 					NavSystem.goToLocation(shieldQueueLocation);
 				} else {
 					// already charging
-					mineDensity = rc.senseMineLocations(findMidPoint(), rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+					mineDensity = findMineDensity();
 					shieldsCutoff = (int) (DataCache.rushDist + 3 * (mineDensity * DataCache.rushDist)) + 50;
 //					rc.setIndicatorString(1, "high cutoff: " + Integer.toString(shieldsCutoff));
 					if (rc.getShields() > shieldsCutoff) {
@@ -1173,6 +1186,27 @@ public class SoldierRobot extends BaseRobot {
 			}
 			
 		}
+	}
+	
+	private double findMineDensity() {
+		int ourX = DataCache.ourHQLocation.x;
+		int ourY = DataCache.ourHQLocation.y;
+		int enemyX = DataCache.enemyHQLocation.x;
+		int enemyY = DataCache.enemyHQLocation.y;
+		
+		MapLocation pt1 = new MapLocation(ourX + (enemyX-ourX)/8, ourY + (enemyY-ourY)/8);
+		MapLocation pt2 = new MapLocation(ourX + 3*(enemyX-ourX)/8, ourY + 3*(enemyY-ourY)/8);
+		MapLocation pt3 = new MapLocation(ourX + 5*(enemyX-ourX)/8, ourY + 5*(enemyY-ourY)/8);
+		MapLocation pt4 = new MapLocation(ourX + 7*(enemyX-ourX)/8, ourY + 7*(enemyY-ourY)/8);
+
+		int rSquared = DataCache.rushDistSquared / 64;
+		double mineDensity1 = rc.senseMineLocations(pt1, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+		double mineDensity2 = rc.senseMineLocations(pt2, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+		double mineDensity3 = rc.senseMineLocations(pt3, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+		double mineDensity4 = rc.senseMineLocations(pt4, rSquared, Team.NEUTRAL).length / (3.0 * rSquared);
+
+		return (mineDensity1 + mineDensity2 + mineDensity3 + mineDensity4)/4.0;
+
 	}
 	
 	

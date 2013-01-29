@@ -184,7 +184,9 @@ public class HQRobot extends BaseRobot {
 						} else if (!DataCache.hasPickaxe) {
 							upgrade = true;
 							rc.researchUpgrade(Upgrade.PICKAXE);
-
+						} else {
+							upgrade = true;
+							rc.researchUpgrade(Upgrade.NUKE);
 						}
 					}
 					if (!upgrade) {
