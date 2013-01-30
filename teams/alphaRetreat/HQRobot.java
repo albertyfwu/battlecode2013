@@ -104,9 +104,9 @@ public class HQRobot extends BaseRobot {
 					} else if (!DataCache.hasDefusion) {
 						upgrade = true;
 						rc.researchUpgrade(Upgrade.DEFUSION);
-					} else if (!DataCache.hasPickaxe) {
+					} else if (!DataCache.hasVision) {
 						upgrade = true;
-						rc.researchUpgrade(Upgrade.PICKAXE);
+						rc.researchUpgrade(Upgrade.VISION);
 					} else {
 						upgrade = true;
 						rc.researchUpgrade(Upgrade.NUKE);

@@ -174,6 +174,7 @@ public class EncampmentJobSystem {
 			}
 			
 		}
+		sortedNeutralEncScores = new double[sortedNeutralEncLocs.length];
 		
 		for (int i = sortedNeutralEncLocs.length; --i >= 0; ) {
 			MapLocation iterLocation = sortedNeutralEncLocs[i];
@@ -734,35 +735,61 @@ public class EncampmentJobSystem {
 	 * @throws GameActionException
 	 */
 	public static void updateJobs() throws GameActionException {
-		MapLocation[] neutralEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, Team.NEUTRAL);
-		
-		if (Clock.getRoundNum() > 50) {
-			hardEncampmentLimit = Integer.MAX_VALUE;
-			int numReachableEncampments = neutralEncampments.length - numUnreachableEncampments;
-			if (numReachableEncampments == 0) {
+		MapLocation[] neutralEncampments = null;
+		MapLocation[] alliedEncampments = null;
+		if (Clock.getRoundNum() == 0) {
+			neutralEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, Team.NEUTRAL);
+			
+			if (Clock.getRoundNum() > 50) {
+				hardEncampmentLimit = Integer.MAX_VALUE;
+				int numReachableEncampments = neutralEncampments.length - numUnreachableEncampments;
+				if (numReachableEncampments == 0) {
+					numEncampmentsNeeded = 0;
+				} else if (DataCache.rushDist < 70) {
+					numEncampmentsNeeded = 3;
+				} else {
+					numEncampmentsNeeded = 4;
+				}
+			}
+			
+			if (numEncampmentsNeeded > neutralEncampments.length - numUnreachableEncampments){
+				numEncampmentsNeeded = neutralEncampments.length - numUnreachableEncampments;
+			}
+			
+			if (DataCache.numAlliedEncampments >= hardEncampmentLimit || robot.enemyNukeHalfDone == true) {
 				numEncampmentsNeeded = 0;
-			} else if (DataCache.rushDist < 70) {
-				numEncampmentsNeeded = 3;
-			} else {
-				numEncampmentsNeeded = 4;
+			}
+
+		} else {
+			alliedEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, rc.getTeam());
+			
+			if (Clock.getRoundNum() > 50) {
+				hardEncampmentLimit = Integer.MAX_VALUE;
+				int numReachableEncampments = sortedNeutralEncLocs.length - alliedEncampments.length - numUnreachableEncampments;
+				if (numReachableEncampments == 0) {
+					numEncampmentsNeeded = 0;
+				} else if (DataCache.rushDist < 70) {
+					numEncampmentsNeeded = 3;
+				} else {
+					numEncampmentsNeeded = 4;
+				}
+			}
+			
+			if (numEncampmentsNeeded > sortedNeutralEncLocs.length - alliedEncampments.length - numUnreachableEncampments) {
+				numEncampmentsNeeded = sortedNeutralEncLocs.length - alliedEncampments.length - numUnreachableEncampments;
+			}
+			
+			if (DataCache.numAlliedEncampments >= hardEncampmentLimit || robot.enemyNukeHalfDone == true) {
+				numEncampmentsNeeded = 0;
 			}
 		}
 		
-		if (numEncampmentsNeeded > neutralEncampments.length){
-			numEncampmentsNeeded = neutralEncampments.length;
-		}
-		
-		if (DataCache.numAlliedEncampments >= hardEncampmentLimit || robot.enemyNukeHalfDone == true) {
-			numEncampmentsNeeded = 0;
-		}
-
 
 		if (numEncampmentsNeeded != 0) {
 			MapLocation[] newJobsList;
 			if (Clock.getRoundNum() == 0) {
 				newJobsList = getBestEncampmentLocations(DataCache.ourHQLocation, neutralEncampments, numEncampmentsNeeded);
 			} else {
-				MapLocation[] alliedEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, rc.getTeam());
 				newJobsList = getBestEncampmentLocationsFromAlliedLoc(DataCache.ourHQLocation, alliedEncampments, numEncampmentsNeeded);
 			}
 //			System.out.println("new jobs list: " + Clock.getBytecodeNum());
@@ -887,7 +914,7 @@ public class EncampmentJobSystem {
 			if (count < k) { // we still need more encampment locations
 				MapLocation iterLocation = sortedNeutralEncLocs[i];
 				// check to see if location exists in allLocSet
-				if (!alliedLocSet.contains(iterLocation)) {
+				if (!alliedLocSet.contains(iterLocation) && !unreachableEncampments.contains(iterLocation)) {
 					// this is eligible location, so insert it into currentToplocations
 					currentTopLocations[count] = iterLocation;
 					count++;
