@@ -50,6 +50,8 @@ public class DataCache {
 	public static boolean hasFusion;
 	public static boolean hasDefusion;
 	public static boolean hasPickaxe;
+	public static boolean hasVision;
+
 	
 	public static void init(BaseRobot myRobot) {
 		robot = myRobot;
@@ -100,5 +102,9 @@ public class DataCache {
 		if (!hasPickaxe) {
 			hasPickaxe = rc.hasUpgrade(Upgrade.PICKAXE);
 		}
+		if (!hasVision) {
+			hasVision = rc.hasUpgrade(Upgrade.VISION);
+		}
+
 	}
 }

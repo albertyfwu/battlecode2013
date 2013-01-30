@@ -913,7 +913,7 @@ public class SoldierRobot extends BaseRobot {
 					NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
 				}
 			}
-		} else if (DataCache.numNearbyEnemySoldiers == 0 || DataCache.numNearbyAlliedSoldiers >= 3 * DataCache.numNearbyEnemySoldiers){ // if no enemies in one, two, or three dist
+		} else if (enemyDistSquared == 16 || enemyDistSquared > 18 || DataCache.numNearbyAlliedSoldiers >= 3 * DataCache.numNearbyEnemySoldiers){ // if no enemies in one, two, or three dist
 //			// if no enemies in 3-dist or we outnumber them 3 to 1
 //			NavSystem.goToLocation(closestEnemyLocation);
 			if (rc.isActive()) {

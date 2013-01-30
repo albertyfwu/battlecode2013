@@ -156,16 +156,34 @@ public class EncampmentJobSystem {
 	 * getBestEncampmentLoc....
 	 */
 	public static void sortNeutralEncampmentScores() {
+		// If there are a ton of encampments, let's just randomly sample roughly 100 of them
+		int count = 0;
+		MapLocation[] sampledNeutralEncLocsLarge = new MapLocation[sortedNeutralEncLocs.length];
+		if (sortedNeutralEncLocs.length > 120) {
+			double probability = 100f / sortedNeutralEncLocs.length;
+			for (int i = sortedNeutralEncLocs.length; --i >= 0;) {
+				if (Util.Random() < probability) { // include it in the list
+					sampledNeutralEncLocsLarge[count] = sortedNeutralEncLocs[i];
+					count++;
+				}
+			}
+			
+			sortedNeutralEncLocs = new MapLocation[count];
+			for (int i = count; --i >= 0;) {
+				sortedNeutralEncLocs[i] = sampledNeutralEncLocsLarge[i]; 
+			}
+			
+		}
+		sortedNeutralEncScores = new double[sortedNeutralEncLocs.length];
+		
 		for (int i = sortedNeutralEncLocs.length; --i >= 0; ) {
 			MapLocation iterLocation = sortedNeutralEncLocs[i];
 			// get the score
 			sortedNeutralEncScores[i] = Math.sqrt(iterLocation.distanceSquaredTo(DataCache.ourHQLocation)) - 1.1 * Math.sqrt(iterLocation.distanceSquaredTo(pathCenterSlightlyCloserToUs));
 		}
 		
-		// TODO: sort in place
+		// sort in place
 		Quicksort.sort(sortedNeutralEncLocs, sortedNeutralEncScores);
-		sortedNeutralEncScores = Quicksort.numbers;
-		sortedNeutralEncLocs = Quicksort.locations;
 	}
 		
 	public static void updateShieldJob() {
@@ -717,31 +735,63 @@ public class EncampmentJobSystem {
 	 * @throws GameActionException
 	 */
 	public static void updateJobs() throws GameActionException {
-		MapLocation[] neutralEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, Team.NEUTRAL);
-		
-		if (Clock.getRoundNum() > 50) {
-			hardEncampmentLimit = Integer.MAX_VALUE;
-			int numReachableEncampments = neutralEncampments.length - numUnreachableEncampments;
-			if (numReachableEncampments == 0) {
+		MapLocation[] neutralEncampments = null;
+		MapLocation[] alliedEncampments = null;
+		if (Clock.getRoundNum() == 0) {
+			neutralEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, Team.NEUTRAL);
+			
+			if (Clock.getRoundNum() > 50) {
+				hardEncampmentLimit = Integer.MAX_VALUE;
+				int numReachableEncampments = neutralEncampments.length - numUnreachableEncampments;
+				if (numReachableEncampments == 0) {
+					numEncampmentsNeeded = 0;
+				} else if (DataCache.rushDist < 70) {
+					numEncampmentsNeeded = 3;
+				} else {
+					numEncampmentsNeeded = 4;
+				}
+			}
+			
+			if (numEncampmentsNeeded > neutralEncampments.length - numUnreachableEncampments){
+				numEncampmentsNeeded = neutralEncampments.length - numUnreachableEncampments;
+			}
+			
+			if (DataCache.numAlliedEncampments >= hardEncampmentLimit || robot.enemyNukeHalfDone == true) {
 				numEncampmentsNeeded = 0;
-			} else if (DataCache.rushDist < 70) {
-				numEncampmentsNeeded = 3;
-			} else {
-				numEncampmentsNeeded = 4;
+			}
+
+		} else {
+			alliedEncampments = rc.senseEncampmentSquares(DataCache.ourHQLocation, 10000, rc.getTeam());
+			
+			if (Clock.getRoundNum() > 50) {
+				hardEncampmentLimit = Integer.MAX_VALUE;
+				int numReachableEncampments = sortedNeutralEncLocs.length - alliedEncampments.length - numUnreachableEncampments;
+				if (numReachableEncampments == 0) {
+					numEncampmentsNeeded = 0;
+				} else if (DataCache.rushDist < 70) {
+					numEncampmentsNeeded = 3;
+				} else {
+					numEncampmentsNeeded = 4;
+				}
+			}
+			
+			if (numEncampmentsNeeded > sortedNeutralEncLocs.length - alliedEncampments.length - numUnreachableEncampments) {
+				numEncampmentsNeeded = sortedNeutralEncLocs.length - alliedEncampments.length - numUnreachableEncampments;
+			}
+			
+			if (DataCache.numAlliedEncampments >= hardEncampmentLimit || robot.enemyNukeHalfDone == true) {
+				numEncampmentsNeeded = 0;
 			}
 		}
 		
-		if (numEncampmentsNeeded > neutralEncampments.length){
-			numEncampmentsNeeded = neutralEncampments.length;
-		}
-		
-		if (DataCache.numAlliedEncampments >= hardEncampmentLimit || robot.enemyNukeHalfDone == true) {
-			numEncampmentsNeeded = 0;
-		}
-
 
 		if (numEncampmentsNeeded != 0) {
-			MapLocation[] newJobsList = getBestEncampmentLocations(DataCache.ourHQLocation, neutralEncampments, numEncampmentsNeeded);
+			MapLocation[] newJobsList;
+			if (Clock.getRoundNum() == 0) {
+				newJobsList = getBestEncampmentLocations(DataCache.ourHQLocation, neutralEncampments, numEncampmentsNeeded);
+			} else {
+				newJobsList = getBestEncampmentLocationsFromAlliedLoc(DataCache.ourHQLocation, alliedEncampments, numEncampmentsNeeded);
+			}
 //			System.out.println("new jobs list: " + Clock.getBytecodeNum());
 
 			ChannelType[] channelList = EncampmentJobSystem.assignChannels(newJobsList, EncampmentJobSystem.encampmentJobs, EncampmentJobSystem.encampmentChannels);
@@ -798,68 +848,83 @@ public class EncampmentJobSystem {
 	 */
 	public static MapLocation[] getBestEncampmentLocations(MapLocation origin, MapLocation[] allLoc, int k) {
 		
-		if (Clock.getRoundNum() == 0) {			
-			MapLocation[] currentTopLocations = new MapLocation[k];			
-			boolean[] allLocIndex = new boolean[allLoc.length];
-			
-			int[] allDistances = new int[allLoc.length];
+		MapLocation[] currentTopLocations = new MapLocation[k];			
+		boolean[] allLocIndex = new boolean[allLoc.length];
+
+		int[] allDistances = new int[allLoc.length];
+		for (int i = allLoc.length; --i >= 0; ) {
+			MapLocation iterLocation = allLoc[i];
+			allDistances[i] = origin.distanceSquaredTo(iterLocation);
+		}
+
+		int bestScore;
+		MapLocation runningLoc = null;
+		int runningIndex = 0;
+		// first round, so be gentle
+		for (int j = k; --j >= 0; ) {
+			bestScore = Integer.MAX_VALUE;
 			for (int i = allLoc.length; --i >= 0; ) {
 				MapLocation iterLocation = allLoc[i];
-				allDistances[i] = origin.distanceSquaredTo(iterLocation);
-			}
-			
-			int bestScore;
-			MapLocation runningLoc = null;
-			int runningIndex = 0;
-			// first round, so be gentle
-			for (int j = k; --j >= 0; ) {
-				bestScore = Integer.MAX_VALUE;
-				for (int i = allLoc.length; --i >= 0; ) {
-					MapLocation iterLocation = allLoc[i];
-					int currentScore = allDistances[i];
-					if (currentScore < bestScore && allLocIndex[i] == false && !unreachableEncampments.contains(iterLocation)) {
-						// if score is better, and the location is not unreachable
-						if (shieldsLoc == null || !iterLocation.equals(shieldsLoc)) {
-							// can't include shieldLoc
-							bestScore = currentScore;
-							runningLoc = iterLocation;
-							runningIndex = i;
-						}
+				int currentScore = allDistances[i];
+				if (currentScore < bestScore && allLocIndex[i] == false && !unreachableEncampments.contains(iterLocation)) {
+					// if score is better, and the location is not unreachable
+					if (shieldsLoc == null || !iterLocation.equals(shieldsLoc)) {
+						// can't include shieldLoc
+						bestScore = currentScore;
+						runningLoc = iterLocation;
+						runningIndex = i;
 					}
 				}
-				currentTopLocations[j] = runningLoc;
-				allLocIndex[runningIndex] = true;
 			}
-			
-			return currentTopLocations;
-		} else {
-			int count = 0;
-			MapLocation[] currentTopLocations = new MapLocation[k];
-			
-			
-			// make a FastLocSet of the current neutral encampments
-			FastLocSet allLocSet = new FastLocSet();
-			for (MapLocation iterLocation : allLoc) {
-				allLocSet.add(iterLocation);
-			}
-			
-			// now, we can use the sorted initial neutral encampment locations and scores
-			for (int i = 0; i < sortedNeutralEncScores.length; i++) {
-				if (count < k) { // we still need more encampment locations
-					MapLocation iterLocation = sortedNeutralEncLocs[i];
-					// check to see if location exists in allLocSet
-					if (allLocSet.contains(iterLocation)) {
-						// this is eligible location, so insert it into currentToplocations
-						currentTopLocations[count] = iterLocation;
-						count++;
-					}
-				} else {
-					break;
-				}
-			}
-			
-			return currentTopLocations;
+			currentTopLocations[j] = runningLoc;
+			allLocIndex[runningIndex] = true;
 		}
+
+		return currentTopLocations;
+	}
+	
+	/**
+	 * Finds the best MapLocations on which to build encampments. We can 
+	 * finds an array of closest MapLocations to rc.getLocation()
+	 * in decreasing order, and then apply heuristics (don't build in middle of map)
+	 * 
+	 * Specification: k must be <= allLoc.length
+	 * Specification: array must not contain origin
+	 * @param origin
+	 * @param allLoc
+	 * @param k
+	 * @return
+	 * 
+	 * This still costs lots of bytecodes
+	 */
+	public static MapLocation[] getBestEncampmentLocationsFromAlliedLoc(MapLocation origin, MapLocation[] alliedLoc, int k) {
+	
+		int count = 0;
+		MapLocation[] currentTopLocations = new MapLocation[k];
+		
+		
+		// make a FastLocSet of the current neutral encampments
+		FastLocSet alliedLocSet = new FastLocSet();
+		for (MapLocation iterLocation : alliedLoc) {
+			alliedLocSet.add(iterLocation);
+		}
+		
+		// now, we can use the sorted initial neutral encampment locations and scores
+		for (int i = 0; i < sortedNeutralEncScores.length; i++) {
+			if (count < k) { // we still need more encampment locations
+				MapLocation iterLocation = sortedNeutralEncLocs[i];
+				// check to see if location exists in allLocSet
+				if (!alliedLocSet.contains(iterLocation) && !unreachableEncampments.contains(iterLocation)) {
+					// this is eligible location, so insert it into currentToplocations
+					currentTopLocations[count] = iterLocation;
+					count++;
+				}
+			} else {
+				break;
+			}
+		}
+		
+		return currentTopLocations;
 	}
 	
 	

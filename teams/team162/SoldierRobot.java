@@ -399,7 +399,13 @@ public class SoldierRobot extends BaseRobot {
 				} else {
 					if (rc.senseEncampmentSquare(currentLocation) && currentLocation.distanceSquaredTo(DataCache.enemyHQLocation) < 0.55 * DataCache.rushDistSquared ) {
 						if (rc.getTeamPower() > rc.senseCaptureCost() && Util.Random() < 0.5 && rc.isActive()) {
-							rc.captureEncampment(RobotType.ARTILLERY);
+							if (!shieldExists() || (shieldExists() && shieldLocation.distanceSquaredTo(currentLocation) > 2)) {
+								rc.captureEncampment(RobotType.ARTILLERY);
+							} else {
+								NavSystem.goToLocation(rallyPoint);
+							}
+						} else {
+							NavSystem.goToLocation(rallyPoint);
 						}
 					} else {
 						boolean layedMine = false;
@@ -907,7 +913,7 @@ public class SoldierRobot extends BaseRobot {
 					NavSystem.goAwayFromLocationAvoidMines(closestEnemyLocation);
 				}
 			}
-		} else if (DataCache.numNearbyEnemySoldiers == 0 || DataCache.numNearbyAlliedSoldiers >= 3 * DataCache.numNearbyEnemySoldiers){ // if no enemies in one, two, or three dist
+		} else if (enemyDistSquared == 16 || enemyDistSquared > 18 || DataCache.numNearbyAlliedSoldiers >= 3 * DataCache.numNearbyEnemySoldiers){ // if no enemies in one, two, or three dist
 //			// if no enemies in 3-dist or we outnumber them 3 to 1
 //			NavSystem.goToLocation(closestEnemyLocation);
 			if (rc.isActive()) {

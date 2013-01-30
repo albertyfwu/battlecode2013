@@ -18,9 +18,9 @@ public class Util {
 	}
 
 	private static int gen() {
-    	m_z = 36969 * (m_z & 0xFFFF) + (m_z >> 16);
-    	m_w = 18000 * (m_w & 0xFFFF) + (m_w >> 16);
-    	return (m_w << 16) + m_z;
+    	m_z = 36969 * (m_z & 65535) + (m_z >> 16);
+    	m_w = 18000 * (m_w & 65535) + (m_w >> 16);
+    	return (m_z << 16) + m_w;
 	}
 	
 	/**
