@@ -25,13 +25,9 @@ public abstract class EncampmentRobot extends BaseRobot {
 	public void run() {
 		MapLocation shieldLoc = EncampmentJobSystem.readShieldLocation();
 		if (shieldLoc != null && shieldLoc.equals(rc.getLocation()) && rc.getType() != RobotType.SHIELDS) {
-			// TODO: check the channel to see if it's time to suicide
-
-
+			// check the channel to see if it's time to suicide
 			rc.suicide();
-
 		}
-
 		runMain();
 	}
 	

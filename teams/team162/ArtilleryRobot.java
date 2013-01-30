@@ -1,6 +1,5 @@
 package team162;
 
-import battlecode.common.Clock;
 import battlecode.common.GameActionException;
 import battlecode.common.GameConstants;
 import battlecode.common.MapLocation;
@@ -24,15 +23,12 @@ public class ArtilleryRobot extends EncampmentRobot {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+//			e.printStackTrace();
 		}
 	}
 
 	public MapLocation getBestTarget(Robot[] potentialTargets) throws GameActionException {
-		int highestScore = 59;
-		if (Clock.getRoundNum() < 150) {
-			highestScore = 19;
-		}
+		int highestScore = 39;
 		MapLocation bestLocation = null;
 		
 		for (Robot potentialTarget : potentialTargets) {
@@ -41,9 +37,9 @@ public class ArtilleryRobot extends EncampmentRobot {
 			Robot[] splashRobots = rc.senseNearbyGameObjects(Robot.class, location, GameConstants.ARTILLERY_SPLASH_RADIUS_SQUARED, null);
 			for (Robot splashRobot : splashRobots) {
 				if (splashRobot.getTeam() == rc.getTeam()) {
-					currentScore -= 20;
+					currentScore -= 15;
 				} else {
-					currentScore += 20;
+					currentScore += 15;
 				}
 			}
 			if (currentScore > highestScore) {
