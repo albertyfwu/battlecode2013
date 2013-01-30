@@ -30,7 +30,7 @@ public class HQRobot extends BaseRobot {
 			BroadcastSystem.write(genCountChannel, EncampmentJobSystem.genCount); // broadcast the number of generators we've built\
 			
 			// Do a quicksort for the EncampmentJobSystem so it saves bytecode later
-			if (Clock.getRoundNum() == 1) {
+			if (Clock.getRoundNum() == 5) {
 				EncampmentJobSystem.sortNeutralEncampmentScores();
 			}
 			// end quicksort test
