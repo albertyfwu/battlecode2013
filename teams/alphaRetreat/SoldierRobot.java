@@ -10,7 +10,6 @@ import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Team;
-import battlecode.common.Upgrade;
 
 public class SoldierRobot extends BaseRobot {
 	
@@ -47,8 +46,8 @@ public class SoldierRobot extends BaseRobot {
 	public MapLocation miningDestination;
 	
 	// still for mining - variables describing the line from our hq to the enemy hq
-	public double lineA, lineB, lineC, lineDistanceDenom;
-	public int x1, y1, x2, y2; // coordinates of our hq and enemy hq
+//	public double lineA, lineB, lineC, lineDistanceDenom;
+//	public int x1, y1, x2, y2; // coordinates of our hq and enemy hq
 	
 	public int rSquared;
 	public double mineDensity; // density of mines
@@ -76,7 +75,7 @@ public class SoldierRobot extends BaseRobot {
 		
 		rSquared = DataCache.rushDistSquared / 4;
 		
-		initializeMining(); // TODO: do we really need every soldier to do this?
+//		initializeMining(); // TODO: do we really need every soldier to do this?
 		
 		// If this soldier is just born, and we're in ALL_IN mode, then charge up at shields and then go to the fight
 		if (move_out_round == 10000) {
@@ -97,8 +96,6 @@ public class SoldierRobot extends BaseRobot {
 	@Override
 	public void run() {
 		try {
-			rc.setIndicatorString(0, soldierState.toString());
-			
 			DataCache.updateRoundVariables();
 			currentLocation = rc.getLocation(); // LEAVE THIS HERE UNDER ALL CIRCUMSTANCES
 			
@@ -115,9 +112,7 @@ public class SoldierRobot extends BaseRobot {
 				if (!shieldExists() && soldierState != SoldierState.ALL_IN) {
 					Message retreatMsg = BroadcastSystem.read(ChannelType.RETREAT_CHANNEL);
 					if (retreatMsg.isValid && retreatMsg.body == Constants.RETREAT) { 
-//						rc.setIndicatorString(1, "shouldn't get here");
 						soldierState = SoldierState.RETREAT;
-//						System.out.println("retreat");
 					}
 				}
 				
@@ -137,15 +132,13 @@ public class SoldierRobot extends BaseRobot {
 					}
 				}
 				
-//				rc.setIndicatorString(0, soldierState.toString());
-				
 				switch (soldierState) {
 				case NEW:
 					newCode();
 					break;
-				case FINDING_START_MINE_POSITIONS:
-					findingStartMinePositionsCode();
-					break;
+//				case FINDING_START_MINE_POSITIONS:
+//					findingStartMinePositionsCode();
+//					break;
 				case CHARGE_SHIELDS:
 					if (shieldExists()) {
 						chargeShieldsCode();
@@ -158,14 +151,13 @@ public class SoldierRobot extends BaseRobot {
 					if (shieldExists()) {
 						expressChargeShieldsCode();
 					} else {
-//						rc.setIndicatorString(1, "shouldn't get here");
 						nextSoldierState = SoldierState.ALL_IN;
 						allInCode();
 					}
 					break;
-				case MINING:
-					miningCode();
-					break;
+//				case MINING:
+//					miningCode();
+//					break;
 				case ESCAPE_HQ_MINES:
 					escapeHQMinesCode();
 					break;
@@ -213,79 +205,79 @@ public class SoldierRobot extends BaseRobot {
 				nextSoldierState = null; // clear the state for the next call of run() to use
 			}
 		} catch (Exception e) {
-			System.out.println("caught exception before it killed us:");
-			System.out.println(rc.getRobot().getID());
-			e.printStackTrace();
+//			System.out.println("caught exception before it killed us:");
+//			System.out.println(rc.getRobot().getID());
+//			e.printStackTrace();
 		}
 	}
 	
-	private MapLocation findMidPoint() {
-		MapLocation enemyLoc = DataCache.enemyHQLocation;
-		MapLocation ourLoc = DataCache.ourHQLocation;
-		int x, y;
-		x = (enemyLoc.x + ourLoc.x) / 2;
-		y = (enemyLoc.y + ourLoc.y) / 2;
-		return new MapLocation(x,y);
-	}
+//	private MapLocation findMidPoint() {
+//		MapLocation enemyLoc = DataCache.enemyHQLocation;
+//		MapLocation ourLoc = DataCache.ourHQLocation;
+//		int x, y;
+//		x = (enemyLoc.x + ourLoc.x) / 2;
+//		y = (enemyLoc.y + ourLoc.y) / 2;
+//		return new MapLocation(x,y);
+//	}
 	
-	public void initializeMining() {
-		x1 = DataCache.ourHQLocation.x;
-		y1 = DataCache.ourHQLocation.y;
-		x2 = DataCache.enemyHQLocation.x;
-		y2 = DataCache.enemyHQLocation.y;
-		
-		if (x2 != x1) {
-			lineA = (double)(y2-y1)/(x2-x1);
-			lineB = -1;
-			lineC = y1 - lineA * x1;
-		} else { // x = x_1 \implies 1 * x + 0 * y - x_1 = 0
-			lineA = 1;
-			lineB = 0;
-			lineC = -x1;
-		}
-		lineDistanceDenom = Math.sqrt(lineA*lineA + lineB*lineB);
-		
-		dirToEnemyHQ = rc.getLocation().directionTo(DataCache.enemyHQLocation);
-		if (Util.randInt() % 2 == 0) {
-			miningDirConstant = dirToEnemyHQ.rotateLeft().rotateLeft();
-			miningDirConstantOpp = dirToEnemyHQ.rotateRight().rotateRight();
-		} else {
-			miningDirConstantOpp = dirToEnemyHQ.rotateLeft().rotateLeft();
-			miningDirConstant = dirToEnemyHQ.rotateRight().rotateRight();
-		}
-		
-		if (Clock.getRoundNum() < 10 * 3) {
-			offset = 2;
-		} else if (Clock.getRoundNum() < 10 * 6) {
-			offset = 3;
-		} else {
-			offset = 4;
-		}
-		
-		newOffset = 2 * offset + 1;
-		randInt = (Util.randInt() % newOffset);
-		if (randInt < 0) {
-			randInt += newOffset;
-		}
-		randInt -= offset;
-		miningStartLocation = DataCache.ourHQLocation.add(miningDirConstant, randInt);
-		int newX = miningStartLocation.x;
-		int newY = miningStartLocation.y;
-//		rc.setIndicatorString(2, "newX: " + newX + ", newY: " + newY);
-		// make sure the location doesn't fall off the map
-		if (newX < 0) {
-			newX = 0;
-		} else if (newX >= DataCache.mapWidth) {
-			newX = DataCache.mapWidth - 1;
-		}
-		if (newY < 0) {
-			newY = 0;
-		} else if (newY >= DataCache.mapHeight){
-			newY = DataCache.mapHeight - 1;
-		}
-		miningStartLocation = new MapLocation(newX, newY);
-		miningDestination = DataCache.enemyHQLocation;
-	}
+//	public void initializeMining() {
+//		x1 = DataCache.ourHQLocation.x;
+//		y1 = DataCache.ourHQLocation.y;
+//		x2 = DataCache.enemyHQLocation.x;
+//		y2 = DataCache.enemyHQLocation.y;
+//		
+//		if (x2 != x1) {
+//			lineA = (double)(y2-y1)/(x2-x1);
+//			lineB = -1;
+//			lineC = y1 - lineA * x1;
+//		} else { // x = x_1 \implies 1 * x + 0 * y - x_1 = 0
+//			lineA = 1;
+//			lineB = 0;
+//			lineC = -x1;
+//		}
+//		lineDistanceDenom = Math.sqrt(lineA*lineA + lineB*lineB);
+//		
+//		dirToEnemyHQ = rc.getLocation().directionTo(DataCache.enemyHQLocation);
+//		if (Util.randInt() % 2 == 0) {
+//			miningDirConstant = dirToEnemyHQ.rotateLeft().rotateLeft();
+//			miningDirConstantOpp = dirToEnemyHQ.rotateRight().rotateRight();
+//		} else {
+//			miningDirConstantOpp = dirToEnemyHQ.rotateLeft().rotateLeft();
+//			miningDirConstant = dirToEnemyHQ.rotateRight().rotateRight();
+//		}
+//		
+//		if (Clock.getRoundNum() < 10 * 3) {
+//			offset = 2;
+//		} else if (Clock.getRoundNum() < 10 * 6) {
+//			offset = 3;
+//		} else {
+//			offset = 4;
+//		}
+//		
+//		newOffset = 2 * offset + 1;
+//		randInt = (Util.randInt() % newOffset);
+//		if (randInt < 0) {
+//			randInt += newOffset;
+//		}
+//		randInt -= offset;
+//		miningStartLocation = DataCache.ourHQLocation.add(miningDirConstant, randInt);
+//		int newX = miningStartLocation.x;
+//		int newY = miningStartLocation.y;
+////		rc.setIndicatorString(2, "newX: " + newX + ", newY: " + newY);
+//		// make sure the location doesn't fall off the map
+//		if (newX < 0) {
+//			newX = 0;
+//		} else if (newX >= DataCache.mapWidth) {
+//			newX = DataCache.mapWidth - 1;
+//		}
+//		if (newY < 0) {
+//			newY = 0;
+//		} else if (newY >= DataCache.mapHeight){
+//			newY = DataCache.mapHeight - 1;
+//		}
+//		miningStartLocation = new MapLocation(newX, newY);
+//		miningDestination = DataCache.enemyHQLocation;
+//	}
 	
 	private MapLocation findRallyPoint() {
 		MapLocation enemyLoc = DataCache.enemyHQLocation;
@@ -296,11 +288,11 @@ public class SoldierRobot extends BaseRobot {
 		return new MapLocation(x,y);
 	}
 	
-	public double distanceToLine(MapLocation location) {
-		int x = location.x;
-		int y = location.y;
-		return Math.abs(lineA * x + lineB * y + lineC) / lineDistanceDenom;
-	}
+//	public double distanceToLine(MapLocation location) {
+//		int x = location.x;
+//		int y = location.y;
+//		return Math.abs(lineA * x + lineB * y + lineC) / lineDistanceDenom;
+//	}
 	
 	public void getNewMiningStartLocation() {
 		MapLocation newLocation = DataCache.ourHQLocation.add(miningDirConstant, (randInt + 1) % offset);
@@ -526,43 +518,43 @@ public class SoldierRobot extends BaseRobot {
 		}
 	}
 
-	public void miningCode() throws GameActionException {
-		int hqPowerLevel = Integer.MAX_VALUE;
-		Message message = BroadcastSystem.read(powerChannel);
-		if (message.isValid) {
-			hqPowerLevel = message.body;
-		} else {
-			hqPowerLevel = (int) rc.getTeamPower();
-		}
-		
-		if (DataCache.numEnemyRobots > 0) {
-//			nextSoldierState = SoldierState.FIGHTING;
-//			fightingCode();
-			if (shieldExists()) {
-				nextSoldierState = SoldierState.CHARGE_SHIELDS;
-				chargeShieldsCode();
-			} else {
-//				nextSoldierState = SoldierState.RALLYING;
-//				rallyingCode();
-				if (Clock.getRoundNum() < 50) {
-					nextSoldierState = SoldierState.PUSHING;
-					pushingCode();
-				} else {
-					nextSoldierState = SoldierState.RALLYING;
-					rallyingCode();
-				}
-			}
-		} else if ((hqPowerLevel < 10 * (1+DataCache.numAlliedEncampments) || hqPowerLevel < 100) ) {
-//			nextSoldierState = SoldierState.PUSHING;
-//			pushingCode();
-			if (shieldExists()) {
-				nextSoldierState = SoldierState.CHARGE_SHIELDS;
-				chargeShieldsCode();
-			}
-		} else {
-			miningSubroutine();
-		}
-	}
+//	public void miningCode() throws GameActionException {
+//		int hqPowerLevel = Integer.MAX_VALUE;
+//		Message message = BroadcastSystem.read(powerChannel);
+//		if (message.isValid) {
+//			hqPowerLevel = message.body;
+//		} else {
+//			hqPowerLevel = (int) rc.getTeamPower();
+//		}
+//		
+//		if (DataCache.numEnemyRobots > 0) {
+////			nextSoldierState = SoldierState.FIGHTING;
+////			fightingCode();
+//			if (shieldExists()) {
+//				nextSoldierState = SoldierState.CHARGE_SHIELDS;
+//				chargeShieldsCode();
+//			} else {
+////				nextSoldierState = SoldierState.RALLYING;
+////				rallyingCode();
+//				if (Clock.getRoundNum() < 50) {
+//					nextSoldierState = SoldierState.PUSHING;
+//					pushingCode();
+//				} else {
+//					nextSoldierState = SoldierState.RALLYING;
+//					rallyingCode();
+//				}
+//			}
+//		} else if ((hqPowerLevel < 10 * (1+DataCache.numAlliedEncampments) || hqPowerLevel < 100) ) {
+////			nextSoldierState = SoldierState.PUSHING;
+////			pushingCode();
+//			if (shieldExists()) {
+//				nextSoldierState = SoldierState.CHARGE_SHIELDS;
+//				chargeShieldsCode();
+//			}
+//		} else {
+//			miningSubroutine();
+//		}
+//	}
 
 	public boolean shieldExists() throws GameActionException {
 		shieldLocation = EncampmentJobSystem.readShieldLocation();
@@ -719,25 +711,25 @@ public class SoldierRobot extends BaseRobot {
 		}
 	}
 
-	public void findingStartMinePositionsCode() throws GameActionException {
-		if (DataCache.numEnemyRobots == 0) {
-			int distanceSquaredToMiningStartLocation = rc.getLocation().distanceSquaredTo(miningStartLocation);
-			if (distanceSquaredToMiningStartLocation == 0 ||
-					(distanceSquaredToMiningStartLocation <= 2 && miningStartLocation.equals(DataCache.ourHQLocation))) {
-				nextSoldierState = SoldierState.MINING;
-				miningCode();
-			} else if (distanceSquaredToMiningStartLocation <= 2 && rc.senseEncampmentSquares(miningStartLocation, 0, null).length == 1) {
-				// Choose another miningStartLocation
-				getNewMiningStartLocation();
-			} else {
-				Direction dir = rc.getLocation().directionTo(miningStartLocation);
-				NavSystem.goDirectionAndDefuse(dir);
-			}
-		} else {
-			nextSoldierState = SoldierState.FIGHTING;
-			fightingCode();
-		}
-	}
+//	public void findingStartMinePositionsCode() throws GameActionException {
+//		if (DataCache.numEnemyRobots == 0) {
+//			int distanceSquaredToMiningStartLocation = rc.getLocation().distanceSquaredTo(miningStartLocation);
+//			if (distanceSquaredToMiningStartLocation == 0 ||
+//					(distanceSquaredToMiningStartLocation <= 2 && miningStartLocation.equals(DataCache.ourHQLocation))) {
+//				nextSoldierState = SoldierState.MINING;
+//				miningCode();
+//			} else if (distanceSquaredToMiningStartLocation <= 2 && rc.senseEncampmentSquares(miningStartLocation, 0, null).length == 1) {
+//				// Choose another miningStartLocation
+//				getNewMiningStartLocation();
+//			} else {
+//				Direction dir = rc.getLocation().directionTo(miningStartLocation);
+//				NavSystem.goDirectionAndDefuse(dir);
+//			}
+//		} else {
+//			nextSoldierState = SoldierState.FIGHTING;
+//			fightingCode();
+//		}
+//	}
 	
 	/**
 	 * compares current health to health last turn and determines whether or not it got splashed damaged upon
@@ -776,167 +768,167 @@ public class SoldierRobot extends BaseRobot {
 		return false;
 	}
 	
-	private void defendMicro() throws GameActionException {
-		Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
-		int[] closestEnemyInfo = getClosestEnemy(enemiesList);
-		MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
-		double[][] activities = enemyActivites (currentLocation, rc.getTeam());
-		if (activities[2][0]+activities[1][0]+activities[0][0] == 0){
-			NavSystem.goToLocationAvoidMines(closestEnemyLocation);
-//			rc.setIndicatorString(0, "Forward1");
-		}
-		if (!minedUpAndReadyToGo(currentLocation)){
-			if (activities[1][0]+activities[0][0]>2) {
-//			if (activities[1][0]>1 || activities[0][0] == 0) {
-				NavSystem.goToLocationAvoidMines(DataCache.ourHQLocation);
-//				rc.setIndicatorString(0, "Back1");
-			}
-		} else {
-			MapLocation bestLocation = currentLocation;
-			int positionQuality=-1000;
-			MapLocation newPosition;
-			int value;
-			for (int i = 8; --i >= 0; ) {
-				newPosition = currentLocation.add(Direction.values()[i]);
-				value = positionValue(newPosition);
-				if (value>positionQuality) {
-					positionQuality=value;
-					bestLocation=newPosition;
-					break;
-				}
-			}
-			NavSystem.goToLocationAvoidMines(bestLocation);
-//			rc.setIndicatorString(0, "Pos");
-		}
-	}
+//	private void defendMicro() throws GameActionException {
+//		Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
+//		int[] closestEnemyInfo = getClosestEnemy(enemiesList);
+//		MapLocation closestEnemyLocation = new MapLocation(closestEnemyInfo[1], closestEnemyInfo[2]);
+//		double[][] activities = enemyActivites (currentLocation, rc.getTeam());
+//		if (activities[2][0]+activities[1][0]+activities[0][0] == 0){
+//			NavSystem.goToLocationAvoidMines(closestEnemyLocation);
+////			rc.setIndicatorString(0, "Forward1");
+//		}
+//		if (!minedUpAndReadyToGo(currentLocation)){
+//			if (activities[1][0]+activities[0][0]>2) {
+////			if (activities[1][0]>1 || activities[0][0] == 0) {
+//				NavSystem.goToLocationAvoidMines(DataCache.ourHQLocation);
+////				rc.setIndicatorString(0, "Back1");
+//			}
+//		} else {
+//			MapLocation bestLocation = currentLocation;
+//			int positionQuality=-1000;
+//			MapLocation newPosition;
+//			int value;
+//			for (int i = 8; --i >= 0; ) {
+//				newPosition = currentLocation.add(Direction.values()[i]);
+//				value = positionValue(newPosition);
+//				if (value>positionQuality) {
+//					positionQuality=value;
+//					bestLocation=newPosition;
+//					break;
+//				}
+//			}
+//			NavSystem.goToLocationAvoidMines(bestLocation);
+////			rc.setIndicatorString(0, "Pos");
+//		}
+//	}
 	
-	private int positionValue(MapLocation location) throws GameActionException {
-		int points=0;
-		double[][] acts = enemyActivites(location, rc.getTeam());
-		if (!minedUpAndReadyToGo(location)){
-			if (acts[1][0]+acts[0][0]>0) {
-				points -= 2;
-//				points -= 2*(acts[0][0]+acts[1][0]);
-			}
-			if (acts[0][1]!=0) {
-				points+=6*acts[0][1];
-//				points+=3*acts[0][1];
-			}
-		}
-		return points;
-	}
+//	private int positionValue(MapLocation location) throws GameActionException {
+//		int points=0;
+//		double[][] acts = enemyActivites(location, rc.getTeam());
+//		if (!minedUpAndReadyToGo(location)){
+//			if (acts[1][0]+acts[0][0]>0) {
+//				points -= 2;
+////				points -= 2*(acts[0][0]+acts[1][0]);
+//			}
+//			if (acts[0][1]!=0) {
+//				points+=6*acts[0][1];
+////				points+=3*acts[0][1];
+//			}
+//		}
+//		return points;
+//	}
 	
-	private double[][] enemyActivites (MapLocation square, Team squareTeam) throws GameActionException{
-		double acount1 = 0;
-		double acount2 = 0;
-		double acount3 = 0;
-		double icount1 = 0;
-		double icount2 = 0;
-		double icount3 = 0;
-		Robot[] enemiesInVision = rc.senseNearbyGameObjects(Robot.class, 18, squareTeam.opponent());
-		for (int i = enemiesInVision.length; --i >= 0; ) {
-			Robot enemy = enemiesInVision[i];
-			if (rc.senseRobotInfo(enemy).roundsUntilMovementIdle==0){
-				RobotInfo rinfo = rc.senseRobotInfo(enemy);
-				int dist = rinfo.location.distanceSquaredTo(currentLocation);
-				if (dist<=2) {
-					acount1++;
-				} else if(dist <=8) {
-					acount2++;
-				} else if (dist > 8 && (dist <= 14 || dist == 18)) {
-					acount3++;
-				}
-			} else {
-				RobotInfo rinfo = rc.senseRobotInfo(enemy);
-				int dist = rinfo.location.distanceSquaredTo(currentLocation);
-				if (dist<=2) {
-					icount1++;
-				} else if(dist <=8) {
-					icount2++;
-				} else if (dist > 8 && (dist <= 14 || dist == 18)) {
-					icount3++;
-				}
-			}
-		}
-		
-		double[][] output = {{acount1, icount1}, {acount2, icount2}, {acount3, icount3}};
-		return output;
-	}
+//	private double[][] enemyActivites (MapLocation square, Team squareTeam) throws GameActionException{
+//		double acount1 = 0;
+//		double acount2 = 0;
+//		double acount3 = 0;
+//		double icount1 = 0;
+//		double icount2 = 0;
+//		double icount3 = 0;
+//		Robot[] enemiesInVision = rc.senseNearbyGameObjects(Robot.class, 18, squareTeam.opponent());
+//		for (int i = enemiesInVision.length; --i >= 0; ) {
+//			Robot enemy = enemiesInVision[i];
+//			if (rc.senseRobotInfo(enemy).roundsUntilMovementIdle==0){
+//				RobotInfo rinfo = rc.senseRobotInfo(enemy);
+//				int dist = rinfo.location.distanceSquaredTo(currentLocation);
+//				if (dist<=2) {
+//					acount1++;
+//				} else if(dist <=8) {
+//					acount2++;
+//				} else if (dist > 8 && (dist <= 14 || dist == 18)) {
+//					acount3++;
+//				}
+//			} else {
+//				RobotInfo rinfo = rc.senseRobotInfo(enemy);
+//				int dist = rinfo.location.distanceSquaredTo(currentLocation);
+//				if (dist<=2) {
+//					icount1++;
+//				} else if(dist <=8) {
+//					icount2++;
+//				} else if (dist > 8 && (dist <= 14 || dist == 18)) {
+//					icount3++;
+//				}
+//			}
+//		}
+//		
+//		double[][] output = {{acount1, icount1}, {acount2, icount2}, {acount3, icount3}};
+//		return output;
+//	}
 	
-	private boolean minedUpAndReadyToGo(MapLocation location){
-		boolean surrounded = true;
-		for (int i = 8; --i >= 0; ) {
-			surrounded = (rc.getTeam() == rc.senseMine(location.add(DataCache.directionArray[i])));
-			if (surrounded == false){
-				break;
-			}
-		}
-		return surrounded;
-	}
+//	private boolean minedUpAndReadyToGo(MapLocation location){
+//		boolean surrounded = true;
+//		for (int i = 8; --i >= 0; ) {
+//			surrounded = (rc.getTeam() == rc.senseMine(location.add(DataCache.directionArray[i])));
+//			if (surrounded == false){
+//				break;
+//			}
+//		}
+//		return surrounded;
+//	}
 	
-	public void miningSubroutine() throws GameActionException {
-		if (DataCache.numEnemyRobots == 0 && rc.getLocation().distanceSquaredTo(DataCache.ourHQLocation) <= Constants.MAXIMUM_MINING_DISTANCE_SQUARED_FROM_HQ) {
-			// Do mining
-			if (rc.hasUpgrade(Upgrade.PICKAXE)) {
-				if (rc.isActive()) {
-					int x = rc.getLocation().x;
-					int y = rc.getLocation().y;
-					if ((2 * x + y) % 5 == 0 && rc.senseMine(rc.getLocation()) == null) {
-						rc.layMine();
-					} else {
-//						if (NavSystem.navMode == NavMode.NEUTRAL) {
-//							NavSystem.setupMiningNav();
-//						} else {
-//							NavSystem.followWaypoints(true, false);
+//	public void miningSubroutine() throws GameActionException {
+//		if (DataCache.numEnemyRobots == 0 && rc.getLocation().distanceSquaredTo(DataCache.ourHQLocation) <= Constants.MAXIMUM_MINING_DISTANCE_SQUARED_FROM_HQ) {
+//			// Do mining
+//			if (rc.hasUpgrade(Upgrade.PICKAXE)) {
+//				if (rc.isActive()) {
+//					int x = rc.getLocation().x;
+//					int y = rc.getLocation().y;
+//					if ((2 * x + y) % 5 == 0 && rc.senseMine(rc.getLocation()) == null) {
+//						rc.layMine();
+//					} else {
+////						if (NavSystem.navMode == NavMode.NEUTRAL) {
+////							NavSystem.setupMiningNav();
+////						} else {
+////							NavSystem.followWaypoints(true, false);
+////						}
+//						MapLocation newLocation1 = rc.getLocation().add(miningDirConstant);
+//						MapLocation newLocation2 = rc.getLocation().add(miningDirConstantOpp);
+//						if (distanceToLine(newLocation1) <= Constants.MINING_WIDTH && rc.senseMine(newLocation1) == null && rc.senseEncampmentSquares(newLocation1, 0, null).length == 0) {
+//							NavSystem.goDirectionAndDefuse(miningDirConstant);
+//							return;
+//						} else if (distanceToLine(newLocation2) <= Constants.MINING_WIDTH && rc.senseMine(newLocation2) == null && rc.senseEncampmentSquares(newLocation2, 0, null).length == 0) {
+//							NavSystem.goDirectionAndDefuse(miningDirConstantOpp);
+//							return;
 //						}
-						MapLocation newLocation1 = rc.getLocation().add(miningDirConstant);
-						MapLocation newLocation2 = rc.getLocation().add(miningDirConstantOpp);
-						if (distanceToLine(newLocation1) <= Constants.MINING_WIDTH && rc.senseMine(newLocation1) == null && rc.senseEncampmentSquares(newLocation1, 0, null).length == 0) {
-							NavSystem.goDirectionAndDefuse(miningDirConstant);
-							return;
-						} else if (distanceToLine(newLocation2) <= Constants.MINING_WIDTH && rc.senseMine(newLocation2) == null && rc.senseEncampmentSquares(newLocation2, 0, null).length == 0) {
-							NavSystem.goDirectionAndDefuse(miningDirConstantOpp);
-							return;
-						}
-						
-						Direction dir = rc.getLocation().directionTo(miningDestination);
-						NavSystem.goDirectionAndDefuse(dir);
-					}
-				}
-			} else {
-				// no upgrade
-				if (rc.isActive()) {
-					if (rc.senseMine(rc.getLocation()) == null) {
-						rc.layMine();
-					} else {
-//						if (NavSystem.navMode == NavMode.NEUTRAL) {
-//							NavSystem.setupMiningNav();
-//						} else {
-//							NavSystem.followWaypoints(true, false);
+//						
+//						Direction dir = rc.getLocation().directionTo(miningDestination);
+//						NavSystem.goDirectionAndDefuse(dir);
+//					}
+//				}
+//			} else {
+//				// no upgrade
+//				if (rc.isActive()) {
+//					if (rc.senseMine(rc.getLocation()) == null) {
+//						rc.layMine();
+//					} else {
+////						if (NavSystem.navMode == NavMode.NEUTRAL) {
+////							NavSystem.setupMiningNav();
+////						} else {
+////							NavSystem.followWaypoints(true, false);
+////						}
+//						// check to see if mines on left or right are untaken
+//						MapLocation newLocation1 = rc.getLocation().add(miningDirConstant);
+//						MapLocation newLocation2 = rc.getLocation().add(miningDirConstantOpp);
+////						rc.setIndicatorString(0, Double.toString(distanceToLine(newLocation1)));
+////						rc.setIndicatorString(1, Double.toString(distanceToLine(newLocation2)));
+//						if (distanceToLine(newLocation1) <= Constants.MINING_WIDTH && rc.senseMine(newLocation1) == null && rc.senseEncampmentSquares(newLocation1, 0, null).length == 0) {
+//							NavSystem.goDirectionAndDefuse(miningDirConstant);
+//							return;
+//						} else if (distanceToLine(newLocation2) <= Constants.MINING_WIDTH && rc.senseMine(newLocation2) == null && rc.senseEncampmentSquares(newLocation2, 0, null).length == 0) {
+//							NavSystem.goDirectionAndDefuse(miningDirConstantOpp);
+//							return;
 //						}
-						// check to see if mines on left or right are untaken
-						MapLocation newLocation1 = rc.getLocation().add(miningDirConstant);
-						MapLocation newLocation2 = rc.getLocation().add(miningDirConstantOpp);
-//						rc.setIndicatorString(0, Double.toString(distanceToLine(newLocation1)));
-//						rc.setIndicatorString(1, Double.toString(distanceToLine(newLocation2)));
-						if (distanceToLine(newLocation1) <= Constants.MINING_WIDTH && rc.senseMine(newLocation1) == null && rc.senseEncampmentSquares(newLocation1, 0, null).length == 0) {
-							NavSystem.goDirectionAndDefuse(miningDirConstant);
-							return;
-						} else if (distanceToLine(newLocation2) <= Constants.MINING_WIDTH && rc.senseMine(newLocation2) == null && rc.senseEncampmentSquares(newLocation2, 0, null).length == 0) {
-							NavSystem.goDirectionAndDefuse(miningDirConstantOpp);
-							return;
-						}
-						
-						Direction dir = rc.getLocation().directionTo(miningDestination);
-						NavSystem.goDirectionAndDefuse(dir);
-					}
-				}
-			}
-		} else {
-			// There are enemies, so ditch mining and go defend
-			soldierState = SoldierState.FIGHTING;
-		}
-	}
+//						
+//						Direction dir = rc.getLocation().directionTo(miningDestination);
+//						NavSystem.goDirectionAndDefuse(dir);
+//					}
+//				}
+//			}
+//		} else {
+//			// There are enemies, so ditch mining and go defend
+//			soldierState = SoldierState.FIGHTING;
+//		}
+//	}
 
 	public void microCode() throws GameActionException {
 		Robot[] enemiesList = rc.senseNearbyGameObjects(Robot.class, 100000, rc.getTeam().opponent());
@@ -1164,7 +1156,7 @@ public class SoldierRobot extends BaseRobot {
 		if (NavSystem.navMode != NavMode.SMART || NavSystem.destination != DataCache.enemyHQLocation) {
 			NavSystem.setupSmartNav(DataCache.enemyHQLocation);
 		}
-		NavSystem.followWaypoints(true, true);
+		NavSystem.followWaypoints(true, false);
 	}
 	
 	/** code to be used by capturers

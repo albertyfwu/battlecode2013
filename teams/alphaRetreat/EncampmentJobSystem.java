@@ -792,18 +792,14 @@ public class EncampmentJobSystem {
 			} else {
 				newJobsList = getBestEncampmentLocationsFromAlliedLoc(DataCache.ourHQLocation, alliedEncampments, numEncampmentsNeeded);
 			}
-//			System.out.println("new jobs list: " + Clock.getBytecodeNum());
 
 			ChannelType[] channelList = EncampmentJobSystem.assignChannels(newJobsList, EncampmentJobSystem.encampmentJobs, EncampmentJobSystem.encampmentChannels);
 
 			for (int i = numEncampmentsNeeded; --i >= 0; ) { // update lists
 				EncampmentJobSystem.encampmentJobs[i] = newJobsList[i];
-//				System.out.println("encampmentJobs.x: " + encampmentJobs[i].x);
-//				System.out.println("encampmentJobs.y: " + encampmentJobs[i].y);
 				EncampmentJobSystem.encampmentChannels[i] = channelList[i];
 			}
 
-//			System.out.println("update lists: " + Clock.getBytecodeNum());
 
 			// clear unused channels
 			for (int i = encampmentJobChannelList.length; --i >= 0; ) {

@@ -4,9 +4,6 @@ import battlecode.common.GameConstants;
 
 public enum ChannelType {
 
-	// for strategy
-	STRATEGY,
-	
 	// for broadcasting move-out
 	MOVE_OUT,
 	
@@ -15,9 +12,6 @@ public enum ChannelType {
 	
 	// for reporting artillery seen
 	ARTILLERY_SEEN,
-	
-	// channel for telling a designated encampment to commit suicide
-	ENCAMPMENT_SUICIDE,
 	
 	// for encampments
 	ENC1,
@@ -35,17 +29,11 @@ public enum ChannelType {
 	COMP5,
 	COMPSHIELD,
 	
-	// broadcasting waypoints for clearing wide swath for army
-	WAYPOINTS,
-	
 	// power level
 	HQPOWERLEVEL,
 	
 	// checking if enemy nuke is half done
 	ENEMY_NUKE_HALF_DONE,
-	
-	// check if our nuke is half done
-	OUR_NUKE_HALF_DONE,
 	
 	// retreat channel
 	RETREAT_CHANNEL,

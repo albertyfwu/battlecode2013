@@ -1,11 +1,6 @@
 package alphaRetreat;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-
 import battlecode.common.Clock;
-import battlecode.common.GameConstants;
 import battlecode.common.RobotController;
 
 /**
@@ -17,7 +12,7 @@ public class BroadcastSystem {
 	
 	public static BaseRobot robot;
 	public static RobotController rc;
-	public static byte signature = 0x4C; // TODO: Better signature verification (based on round number, channel type, etc.)
+	public static byte signature = 0x7D;
 	public static final int signatureMask = 0x00FFFFFF;
 	
 	/**
@@ -70,7 +65,7 @@ public class BroadcastSystem {
 					rc.broadcast(channelNo, result);
 				}
 			} catch (Exception e) {
-				e.printStackTrace();
+//				e.printStackTrace();
 			}
 		}
 	}
@@ -95,17 +90,6 @@ public class BroadcastSystem {
 		int round = Clock.getRoundNum();
 		int round_cycle = round / Constants.CHANNEL_CYCLE - 1;		
 		return getChannelNos(channelType, round_cycle);
-	}
-	
-	/**
-	 * For precomputed channels.
-	 * @param channelType
-	 * @param round_cycle
-	 * @return
-	 */
-	public static int[] getChannelNosPrecomputed(ChannelType channelType, int round_cycle) {
-		return PrecomputedChannelNos.precomputedChannelNos[round_cycle][channelType.ordinal()];
-//		return new int[0];
 	}
 	
 	public static Message readLastCycle(ChannelType channelType) {
@@ -138,9 +122,6 @@ public class BroadcastSystem {
 	}
 	
 	public static int[] getChannelNos(ChannelType channelType, int constant) {
-//		if (constant < Constants.MAX_PRECOMPUTED_ROUNDS / Constants.CHANNEL_CYCLE) {
-//			return getChannelNosPrecomputed(channelType, constant);
-//		}
 		int[] channelNos = new int[Constants.REDUNDANT_CHANNELS];
 		int rangeStart = channelType.ordinal() * ChannelType.range;
 		constant += 1;

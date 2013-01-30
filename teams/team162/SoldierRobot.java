@@ -570,22 +570,63 @@ public class SoldierRobot extends BaseRobot {
 			// looks like something exists at the location...
 			GameObject object = rc.senseObjectAtLocation(shieldLocation);
 			if (object != null && rc.senseRobotInfo((Robot) object).type == RobotType.SHIELDS) {
-				// set the shieldQueueLocation						
+				// set the shieldQueueLocation
 				int dx = shieldLocation.x - DataCache.ourHQLocation.x;
-				int dy = shieldLocation.y - DataCache.ourHQLocation.y;
-				
-				double maxDxDy = Math.max(Math.abs(dx), Math.abs(dy));
-				
+				int dy = shieldLocation.y - DataCache.ourHQLocation.y;				
+				double maxDxDy = Math.max(Math.abs(dx), Math.abs(dy));					
 				double dxNorm = dx / maxDxDy;
 				double dyNorm = dy / maxDxDy;
-				
-				int centerx = (int) (shieldLocation.x - 5 * dxNorm);
-				int centery = (int) (shieldLocation.y - 5 * dyNorm);
-				
-				shieldQueueLocation = new MapLocation(centerx, centery);
+				if (shieldLocation.distanceSquaredTo(DataCache.ourHQLocation) < 73) {
+					// we're too close to the HQ
+					// try -dy, dx and dy, -dx
+					int centerx1 = (int) (shieldLocation.x - 5 * dyNorm);
+					int centery1 = (int) (shieldLocation.y + 5 * dxNorm);
+					MapLocation loc1 = new MapLocation(centerx1, centery1);
+					int centerx2 = (int) (shieldLocation.x + 5 * dyNorm);
+					int centery2 = (int) (shieldLocation.y - 5 * dxNorm);
+					MapLocation loc2 = new MapLocation(centerx2, centery2);
+					
+					MapLocation fartherLoc = null;
+					if (loc2.distanceSquaredTo(DataCache.enemyHQLocation) < loc1.distanceSquaredTo(DataCache.enemyHQLocation)) {
+						fartherLoc = loc1;
+					} else {
+						fartherLoc = loc2;
+					}
+					
+					boolean loc1OnMap = loc1.x < DataCache.mapWidth && loc1.x >= 0 && loc1.y < DataCache.mapHeight && loc1.y >= 0;
+					boolean loc2OnMap = loc2.x < DataCache.mapWidth && loc2.x >= 0 && loc2.y < DataCache.mapHeight && loc2.y >= 0;
+					
+					if (fartherLoc.equals(loc1)) {
+						if (loc1OnMap) {
+							shieldQueueLocation = loc1;
+						} else {
+							if (loc2OnMap) {
+								shieldQueueLocation = loc2;
+							} else {
+								shieldQueueLocation = loc1;
+							}
+						}
+					} else {
+						if (loc2OnMap) {
+							shieldQueueLocation = loc2;
+						} else {
+							if (loc1OnMap) {
+								shieldQueueLocation = loc1;
+							} else {
+								shieldQueueLocation = loc2;
+							}
+						}
+					}
+				} else {
+					// we're far enough away from the HQ to prevent overcrowding
+					
+					int centerx = (int) (shieldLocation.x - 5 * dxNorm);
+					int centery = (int) (shieldLocation.y - 5 * dyNorm);
+					
+					shieldQueueLocation = new MapLocation(centerx, centery);
+				}
 				
 				rallyPoint = shieldQueueLocation;
-						
 				return true;
 			}
 		}

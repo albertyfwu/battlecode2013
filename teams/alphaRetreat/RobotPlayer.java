@@ -39,7 +39,7 @@ public class RobotPlayer {
 			}
 			robot.loop();
 		} catch (Exception e) {
-			e.printStackTrace();
+//			e.printStackTrace();
 		}
 	}
 }

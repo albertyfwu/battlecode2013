@@ -65,7 +65,7 @@ public class NavSystem {
 		// Calculate the center of the map
 		mapCenter = new MapLocation(mapWidth / 2, mapHeight / 2);
 		
-		swarmC = 0;
+//		swarmC = 0;
 	}
 	
 	/**
@@ -265,7 +265,6 @@ public class NavSystem {
 			}
 			if (defuseMines) {
 				if (swarm) {
-//					rc.setIndicatorString(2, currentWaypoint.toString());
 					goToLocationSwarm(currentWaypoint, true);
 				} else {
 					goToLocation(currentWaypoint);
@@ -281,7 +280,6 @@ public class NavSystem {
 			// Keep moving to the current waypoint
 			if (defuseMines) {
 				if (swarm) {
-//					rc.setIndicatorString(2, currentWaypoint.toString());
 					goToLocationSwarm(currentWaypoint, true);
 				} else {
 					goToLocation(currentWaypoint);
@@ -396,75 +394,75 @@ public class NavSystem {
 		}
 	}
 
-	/**
-	 * Sets up the backdoor navigation system for a given endLocation.
-	 * @param endLocation
-	 * @throws GameActionException
-	 */
-	public static void setupBackdoorNav(MapLocation endLocation) throws GameActionException {
-		navMode = NavMode.BACKDOOR;
-		destination = endLocation;
-		// Calculate all the waypoints first and save them (this is different from smart nav)
-		MapLocation currentLocation = rc.getLocation();
-		Direction dirToEndLocation = currentLocation.directionTo(endLocation);
-		// How close are we to the wall?
-		int horzDistanceToWall = mapWidth / 2 - Math.abs(endLocation.x - mapCenter.x);
-		int vertDistanceToWall = mapHeight / 2 - Math.abs(endLocation.y - mapCenter.y);
-		int distanceToWall = (int)(0.8 * Math.min(horzDistanceToWall, vertDistanceToWall));
-		MapLocation firstWaypoint = currentLocation.add(dirToEndLocation, -distanceToWall);
-		MapLocation lastWaypoint = endLocation.add(dirToEndLocation, distanceToWall);
-		backdoorWaypoints = new MapLocation[]{firstWaypoint, null, null, lastWaypoint};
-		// Now let's try to find some intermediate waypoints to follow
-		// Let's see if we should move horizontally first or vertically first
-		int dx = endLocation.x - currentLocation.x;
-		int dy = endLocation.y - currentLocation.y;
-		if (Math.abs(dx) > Math.abs(dy)) {
-			// We're vertically really close, but not horizontally, so move vertically first
-			if (Util.Random() < 0.5) {
-				// Try moving up, then horizontally, then down to endLocation
-				backdoorWaypoints[1] = new MapLocation(currentLocation.x, Constants.BACKDOOR_WALL_BUFFER);
-				// We need to know if endLocation is closer to the left wall or the right wall
-				if (endLocation.x < mapWidth - endLocation.x) { // left wall
-					backdoorWaypoints[2] = new MapLocation(Constants.BACKDOOR_WALL_BUFFER, Constants.BACKDOOR_WALL_BUFFER);
-				} else { // right wall
-					backdoorWaypoints[2] = new MapLocation(mapWidth - 1 - Constants.BACKDOOR_WALL_BUFFER, Constants.BACKDOOR_WALL_BUFFER);
-				}
-			} else {
-				// Try moving down, then horizontally, then up to endLocation
-				backdoorWaypoints[1] = new MapLocation(currentLocation.x, mapHeight - Constants.BACKDOOR_WALL_BUFFER);
-				// We need to know if endLocation is closer to the left wall or the right wall
-				if (endLocation.x < mapWidth - endLocation.x) { // left wall
-					backdoorWaypoints[2] = new MapLocation(Constants.BACKDOOR_WALL_BUFFER, mapHeight - 1 - Constants.BACKDOOR_WALL_BUFFER);
-				} else { // right wall
-					backdoorWaypoints[2] = new MapLocation(mapWidth - 1 - Constants.BACKDOOR_WALL_BUFFER, mapHeight - 1 - Constants.BACKDOOR_WALL_BUFFER);
-				}
-			}
-		} else {
-			// We're horizontally really close, but not vertically, so move horizontally first
-			if (Util.Random() < 0.5) {
-				// Try moving left, then vertically, then right to endLocation
-				backdoorWaypoints[1] = new MapLocation(Constants.BACKDOOR_WALL_BUFFER, currentLocation.y);
-				// We need to know if endLocation is closer to the top wall or the bottom wall
-				if (endLocation.y < mapHeight - endLocation.y) { // top wall
-					backdoorWaypoints[2] = new MapLocation(Constants.BACKDOOR_WALL_BUFFER, Constants.BACKDOOR_WALL_BUFFER);
-				} else { // bottom wall
-					backdoorWaypoints[2] = new MapLocation(Constants.BACKDOOR_WALL_BUFFER, mapHeight - 1 - Constants.BACKDOOR_WALL_BUFFER);
-				}
-			} else {
-				// Try moving right, then vertically, then left to endLocation
-				backdoorWaypoints[1] = new MapLocation(mapWidth - Constants.BACKDOOR_WALL_BUFFER, currentLocation.y);
-				// We need to know if endLocation is closer to the top wall or the bottom wall
-				if (endLocation.y < mapHeight - endLocation.y) { // top wall
-					backdoorWaypoints[2] = new MapLocation(mapWidth - 1 - Constants.BACKDOOR_WALL_BUFFER, Constants.BACKDOOR_WALL_BUFFER);
-				} else { // bottom wall
-					backdoorWaypoints[2] = new MapLocation(mapWidth - 1 - Constants.BACKDOOR_WALL_BUFFER, mapHeight - 1 - Constants.BACKDOOR_WALL_BUFFER);
-				}
-			}
-		}
-		// Upon calling getBackdoorWaypoint(), backdoorWaypointsIndex will be incremented by 1
-		backdoorWaypointsIndex = -1;
-		getBackdoorWaypoint();
-	}
+//	/**
+//	 * Sets up the backdoor navigation system for a given endLocation.
+//	 * @param endLocation
+//	 * @throws GameActionException
+//	 */
+//	public static void setupBackdoorNav(MapLocation endLocation) throws GameActionException {
+//		navMode = NavMode.BACKDOOR;
+//		destination = endLocation;
+//		// Calculate all the waypoints first and save them (this is different from smart nav)
+//		MapLocation currentLocation = rc.getLocation();
+//		Direction dirToEndLocation = currentLocation.directionTo(endLocation);
+//		// How close are we to the wall?
+//		int horzDistanceToWall = mapWidth / 2 - Math.abs(endLocation.x - mapCenter.x);
+//		int vertDistanceToWall = mapHeight / 2 - Math.abs(endLocation.y - mapCenter.y);
+//		int distanceToWall = (int)(0.8 * Math.min(horzDistanceToWall, vertDistanceToWall));
+//		MapLocation firstWaypoint = currentLocation.add(dirToEndLocation, -distanceToWall);
+//		MapLocation lastWaypoint = endLocation.add(dirToEndLocation, distanceToWall);
+//		backdoorWaypoints = new MapLocation[]{firstWaypoint, null, null, lastWaypoint};
+//		// Now let's try to find some intermediate waypoints to follow
+//		// Let's see if we should move horizontally first or vertically first
+//		int dx = endLocation.x - currentLocation.x;
+//		int dy = endLocation.y - currentLocation.y;
+//		if (Math.abs(dx) > Math.abs(dy)) {
+//			// We're vertically really close, but not horizontally, so move vertically first
+//			if (Util.Random() < 0.5) {
+//				// Try moving up, then horizontally, then down to endLocation
+//				backdoorWaypoints[1] = new MapLocation(currentLocation.x, Constants.BACKDOOR_WALL_BUFFER);
+//				// We need to know if endLocation is closer to the left wall or the right wall
+//				if (endLocation.x < mapWidth - endLocation.x) { // left wall
+//					backdoorWaypoints[2] = new MapLocation(Constants.BACKDOOR_WALL_BUFFER, Constants.BACKDOOR_WALL_BUFFER);
+//				} else { // right wall
+//					backdoorWaypoints[2] = new MapLocation(mapWidth - 1 - Constants.BACKDOOR_WALL_BUFFER, Constants.BACKDOOR_WALL_BUFFER);
+//				}
+//			} else {
+//				// Try moving down, then horizontally, then up to endLocation
+//				backdoorWaypoints[1] = new MapLocation(currentLocation.x, mapHeight - Constants.BACKDOOR_WALL_BUFFER);
+//				// We need to know if endLocation is closer to the left wall or the right wall
+//				if (endLocation.x < mapWidth - endLocation.x) { // left wall
+//					backdoorWaypoints[2] = new MapLocation(Constants.BACKDOOR_WALL_BUFFER, mapHeight - 1 - Constants.BACKDOOR_WALL_BUFFER);
+//				} else { // right wall
+//					backdoorWaypoints[2] = new MapLocation(mapWidth - 1 - Constants.BACKDOOR_WALL_BUFFER, mapHeight - 1 - Constants.BACKDOOR_WALL_BUFFER);
+//				}
+//			}
+//		} else {
+//			// We're horizontally really close, but not vertically, so move horizontally first
+//			if (Util.Random() < 0.5) {
+//				// Try moving left, then vertically, then right to endLocation
+//				backdoorWaypoints[1] = new MapLocation(Constants.BACKDOOR_WALL_BUFFER, currentLocation.y);
+//				// We need to know if endLocation is closer to the top wall or the bottom wall
+//				if (endLocation.y < mapHeight - endLocation.y) { // top wall
+//					backdoorWaypoints[2] = new MapLocation(Constants.BACKDOOR_WALL_BUFFER, Constants.BACKDOOR_WALL_BUFFER);
+//				} else { // bottom wall
+//					backdoorWaypoints[2] = new MapLocation(Constants.BACKDOOR_WALL_BUFFER, mapHeight - 1 - Constants.BACKDOOR_WALL_BUFFER);
+//				}
+//			} else {
+//				// Try moving right, then vertically, then left to endLocation
+//				backdoorWaypoints[1] = new MapLocation(mapWidth - Constants.BACKDOOR_WALL_BUFFER, currentLocation.y);
+//				// We need to know if endLocation is closer to the top wall or the bottom wall
+//				if (endLocation.y < mapHeight - endLocation.y) { // top wall
+//					backdoorWaypoints[2] = new MapLocation(mapWidth - 1 - Constants.BACKDOOR_WALL_BUFFER, Constants.BACKDOOR_WALL_BUFFER);
+//				} else { // bottom wall
+//					backdoorWaypoints[2] = new MapLocation(mapWidth - 1 - Constants.BACKDOOR_WALL_BUFFER, mapHeight - 1 - Constants.BACKDOOR_WALL_BUFFER);
+//				}
+//			}
+//		}
+//		// Upon calling getBackdoorWaypoint(), backdoorWaypointsIndex will be incremented by 1
+//		backdoorWaypointsIndex = -1;
+//		getBackdoorWaypoint();
+//	}
 	
 	/**
 	 * Sets up the smart navigation system for a given endLocation.
