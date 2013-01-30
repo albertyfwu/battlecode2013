@@ -24,13 +24,13 @@ public class HQRobot extends BaseRobot {
 	
 	@Override
 	public void run() {
-		try {			
+		try {
 			DataCache.updateRoundVariables();
 			BroadcastSystem.write(powerChannel, (int) rc.getTeamPower()); // broadcast the team power
 			BroadcastSystem.write(genCountChannel, EncampmentJobSystem.genCount); // broadcast the number of generators we've built\
 			
 			// Do a quicksort for the EncampmentJobSystem so it saves bytecode later
-			if (Clock.getRoundNum() == 5) {
+			if (Clock.getRoundNum() == 6) {
 				EncampmentJobSystem.sortNeutralEncampmentScores();
 			}
 			// end quicksort test
@@ -165,27 +165,14 @@ public class HQRobot extends BaseRobot {
 		// Otherwise, let's just spawn in the desired direction, and make sure to clear out a path later
 		return canMoveDirection;
 	}
+	
+//	public static void testing(int[] arr) {
+//		arr[0] = 3;
+//	}
 
 //	public static void main(String[] arg0) {
-//		MapLocation origin = new MapLocation(0,0);
-//
-//		MapLocation test1 = new MapLocation(5,0);
-//		MapLocation test2 = new MapLocation(4,1);
-//		MapLocation test3 = new MapLocation(3,2);
-//		MapLocation test4 = new MapLocation(1,3);
-//		MapLocation test5 = new MapLocation(6,2);
-//		MapLocation test6 = new MapLocation(0,5);
-//		MapLocation test7 = new MapLocation(2,3);
-//
-//		MapLocation[] oldJobsList = {test1, test2, test3, test4, null};
-//		MapLocation[] newJobsList = {test2, test4, test5, null, null};
-//		ChannelType[] oldChannelsList = {ChannelType.ENC1, ChannelType.ENC2, ChannelType.ENC3, ChannelType.ENC4, ChannelType.ENC5};
-//
-//		ChannelType[] newChannelsList = EncampmentJobSystem.assignChannels(newJobsList, oldJobsList, oldChannelsList);
-//
-//		for (int i=0; i<newChannelsList.length; i++) {
-//			System.out.println("result " + i + ": " + newChannelsList[i]);
-//		}
-//
+//		int[] testArr = new int[] {1};
+//		testing(testArr);
+//		System.out.println(testArr[0]);
 //	}
 }

@@ -399,7 +399,13 @@ public class SoldierRobot extends BaseRobot {
 				} else {
 					if (rc.senseEncampmentSquare(currentLocation) && currentLocation.distanceSquaredTo(DataCache.enemyHQLocation) < 0.55 * DataCache.rushDistSquared ) {
 						if (rc.getTeamPower() > rc.senseCaptureCost() && Util.Random() < 0.5 && rc.isActive()) {
-							rc.captureEncampment(RobotType.ARTILLERY);
+							if (!shieldExists() || (shieldExists() && shieldLocation.distanceSquaredTo(currentLocation) > 2)) {
+								rc.captureEncampment(RobotType.ARTILLERY);
+							} else {
+								NavSystem.goToLocation(rallyPoint);
+							}
+						} else {
+							NavSystem.goToLocation(rallyPoint);
 						}
 					} else {
 						boolean layedMine = false;

@@ -123,7 +123,7 @@ public class EncampmentJobSystem {
 		}
 
 		MapLocation[] closestEncampments = getBestEncampmentLocations(DataCache.ourHQLocation, sortedNeutralEncLocs, numEncampmentsNeeded);
-
+		
 		for (int i = numEncampmentsNeeded; --i >= 0; ) {
 			// save in list of jobs
 			encampmentJobs[i] = closestEncampments[i];

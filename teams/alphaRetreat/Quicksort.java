@@ -10,16 +10,15 @@ public class Quicksort  {
 	  /**
 	   * Make sure that locations has the same length as values
 	   */
-	  public static double[] sort(MapLocation[] myLocations, double[] values) {
+	  public static void sort(MapLocation[] myLocations, double[] values) {
 	    // Check for empty or null array
 	    if (values ==null || values.length==0){
-	      return null;
+	      return;
 	    }
 	    locations = myLocations;
 	    numbers = values;
 	    number = values.length;
 	    quicksort(0, number - 1);
-	    return numbers;
 	  }
 
 	  private static void quicksort(int low, int high) {
