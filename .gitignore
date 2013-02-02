@@ -18,3 +18,5 @@ bin/*
 submission.jar
 battlecode*.tmp
 match.rms
+match_results.csv
+profile.log
